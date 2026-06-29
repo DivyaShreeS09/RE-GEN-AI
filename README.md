@@ -2,7 +2,7 @@
   <img src="frontend/src/assets/logo.jpeg" alt="RE:GEN AI Logo" width="180" />
 </p>
 
-<h1 align="center">RE:GEN AI — Autonomous Sustainability Command Center</h1>
+<h1 align="center">RE:GEN AI â€” Autonomous Sustainability Command Center</h1>
 
 <p align="center">
   A multi-agent decision-support prototype that detects hidden resource loss in simulated smart-campus
@@ -16,7 +16,7 @@
   <img src="https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?logo=tailwindcss&logoColor=white" />
   <img src="https://img.shields.io/badge/Recharts-3.9-8884D8" />
   <img src="https://img.shields.io/badge/Google_AI_Agents-Capstone-4285F4?logo=google&logoColor=white" />
-  <img src="https://img.shields.io/badge/License-MIT-22c55e" />
+
 </p>
 
 ---
@@ -36,7 +36,7 @@ and a 4-tier executive action plan.
 ```mermaid
 graph TD
     User["User (Browser)"] -->|"Click Scan"| Hero["HeroSection"]
-    Hero -->|"Promise.all — 5 requests"| API["FastAPI Backend :8000"]
+    Hero -->|"Promise.all â€” 5 requests"| API["FastAPI Backend :8000"]
 
     API --> WA["Water Leakage Agent\nwater_usage.csv"]
     API --> EA["Energy Optimization Agent\nenergy_usage.csv"]
@@ -105,15 +105,15 @@ sequenceDiagram
 ```mermaid
 graph LR
     subgraph "Data Layer"
-        WC["water_usage.csv\n168 rows — Jan 15-21 2024"]
-        EC["energy_usage.csv\n168 rows — Jan 15-21 2024"]
+        WC["water_usage.csv\n168 rows â€” Jan 15-21 2024"]
+        EC["energy_usage.csv\n168 rows â€” Jan 15-21 2024"]
         KB["waste_knowledge_base.json\n30 materials"]
     end
 
     subgraph "simulation.py"
         LW["load_water_data()"]
         LE["load_energy_data()"]
-        LK["load_waste_kb() — cached"]
+        LK["load_waste_kb() â€” cached"]
     end
 
     subgraph "Agent Pipeline"
@@ -137,39 +137,39 @@ graph LR
 ## Features
 
 ### Waste Intelligence
-- **30-material knowledge base** — Agricultural, Organic, Industrial, Metal, Plastic, Glass, Hazardous
-- **Three-pathway comparison** — Sell raw (1.0x), Process into product (1.8x), Partner with recycler (1.3x)
-- **Hazard guardrails** — e-waste, battery waste, medical waste trigger CPCB notice + suppress all financials
-- **Hidden value score** — Each material rated 0-100 for recovery potential
-- **7-step reasoning trace** — Auditable step-by-step explanation of every recommendation
+- **30-material knowledge base** â€” Agricultural, Organic, Industrial, Metal, Plastic, Glass, Hazardous
+- **Three-pathway comparison** â€” Sell raw (1.0x), Process into product (1.8x), Partner with recycler (1.3x)
+- **Hazard guardrails** â€” e-waste, battery waste, medical waste trigger CPCB notice + suppress all financials
+- **Hidden value score** â€” Each material rated 0-100 for recovery potential
+- **7-step reasoning trace** â€” Auditable step-by-step explanation of every recommendation
 
 ### Water Intelligence
-- **Night-flow anomaly detection** — Scans hours 0-5 against baseline; flags readings 4x above normal
-- **Event grouping** — Anomalies grouped by date and location with duration and wasted volume
-- **Cost + carbon** — Rs 0.05/L, 0.001 kg CO2/L
-- **Severity tiers** — critical >1000 L · high >500 L · medium >200 L · low >50 L · none
+- **Night-flow anomaly detection** â€” Scans hours 0-5 against baseline; flags readings 4x above normal
+- **Event grouping** â€” Anomalies grouped by date and location with duration and wasted volume
+- **Cost + carbon** â€” Rs 0.05/L, 0.001 kg CO2/L
+- **Severity tiers** â€” critical >1000 L Â· high >500 L Â· medium >200 L Â· low >50 L Â· none
 
 ### Energy Intelligence
-- **After-hours detection** — Hours 22-23 (10-11 PM) and 0-5 (midnight-6 AM)
-- **Zone-level grouping** — Events by date and zone with equipment type
-- **India grid CO2** — 0.82 kg/kWh, Rs 8.00/kWh tariff
-- **Severity tiers** — critical >200 kWh · high >100 · medium >50 · low >10 · none
+- **After-hours detection** â€” Hours 22-23 (10-11 PM) and 0-5 (midnight-6 AM)
+- **Zone-level grouping** â€” Events by date and zone with equipment type
+- **India grid CO2** â€” 0.82 kg/kWh, Rs 8.00/kWh tariff
+- **Severity tiers** â€” critical >200 kWh Â· high >100 Â· medium >50 Â· low >10 Â· none
 
 ### Cross-Domain Impact
-- **CO2 aggregation** — Water + energy combined into total kg and tonne values
-- **Tree equivalence** — (CO2_kg / 100) x 4.5 trees
-- **SDG alignment** — SDG 6, 7, 12, 13 each with contribution statement
-- **Financial benefit** — water x Rs 0.05 + energy x Rs 8 + waste_value x 0.60
+- **CO2 aggregation** â€” Water + energy combined into total kg and tonne values
+- **Tree equivalence** â€” (CO2_kg / 100) x 4.5 trees
+- **SDG alignment** â€” SDG 6, 7, 12, 13 each with contribution statement
+- **Financial benefit** â€” water x Rs 0.05 + energy x Rs 8 + waste_value x 0.60
 
 ### Dashboard & UI
-- **Mission Control overlay** — 8-step cinematic scan, progress bar 0-100%, parallel to real API calls
-- **RE:GEN Score gauges** — Animated SVG arc rings for before and after scores
-- **Digital Twin Campus** — Clickable 6-building map with per-zone diagnostic detail
-- **Resource Loss Heatmap** — Zone x domain risk grid with color-coded severity classes
-- **30-Day Impact Projection** — Extrapolates wasted volumes (water: 85% fix rate, energy: 80%)
-- **Intervention Simulator** — 6 toggles update score, savings, CO2 instantly (no backend call)
-- **Sustainability Achievements** — 6 badge cards unlock dynamically from scan results
-- **Agent War Room** — Live collaboration feed appends messages every 2.8s
+- **Mission Control overlay** â€” 8-step cinematic scan, progress bar 0-100%, parallel to real API calls
+- **RE:GEN Score gauges** â€” Animated SVG arc rings for before and after scores
+- **Digital Twin Campus** â€” Clickable 6-building map with per-zone diagnostic detail
+- **Resource Loss Heatmap** â€” Zone x domain risk grid with color-coded severity classes
+- **30-Day Impact Projection** â€” Extrapolates wasted volumes (water: 85% fix rate, energy: 80%)
+- **Intervention Simulator** â€” 6 toggles update score, savings, CO2 instantly (no backend call)
+- **Sustainability Achievements** â€” 6 badge cards unlock dynamically from scan results
+- **Agent War Room** â€” Live collaboration feed appends messages every 2.8s
 
 ---
 
@@ -198,14 +198,14 @@ graph LR
 **Requirements:** Python 3.11+, Node.js 18+, npm 9+
 
 ```bash
-# Terminal 1 — Backend
+# Terminal 1 â€” Backend
 cd backend
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
 ```bash
-# Terminal 2 — Frontend
+# Terminal 2 â€” Frontend
 cd frontend
 npm install
 npm run dev
@@ -221,13 +221,13 @@ No environment variables. No external services. Runs entirely locally.
 
 | Method | Endpoint | Agent | Description |
 |--------|----------|-------|-------------|
-| `GET` | `/health` | — | System status + disclaimer |
+| `GET` | `/health` | â€” | System status + disclaimer |
 | `POST` | `/analyze/waste` | Waste-to-Wealth | Material lookup, hazard check, pathway scoring |
 | `GET` | `/analyze/water` | Water Leakage | Night-flow anomaly detection on 7-day CSV |
 | `GET` | `/analyze/energy` | Energy Optimization | After-hours waste detection on 7-day CSV |
-| `GET` | `/dashboard/summary` | All 6 | Full pipeline — compact summary |
+| `GET` | `/dashboard/summary` | All 6 | Full pipeline â€” compact summary |
 | `GET` | `/agent-war-room` | All 7 | Agent status panel with findings + confidence |
-| `POST` | `/generate/action-plan` | All 7 | Full pipeline — unabridged report + traces |
+| `POST` | `/generate/action-plan` | All 7 | Full pipeline â€” unabridged report + traces |
 
 All responses include `disclaimer` and `data_notice` fields. Full examples in [`docs/API.md`](docs/API.md).
 
@@ -237,31 +237,31 @@ All responses include `disclaimer` and `data_notice` fields. Full examples in [`
 
 ```
 REGEN AI/
-├── backend/
-│   ├── main.py              # 7 FastAPI routes, CORS, Pydantic models
-│   ├── requirements.txt     # fastapi, uvicorn, pandas, pydantic, python-multipart
-│   ├── agents/              # 7 agent modules (one file per agent)
-│   ├── core/
-│   │   ├── scoring.py       # RE:GEN Score formula + severity_label()
-│   │   ├── guardrails.py    # Hazard suppression, quantity validation, disclaimer
-│   │   └── simulation.py    # CSV and JSON loaders
-│   └── data/
-│       ├── water_usage.csv
-│       ├── energy_usage.csv
-│       └── waste_knowledge_base.json
-└── frontend/
-    ├── vite.config.js       # Tailwind v4 plugin; /api proxy to localhost:8000
-    ├── package.json
-    └── src/
-        ├── App.jsx           # Scan state, Mission Control overlay, 14 sections
-        ├── api.js            # 7 Axios functions
-        ├── index.css         # Glassmorphism system, 14 keyframe animations
-        └── components/       # 15 components
+â”œâ”€â”€ backend/
+â”‚   â”œâ”€â”€ main.py              # 7 FastAPI routes, CORS, Pydantic models
+â”‚   â”œâ”€â”€ requirements.txt     # fastapi, uvicorn, pandas, pydantic, python-multipart
+â”‚   â”œâ”€â”€ agents/              # 7 agent modules (one file per agent)
+â”‚   â”œâ”€â”€ core/
+â”‚   â”‚   â”œâ”€â”€ scoring.py       # RE:GEN Score formula + severity_label()
+â”‚   â”‚   â”œâ”€â”€ guardrails.py    # Hazard suppression, quantity validation, disclaimer
+â”‚   â”‚   â””â”€â”€ simulation.py    # CSV and JSON loaders
+â”‚   â””â”€â”€ data/
+â”‚       â”œâ”€â”€ water_usage.csv
+â”‚       â”œâ”€â”€ energy_usage.csv
+â”‚       â””â”€â”€ waste_knowledge_base.json
+â””â”€â”€ frontend/
+    â”œâ”€â”€ vite.config.js       # Tailwind v4 plugin; /api proxy to localhost:8000
+    â”œâ”€â”€ package.json
+    â””â”€â”€ src/
+        â”œâ”€â”€ App.jsx           # Scan state, Mission Control overlay, 14 sections
+        â”œâ”€â”€ api.js            # 7 Axios functions
+        â”œâ”€â”€ index.css         # Glassmorphism system, 14 keyframe animations
+        â””â”€â”€ components/       # 15 components
 ```
 
 ---
 
-## 7 Agents — Summary
+## 7 Agents â€” Summary
 
 | # | Agent | File | Confidence | Key Output |
 |---|-------|------|-----------|-----------|
@@ -288,7 +288,7 @@ RE:GEN Score = waste  x 0.20
              + feasibility x 0.10
 ```
 
-Result clamped 0-100. Ratings: **>=80 Excellent · >=60 Good · >=40 Moderate · >=20 Poor · <20 Critical**
+Result clamped 0-100. Ratings: **>=80 Excellent Â· >=60 Good Â· >=40 Moderate Â· >=20 Poor Â· <20 Critical**
 
 The dashboard shows a **before score** (current degraded state with 15-25pt penalties applied)
 and **after score** (if all recommended actions are fully implemented).
@@ -323,9 +323,9 @@ Full details in [`docs/SECURITY.md`](docs/SECURITY.md).
 
 | Dataset | Rows | Locations / Zones | Key Anomalies |
 |---------|------|-------------------|---------------|
-| `water_usage.csv` | 168 | Campus Main, Block-B Hostel, Lab Block | Night-flow burst Jan 16 (Hostel), Jan 19 (Lab Block — CRITICAL) |
+| `water_usage.csv` | 168 | Campus Main, Block-B Hostel, Lab Block | Night-flow burst Jan 16 (Hostel), Jan 19 (Lab Block â€” CRITICAL) |
 | `energy_usage.csv` | 168 | Admin Block, Seminar Hall, Computer Lab, Campus | After-hours AC Jan 16 (Seminar), Jan 19 (Computer Lab) |
-| `waste_knowledge_base.json` | 30 materials | — | e-waste, battery waste, medical waste flagged critical |
+| `waste_knowledge_base.json` | 30 materials | â€” | e-waste, battery waste, medical waste flagged critical |
 
 All data is generated for January 15-21, 2024. No live IoT systems are connected.
 
@@ -351,7 +351,7 @@ Full mapping in [`docs/CAPSTONE.md`](docs/CAPSTONE.md).
 | File | Contents |
 |------|---------|
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System design, component map, CSS system, scoring formula |
-| [`docs/AGENTS.md`](docs/AGENTS.md) | All 7 agents — inputs, process, outputs, exact thresholds |
+| [`docs/AGENTS.md`](docs/AGENTS.md) | All 7 agents â€” inputs, process, outputs, exact thresholds |
 | [`docs/API.md`](docs/API.md) | All 7 endpoints with full request/response JSON |
 | [`docs/FLOWCHARTS.md`](docs/FLOWCHARTS.md) | Extended Mermaid diagrams |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Guardrails, disclaimer injection, production gaps |
@@ -373,12 +373,8 @@ Full mapping in [`docs/CAPSTONE.md`](docs/CAPSTONE.md).
 
 ---
 
-## License
-
-MIT — see [LICENSE](LICENSE).
-
 ---
 
 > **Disclaimer:** RE:GEN AI is a prototype decision-support system built for the Google Kaggle AI Agents
 > Capstone. All sensor data is simulated (January 15-21, 2024). No live IoT systems are connected.
-> All cost, CO2, and recovery values are estimates — not professional regulatory, financial, or engineering advice.
+> All cost, CO2, and recovery values are estimates â€” not professional regulatory, financial, or engineering advice.
