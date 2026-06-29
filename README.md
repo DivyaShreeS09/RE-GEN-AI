@@ -1,36 +1,98 @@
 <p align="center">
-  <img src="frontend/src/assets/logo.jpeg" alt="RE:GEN AI Logo" width="180" />
+  <img src="frontend/src/assets/logo.jpeg" alt="RE:GEN AI" width="180" />
 </p>
 
-<h1 align="center">RE:GEN AI -- Autonomous Sustainability Command Center</h1>
+<h1 align="center">RE:GEN AI</h1>
+<h3 align="center">Autonomous Sustainability Command Center</h3>
 
 <p align="center">
-  A multi-agent decision-support prototype that detects hidden resource loss in simulated smart-campus
-  sensor logs, maps waste-to-value pathways, and generates agent-prioritized sustainability interventions.
+  A multi-agent decision-support prototype that detects hidden resource loss in simulated
+  smart-campus sensor logs, maps waste-to-value pathways, and generates agent-prioritized
+  sustainability interventions -- with optional Gemini 2.0 Flash AI reasoning layered on top.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" />
-  <img src="https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi&logoColor=white" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?logo=tailwindcss&logoColor=white" />
-  <img src="https://img.shields.io/badge/Recharts-3.9-8884D8" />
-  <img src="https://img.shields.io/badge/Google_AI_Agents-Capstone-4285F4?logo=google&logoColor=white" />
+  <img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/Gemini-2.0_Flash-4285F4?logo=google&logoColor=white" alt="Gemini" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?logo=tailwindcss&logoColor=white" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/Google_AI_Agents-Capstone-34A853?logo=google&logoColor=white" alt="Capstone" />
 </p>
 
 ---
 
-## What It Does
+## The Problem RE:GEN AI Solves
 
-Seven specialized agents analyze simulated 7-day campus sensor logs across water, energy, and waste.
-They collaborate through a structured pipeline to produce ranked interventions, a composite RE:GEN Score (0-100),
-and a 4-tier executive action plan.
+Most university campuses lose thousands of rupees every week to hidden resource waste --
+water pipes leaking at night when no one notices, HVAC running in empty labs, recyclable
+materials discarded instead of recovered for value. No dashboard catches all three domains
+together. No system tells you which problem to fix first, why, and what the financial and
+environmental payoff is.
 
 **RE:GEN AI sends agents, not alerts.**
+
+Seven specialized agents analyze simulated 7-day campus resource logs, collaborate through
+a structured pipeline, and produce a ranked action plan with carbon equivalences, ROI
+estimates, and a 4-tier executive sustainability report -- all within seconds.
+
+---
+
+## What Is New in This Version
+
+- **Gemini 2.0 Flash AI layer** -- Report Agent, Decision Engine, and Waste Agent call
+  Gemini for narrative reasoning. Every call has a deterministic fallback so the system
+  runs identically without an API key.
+- **Campus Health Index** -- Letter grade A+ to F with label, color, and interpretation
+  derived from 6 sustainability sub-dimensions.
+- **CO2 Equivalences** -- Vehicle-km offset, household-days powered, flight fraction shown
+  on the dashboard with educational context and source constants.
+- **Annual Projection Strip** -- 52-week simulated projection clearly labeled as estimated.
+- **SDG Alignment Cards** -- UN Goals 6, 7, 9, 12, 13 mapped with specific contribution
+  statements generated per scan.
+- **Building Risk Ranking** -- Per-building risk table merged from water and energy
+  anomaly data across all monitored zones.
+- **Storytelling Dashboard** -- Every metric answers: What is happening? Why? What next?
+  What is the estimated impact?
+- **War Room Pipeline Header** -- 3-phase sequential reveal (Rule Engine, Impact & Decision,
+  AI Reasoning & Report) with per-card phase progress indicators.
+- **PDF Print Export** -- window.print() with @media print CSS; no extra packages needed.
+- **ROI Payback Estimates** -- Install cost divided by monthly saving in months, clearly
+  labeled as simulated.
 
 ---
 
 ## System Architecture
+
+```
+User (Browser)
+  |
+  | Click "Launch Campus Intelligence Scan"
+  v
+React Frontend  (Vite + Tailwind CSS v4 + Recharts)
+  |
+  | Promise.all -- 5 parallel API calls
+  v
+FastAPI Backend  :8000
+  |
+  +-- Water Leakage Agent        water_usage.csv (168 rows)
+  +-- Energy Optimization Agent  energy_usage.csv (168 rows)
+  +-- Waste-to-Wealth Agent      waste_knowledge_base.json (30 materials)
+  |
+  +-- Pollution and Impact Agent  cross-domain CO2 + SDG + equivalences
+  +-- Decision Engine Agent       urgency x cost x env x feasibility ranking
+  +-- RE:GEN Score Agent          6-dimension weighted composite 0-100
+  +-- Report Agent                executive summary + 4-tier action plan
+               |
+               | Optional AI layer (Gemini 2.0 Flash)
+               | Graceful fallback if GEMINI_API_KEY not set
+               v
+      JSON response -> 14 interactive React sections
+```
+
+---
+
+## Mermaid Architecture Diagram
 
 ```mermaid
 graph TD
@@ -49,7 +111,8 @@ graph TD
     DA  --> SA["RE:GEN Score Agent"]
     SA  --> RA["Report Agent"]
 
-    RA  -->|"JSON response"| FE["React Frontend\n14 interactive sections"]
+    RA  -->|"Gemini 2.0 Flash (optional)"| GEM["Google Generative AI"]
+    RA  -->|"JSON response"| FE["React Dashboard\n14 interactive sections"]
 ```
 
 ---
@@ -67,6 +130,7 @@ sequenceDiagram
     participant D  as Decision Engine
     participant S  as Score Agent
     participant Rp as Report Agent
+    participant G  as Gemini 2.0 Flash
 
     U->>R: Click "Launch Campus Intelligence Scan"
     R->>R: Show Mission Control Overlay (8-step animation)
@@ -84,135 +148,140 @@ sequenceDiagram
     F->>E: analyze_energy()
     E-->>F: wasted_kwh, severity, confidence=0.91
     F->>I: analyze_impact(water_L, energy_kWh, waste_INR)
-    I-->>F: co2_saved, sdg_alignment, confidence=0.87
+    I-->>F: co2_saved, sdg_alignment, equivalences, annual_projection
     F->>D: generate_decisions(water, energy, waste)
-    D-->>F: ranked_actions, confidence=0.90
+    D->>G: Explain top priority action (2 sentences)
+    G-->>D: AI explanation (or rule-based fallback)
+    D-->>F: ranked_actions, roi, confidence=0.90
     F->>S: compute_regen_score(all_results)
-    S-->>F: before_score, after_score, confidence=0.88
+    S-->>F: before_score, after_score, health_grade, building_ranking
     F->>Rp: generate_report(all_results)
-    Rp-->>F: executive_summary, action_plan, traces
-
+    Rp->>G: 3-paragraph executive summary (max 160 words)
+    G-->>Rp: AI summary (or template fallback)
+    Rp-->>F: executive_summary, action_plan, sdg_cards, traces
     F-->>R: JSON responses resolved
     R->>R: Dismiss overlay after 2s
-    R->>U: Full dashboard rendered
+    R->>U: Full dashboard rendered (14 sections)
 ```
 
 ---
 
-## Data Flow
+## The 7 Agents
 
-```mermaid
-graph LR
-    subgraph "Data Layer"
-        WC["water_usage.csv\n168 rows - Jan 15-21 2024"]
-        EC["energy_usage.csv\n168 rows - Jan 15-21 2024"]
-        KB["waste_knowledge_base.json\n30 materials"]
-    end
+| # | Agent | File | Confidence | AI-Enhanced | Key Output |
+|---|-------|------|-----------|------------|-----------|
+| 1 | Waste-to-Wealth | `waste_agent.py` | 0.92 | Yes | Recovery pathway, hidden value score, hazard guardrail, Gemini recommendation |
+| 2 | Water Leakage | `water_agent.py` | 0.89 | No | Night-flow anomaly events, wasted litres, 5-tier severity |
+| 3 | Energy Optimization | `energy_agent.py` | 0.91 | No | After-hours kWh waste per zone, CO2 at 0.82 kg/kWh |
+| 4 | Pollution and Impact | `impact_agent.py` | 0.87 | No | CO2 kg, SDG alignment, vehicle/household/flight equivalences, annual projection |
+| 5 | Decision Engine | `decision_agent.py` | 0.90 | Yes | Ranked actions by priority score, ROI payback months, Gemini priority explanation |
+| 6 | RE:GEN Score | `regen_score_agent.py` | 0.88 | No | Before/after score, campus health grade, 6 sub-dimensions, building risk ranking |
+| 7 | Report Agent | `report_agent.py` | 0.95 | Yes | Gemini executive summary, 4-tier action plan, SDG cards, all reasoning traces |
 
-    subgraph "simulation.py"
-        LW["load_water_data()"]
-        LE["load_energy_data()"]
-        LK["load_waste_kb() - cached"]
-    end
+---
 
-    subgraph "Agent Pipeline"
-        direction TB
-        WAgent["Water Agent"] --> IAgent["Impact Agent"]
-        EAgent["Energy Agent"] --> IAgent
-        WsAgent["Waste Agent"] --> IAgent
-        IAgent --> DAgent["Decision Engine"]
-        DAgent --> SAgent["Score Agent"]
-        SAgent --> RAgent["Report Agent"]
-    end
+## Gemini AI Integration
 
-    WC --> LW --> WAgent
-    EC --> LE --> EAgent
-    KB --> LK --> WsAgent
-    RAgent -->|"JSON"| FE["React Dashboard"]
+RE:GEN AI uses Gemini 2.0 Flash as an optional reasoning layer. The system is fully
+functional without it. Every Gemini call has a pre-computed deterministic fallback.
+
+```python
+# backend/core/gemini_client.py
+
+def call_gemini(prompt: str, fallback: str = "") -> tuple[str, bool]:
+    if not GEMINI_AVAILABLE or _model is None:
+        return fallback, False       # rule-based fallback
+    try:
+        response = _model.generate_content(prompt)
+        return response.text.strip(), True
+    except Exception as exc:
+        logging.warning(f"Gemini call failed, using fallback: {exc}")
+        return fallback, False       # network or quota error -> fallback
+```
+
+**Where Gemini IS used:**
+- Report Agent: 3-paragraph executive summary (max 160 words, prototype disclaimer required)
+- Decision Engine: 2-sentence explanation of why the top action must be done first
+- Waste Agent: 2-sentence actionable recovery recommendation (non-hazardous materials only)
+
+**Where Gemini is NEVER used:**
+- Hazardous waste: financial data stays suppressed regardless of AI availability
+- Water and energy threshold calculations: always deterministic
+- RE:GEN Score computation: always deterministic
+- Any output claiming exact profit or live sensor data
+
+All Gemini prompts contain embedded rules against forbidden phrases, financial exaggeration,
+and sensor data misrepresentation.
+
+---
+
+## RE:GEN Score Formula
+
+```
+RE:GEN Score = waste_sub        x 0.20
+             + water_sub        x 0.20
+             + energy_sub       x 0.20
+             + co2_sub          x 0.15
+             + urgency_sub      x 0.15
+             + feasibility_sub  x 0.10
+```
+
+Result clamped 0-100. Campus Health Grade:
+
+| Score | Grade | Label |
+|-------|-------|-------|
+| >= 90 | A+ | Carbon-Neutral Ready |
+| >= 80 | A  | High-Performing |
+| >= 70 | B  | On Track |
+| >= 55 | C  | Moderate Risk |
+| >= 40 | D  | High Risk -- Act Now |
+| < 40  | F  | Critical -- Immediate Escalation |
+
+Decision Engine priority formula:
+
+```
+priority_score = urgency           x 0.35
+              + min(cost/1000, 30) x 0.30
+              + env_impact         x 0.25
+              + feasibility        x 0.10
 ```
 
 ---
 
-## Features
+## Safety Guardrails
 
-### Waste Intelligence
-- **30-material knowledge base** - Agricultural, Organic, Industrial, Metal, Plastic, Glass, Hazardous
-- **Three-pathway comparison** - Sell raw (1.0x), Process into product (1.8x), Partner with recycler (1.3x)
-- **Hazard guardrails** - e-waste, battery waste, medical waste trigger CPCB notice + suppress all financials
-- **Hidden value score** - Each material rated 0-100 for recovery potential
-- **7-step reasoning trace** - Auditable step-by-step explanation of every recommendation
+| Guardrail | Trigger | Effect |
+|-----------|---------|--------|
+| Hazard suppression | hazard_level critical or high | CPCB warning injected; all financials null |
+| Quantity validation | quantity_kg <= 0 or > 100,000 | HTTP 400 before any agent runs |
+| Disclaimer injection | Every response | Prototype disclaimer in all JSON responses |
+| Sensor claim block | Always | Agents never claim live IoT or real-time data |
+| Financial claim block | Always | Only "estimated" values; exact profit never claimed |
+| Gemini guardrail | All Gemini prompts | Forbidden phrases and estimation rules embedded in every prompt |
 
-### Water Intelligence
-- **Night-flow anomaly detection** - Scans hours 0-5 against baseline; flags readings 4x above normal
-- **Event grouping** - Anomalies grouped by date and location with duration and wasted volume
-- **Cost and carbon** - Rs. 0.05/L water tariff, 0.001 kg CO2/L
-- **Severity tiers** - critical >1000 L, high >500 L, medium >200 L, low >50 L, none
-
-### Energy Intelligence
-- **After-hours detection** - Hours 22-23 (10-11 PM) and 0-5 (midnight-6 AM)
-- **Zone-level grouping** - Events by date and zone with equipment type
-- **India grid CO2** - 0.82 kg/kWh emission factor, Rs. 8.00/kWh tariff
-- **Severity tiers** - critical >200 kWh, high >100, medium >50, low >10, none
-
-### Cross-Domain Impact
-- **CO2 aggregation** - Water + energy combined into total kg and tonne values
-- **Tree equivalence** - (CO2_kg / 100) x 4.5 trees
-- **SDG alignment** - SDG 6, 7, 12, 13 each with contribution statement
-- **Financial benefit** - water x Rs. 0.05 + energy x Rs. 8 + waste_value x 0.60
-
-### Dashboard and UI
-- **Mission Control overlay** - 8-step cinematic scan, progress bar 0-100%, runs parallel to API calls
-- **RE:GEN Score gauges** - Animated SVG arc rings for before and after scores
-- **Digital Twin Campus** - Clickable 6-building map with per-zone diagnostic detail
-- **Resource Loss Heatmap** - Zone x domain risk grid with color-coded severity classes
-- **30-Day Impact Projection** - Extrapolates wasted volumes (water: 85% fix rate, energy: 80%)
-- **Intervention Simulator** - 6 toggles update score, savings, CO2 instantly (no backend call)
-- **Sustainability Achievements** - 6 badge cards unlock dynamically from scan results
-- **Agent War Room** - Live collaboration feed appends messages every 2.8s
+Materials that trigger hazard suppression: **e-waste**, **battery waste**, **medical waste**.
 
 ---
 
-## Tech Stack
+## Dashboard Features (14 Sections)
 
-| | Backend | Version |
-|-|---------|---------|
-| Framework | FastAPI | 0.111.0 |
-| Server | Uvicorn | 0.29.0 |
-| Data | Pandas | 2.2.2 |
-| Validation | Pydantic | 2.7.1 |
-
-| | Frontend | Version |
-|-|----------|---------|
-| UI | React | 19.2.7 |
-| Build | Vite | 8.1.0 |
-| Styling | Tailwind CSS v4 | 4.3.1 |
-| Charts | Recharts | 3.9.0 |
-| Icons | Lucide React | 1.21.0 |
-| HTTP | Axios | 1.18.1 |
-
----
-
-## Quick Start
-
-**Requirements:** Python 3.11+, Node.js 18+, npm 9+
-
-```bash
-# Terminal 1 - Backend
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-```
-
-```bash
-# Terminal 2 - Frontend
-cd frontend
-npm install
-npm run dev
-```
-
-Open: **http://localhost:5173** | API Docs: **http://localhost:8000/docs**
-
-No environment variables. No external services. Runs entirely locally.
+| Section | What It Shows |
+|---------|--------------|
+| Hero | 176px logo centered, scan CTA, live agent network status card |
+| Mission Control | 8-step cinematic scan overlay (parallel to API calls) |
+| Command Center | 6 stat cards with What/Why/Next/Impact storytelling, CO2 equivalences, annual projection |
+| RE:GEN Score Gauge | Animated SVG arc rings showing before and after intervention scores |
+| Hidden Resource Loss | Water + energy + recoverable waste value in one card |
+| Digital Twin Campus | Clickable 6-building map with per-zone risk diagnostics |
+| Waste Analyzer | 30-material search, pathway scoring, hazard warnings, Gemini recommendation |
+| Water Panel | Night-flow anomaly timeline, location table, severity indicators |
+| Energy Panel | After-hours kWh per zone, CO2 contribution bar chart |
+| Resource Loss Heatmap | Zone x domain risk grid, color-coded severity classes |
+| Impact Projection | 30-day extrapolation with fix-rate display |
+| Intervention Simulator | 6 toggles updating score + savings + CO2 instantly (no backend call) |
+| Sustainability Achievements | 6 badge cards unlocking dynamically from scan results |
+| Agent War Room | 3-phase pipeline header, sequential card reveal, per-card phase progress, live feed |
+| Action Plan | 4-tier plan, Campus Health Index, SDG alignment cards, building risk table, PDF + JSON export |
 
 ---
 
@@ -220,15 +289,41 @@ No environment variables. No external services. Runs entirely locally.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/health` | System status + disclaimer |
-| `POST` | `/analyze/waste` | Waste-to-Wealth Agent: material lookup, hazard check, pathway scoring |
+| `GET` | `/health` | System status, Gemini availability, disclaimer |
+| `POST` | `/analyze/waste` | Waste-to-Wealth Agent: material lookup, hazard check, Gemini recommendation |
 | `GET` | `/analyze/water` | Water Leakage Agent: night-flow anomaly detection on 7-day CSV |
-| `GET` | `/analyze/energy` | Energy Optimization Agent: after-hours waste detection |
-| `GET` | `/dashboard/summary` | Full pipeline -- compact summary for dashboard |
-| `GET` | `/agent-war-room` | All 7 agent status cards with findings and confidence |
-| `POST` | `/generate/action-plan` | Full pipeline -- unabridged report with reasoning traces |
+| `GET` | `/analyze/energy` | Energy Optimization Agent: after-hours waste detection per zone |
+| `GET` | `/dashboard/summary` | Full pipeline compact summary for dashboard (fast path) |
+| `GET` | `/agent-war-room` | All 7 agent status cards with findings and confidence scores |
+| `POST` | `/generate/action-plan` | Full pipeline with Gemini: action plan, SDG, health index, exec summary |
 
-Full request/response examples in [`docs/API.md`](docs/API.md).
+Interactive docs: **http://localhost:8000/docs** (when backend is running)
+
+---
+
+## Tech Stack
+
+### Backend
+
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| FastAPI | 0.111.0 | API framework, CORS, Pydantic validation |
+| Uvicorn | 0.29.0 | ASGI server |
+| Pandas | 2.2.2 | CSV data processing |
+| Pydantic | 2.7.1 | Request/response models |
+| google-generativeai | 0.8.0+ | Gemini 2.0 Flash API client |
+| python-dotenv | 1.0.0+ | .env file loading for API key |
+
+### Frontend
+
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| React | 19.2.7 | UI library |
+| Vite | 8.1.0 | Build tool with /api proxy |
+| Tailwind CSS v4 | 4.3.1 | Utility-first styling (no PostCSS, @tailwindcss/vite) |
+| Recharts | 3.9.0 | SVG charts |
+| Lucide React | 1.21.0 | Icon system |
+| Axios | 1.18.1 | HTTP client (VITE_API_URL support for deployment) |
 
 ---
 
@@ -236,125 +331,227 @@ Full request/response examples in [`docs/API.md`](docs/API.md).
 
 ```
 REGEN AI/
-├── backend/
-│   ├── main.py              # 7 FastAPI routes, CORS, Pydantic models
-│   ├── requirements.txt
-│   ├── agents/              # 7 agent modules (one file per agent)
-│   ├── core/
-│   │   ├── scoring.py       # RE:GEN Score formula
-│   │   ├── guardrails.py    # Hazard suppression, disclaimer constants
-│   │   └── simulation.py    # CSV and JSON loaders
-│   └── data/
-│       ├── water_usage.csv
-│       ├── energy_usage.csv
-│       └── waste_knowledge_base.json
-└── frontend/
-    ├── vite.config.js       # Tailwind v4 plugin; /api proxy to localhost:8000
-    ├── package.json
-    └── src/
-        ├── App.jsx          # Scan state, Mission Control overlay, 14 sections
-        ├── api.js           # 7 Axios functions
-        ├── index.css        # Glassmorphism system, 14 keyframe animations
-        └── components/      # 15 components
+|-- backend/
+|   |-- main.py                       FastAPI routes, CORS, Pydantic models
+|   |-- requirements.txt
+|   |-- .env.example                  Copy to .env and add GEMINI_API_KEY
+|   |-- agents/
+|   |   |-- waste_agent.py            30-material KB, hazard guardrail, Gemini rec
+|   |   |-- water_agent.py            Night-flow anomaly detection
+|   |   |-- energy_agent.py           After-hours zone analysis
+|   |   |-- impact_agent.py           CO2, SDG, vehicle/household equivalences
+|   |   |-- decision_agent.py         Priority scoring, ROI, Gemini explanation
+|   |   |-- regen_score_agent.py      6-dimension score, health grade, building rank
+|   |   `-- report_agent.py           Gemini exec summary, 4-tier action plan
+|   |-- core/
+|   |   |-- gemini_client.py          Gemini 2.0 Flash + graceful fallback
+|   |   |-- scoring.py                RE:GEN Score formula
+|   |   |-- guardrails.py             Hazard suppression, disclaimer constants
+|   |   `-- simulation.py             CSV and JSON data loaders
+|   `-- data/
+|       |-- water_usage.csv           168 rows, Jan 15-21 2024, 4 locations
+|       |-- energy_usage.csv          168 rows, Jan 15-21 2024, 4 zones
+|       `-- waste_knowledge_base.json 30 materials, 7 categories
+`-- frontend/
+    |-- vite.config.js                Tailwind v4 plugin; /api proxy to :8000
+    |-- package.json
+    `-- src/
+        |-- App.jsx                   Scan state, Mission Control, 14 sections
+        |-- api.js                    7 Axios functions, VITE_API_URL for deployment
+        |-- index.css                 Glassmorphism system, 20+ animations, print CSS
+        `-- components/               15 React components
 ```
 
 ---
 
-## 7 Agents
+## Quick Start -- Running in the Terminal
 
-| # | Agent | Confidence | Key Output |
-|---|-------|-----------|-----------|
-| 1 | Waste-to-Wealth (`waste_agent.py`) | 0.92 | Recovery pathway, hidden value score, hazard guardrail |
-| 2 | Water Leakage (`water_agent.py`) | 0.89 | Anomaly events, wasted litres, 5-tier severity |
-| 3 | Energy Optimization (`energy_agent.py`) | 0.91 | After-hours kWh waste, CO2 at 0.82 kg/kWh |
-| 4 | Pollution and Impact (`impact_agent.py`) | 0.87 | Total CO2, trees equivalent, SDG alignment |
-| 5 | Decision Engine (`decision_agent.py`) | 0.90 | Ranked actions by urgency x cost x env x feasibility |
-| 6 | RE:GEN Score (`regen_score_agent.py`) | 0.88 | Before/after score, 6 sub-dimension breakdown |
-| 7 | Report (`report_agent.py`) | 0.95 | Executive summary, 4-tier action plan, all traces |
+### Requirements
 
-Full agent specs in [`docs/AGENTS.md`](docs/AGENTS.md).
+- Python 3.11 or higher
+- Node.js 18 or higher
+- npm 9 or higher
 
----
+### Step 1 -- Clone the repository
 
-## RE:GEN Score Formula
-
-```
-RE:GEN Score = waste        x 0.20
-             + water        x 0.20
-             + energy       x 0.20
-             + CO2          x 0.15
-             + urgency      x 0.15
-             + feasibility  x 0.10
+```bash
+git clone https://github.com/DivyaShreeS09/REGEN-AI.git
+cd "REGEN AI"
 ```
 
-Result clamped 0-100. Ratings: **>=80 Excellent | >=60 Good | >=40 Moderate | >=20 Poor | <20 Critical**
+### Step 2 -- Set up the Python backend
 
-Decision Engine ranking formula:
+```bash
+cd backend
+
+# Create a virtual environment (recommended)
+python -m venv venv
+
+# Activate it
+# On Windows:
+venv\Scripts\activate
+# On macOS / Linux:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Step 3 -- (Optional) Enable Gemini AI
+
+```bash
+# Copy the example env file
+cp .env.example .env
+```
+
+Edit `.env` and paste your key:
 
 ```
-priority_score = urgency x 0.35
-              + min(cost / 1000, 30) x 0.30
-              + env_impact x 0.25
-              + feasibility x 0.10
+GEMINI_API_KEY=your_api_key_here
 ```
 
----
+Get a free Gemini API key at: https://aistudio.google.com/app/apikey
 
-## Guardrails
+The app works fully without a key. Gemini adds AI narrative on top of deterministic analysis.
 
-| Guardrail | Trigger | Effect |
-|-----------|---------|--------|
-| Hazard suppression | hazard_level is critical or high | CPCB notice injected, all financials set to null |
-| Quantity validation | quantity_kg <= 0 or > 100,000 | HTTP 400 returned before any agent runs |
-| Disclaimer injection | Every request | Prototype disclaimer appended to all responses |
-| Forbidden outputs | Always | Agents never claim exact profit or live sensor readings |
+### Step 4 -- Start the backend server (Terminal 1)
 
-Materials that trigger hazard suppression: **e-waste**, **battery waste**, **medical waste**.
+```bash
+# From the backend/ directory with venv activated
+uvicorn main:app --reload --port 8000
+```
 
-Full details in [`docs/SECURITY.md`](docs/SECURITY.md).
+You should see:
+```
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Application startup complete.
+```
+
+### Step 5 -- Start the frontend (Terminal 2, new window)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+You should see:
+```
+  VITE v8.x.x  ready in xxx ms
+  -> Local:   http://localhost:5173/
+```
+
+### Step 6 -- Open the app
+
+Navigate to: **http://localhost:5173**
+
+Click **"Launch Campus Intelligence Scan"** on the hero page.
+
+The Mission Control overlay appears for approximately 4 seconds while all agents run.
+All 14 dashboard sections then load with animated data.
+
+Interactive API docs: **http://localhost:8000/docs**
 
 ---
 
 ## Simulated Data
 
-| Dataset | Rows | Anomalies |
-|---------|------|-----------|
-| `water_usage.csv` | 168 | Night-flow burst Jan 16 (Hostel), Jan 19 (Lab Block - CRITICAL) |
-| `energy_usage.csv` | 168 | After-hours AC Jan 16 (Seminar Hall), Jan 19 (Computer Lab) |
-| `waste_knowledge_base.json` | 30 materials | e-waste, battery waste, medical waste flagged critical |
+All data is simulated for capstone demonstration. No live IoT systems are connected.
 
-All data covers January 15-21, 2024. No live IoT systems are connected.
+| Dataset | Rows | Embedded Anomalies |
+|---------|------|--------------------|
+| `water_usage.csv` | 168 | Night-flow burst Jan 16 Block-B Hostel (HIGH), Jan 19 Lab Block (CRITICAL) |
+| `energy_usage.csv` | 168 | After-hours AC Jan 16 Seminar Hall (HIGH), Jan 19 Computer Lab (CRITICAL) |
+| `waste_knowledge_base.json` | 30 materials | e-waste, battery waste, medical waste flagged critical/hazardous |
+
+Data covers January 15-21, 2024. Each CSV has 24 hourly readings x 7 days = 168 rows.
+
+---
+
+## Deployment Guide
+
+### Option A -- Render (backend) + Vercel (frontend) -- Free Tier
+
+**1. Deploy backend to Render.com**
+
+- Go to https://render.com and sign in with GitHub.
+- Click New -> Web Service -> connect your REGEN-AI repository.
+- Configure:
+  - Root directory: `backend`
+  - Runtime: Python 3
+  - Build command: `pip install -r requirements.txt`
+  - Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+  - Environment variable: `GEMINI_API_KEY` = your key (optional)
+- Deploy. You will receive a URL like `https://regen-ai-backend.onrender.com`.
+
+**2. Deploy frontend to Vercel**
+
+- Go to https://vercel.com and sign in with GitHub.
+- Click New Project -> Import REGEN-AI repository.
+- Configure:
+  - Framework preset: Vite
+  - Root directory: `frontend`
+  - Build command: `npm run build`
+  - Output directory: `dist`
+  - Environment variable: `VITE_API_URL` = `https://regen-ai-backend.onrender.com`
+- Deploy. You will receive a URL like `https://regen-ai.vercel.app`.
+
+> Important: The Vite dev proxy (/api -> localhost:8000) only works locally. In production,
+> VITE_API_URL tells the frontend where the real backend is. This is already handled in
+> frontend/src/api.js via `import.meta.env.VITE_API_URL || '/api'`.
+
+> Render free tier spins down after 15 minutes of inactivity. First request after spin-down
+> takes 30-60 seconds. This is a Render free tier limitation, not a code issue.
+
+---
+
+### Option B -- Local production build
+
+```bash
+# Build the frontend for production
+cd frontend
+npm run build
+# Output goes to frontend/dist/
+
+# Start the backend (serves API on :8000)
+cd ../backend
+uvicorn main:app --host 0.0.0.0 --port 8000
+
+# Serve the built frontend with any static file server, for example:
+npx serve ../frontend/dist -p 3000
+```
 
 ---
 
 ## Google AI Agents Capstone Mapping
 
-| Concept | Implementation |
-|---------|---------------|
-| Multi-Agent System | 7 specialized agents, one module each in `backend/agents/` |
-| Tools and Data Lookup | CSV + JSON KB retrieval via `core/simulation.py` |
-| State and Memory | Agent dicts chained through `main.py`; Report Agent aggregates full context |
-| Guardrails and Safety | Hazard suppression + disclaimer injection on every response |
-| Evaluation and Scoring | 6-dimension weighted score, per-agent confidence 0.87-0.95 |
-| Production-Grade Structure | FastAPI + Pydantic + CORS + React + Vite + Axios |
-
-Full mapping in [`docs/CAPSTONE.md`](docs/CAPSTONE.md).
+| Concept | RE:GEN AI Implementation |
+|---------|--------------------------|
+| Multi-Agent System | 7 specialized agents in `backend/agents/`, one Python module each |
+| Tool Use / Data Retrieval | Pandas CSV loader, JSON knowledge base (cached on first load), Gemini API |
+| Agent Reasoning | 7-step auditable reasoning trace per agent returned in every API response |
+| Gemini AI Integration | Gemini 2.0 Flash called from 3 agents with graceful deterministic fallback |
+| Guardrails and Safety | Hazard suppression, quantity validation, disclaimer injection, Gemini prompt rules |
+| Evaluation and Scoring | 6-dimension weighted RE:GEN Score (0-100), per-agent confidence 0.87-0.95 |
+| Multi-Domain Analysis | Water, Energy, Waste analyzed independently then synthesized by Impact Agent |
+| Impact Quantification | CO2 kg, vehicle-km offset, household-days, 52-week annual projection |
+| SDG Alignment | SDG 6, 7, 9, 12, 13 each with specific contribution statement per scan |
+| Decision Support | 4-tier action plan (24h / 7d / 30d / 12m+) with ROI payback month estimates |
+| Production Structure | FastAPI + Pydantic + CORS + React 19 + Vite 8 + Tailwind CSS v4 + Recharts |
 
 ---
 
-## Documentation
+## Known Limitations
 
-| File | Contents |
-|------|---------|
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System design, component map, CSS system, scoring formula |
-| [`docs/AGENTS.md`](docs/AGENTS.md) | All 7 agents - inputs, process, outputs, exact thresholds |
-| [`docs/API.md`](docs/API.md) | All 7 endpoints with full request/response JSON examples |
-| [`docs/FLOWCHARTS.md`](docs/FLOWCHARTS.md) | Extended Mermaid diagrams |
-| [`docs/SECURITY.md`](docs/SECURITY.md) | Guardrails, disclaimer injection, production security gaps |
-| [`docs/CAPSTONE.md`](docs/CAPSTONE.md) | Capstone mapping, evaluation test cases, SDG alignment |
-| [`docs/DEMO.md`](docs/DEMO.md) | Step-by-step walkthrough, intervention toggle guide |
-| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Local dev, production build, cloud platforms, Docker |
-| [`docs/FUTURE_ROADMAP.md`](docs/FUTURE_ROADMAP.md) | Roadmap, known limitations, contributing guide |
+This is a capstone prototype. The following are clearly disclosed in the UI:
+
+- All data is simulated (January 15-21, 2024). No live IoT systems are connected.
+- Financial values use standard utility rates (Rs. 0.05/L water, Rs. 8.00/kWh), not actual bills.
+- CO2 equivalences use published averages as educational analogies, not precise campus baselines.
+- Annual projections assume the same weekly loss rate sustained for 52 weeks with no intervention.
+- ROI payback months use assumed install costs (clearly labeled as simulated estimates).
+- Campus Health Grade is derived from simulated data only, not an official accreditation.
+- Gemini AI narrative is probabilistic; the rule engine output underneath is always deterministic.
 
 ---
 
@@ -364,11 +561,13 @@ Full mapping in [`docs/CAPSTONE.md`](docs/CAPSTONE.md).
 2. Backend changes in `backend/`, frontend in `frontend/`
 3. New agents: add a file to `backend/agents/` and wire it into `main.py`
 4. Do not weaken guardrail logic in `core/guardrails.py`
-5. All API responses must include `disclaimer` and `data_notice`
-6. Run `cd frontend && npm run build` before opening a PR
+5. All API responses must include `disclaimer` and `data_notice` fields
+6. Gemini prompts must include forbidden-phrase and "estimated values only" rules in the prompt body
+7. Run `cd frontend && npm run build` before opening a PR
 
 ---
 
-> **Disclaimer:** RE:GEN AI is a prototype decision-support system built for the Google Kaggle AI Agents
-> Capstone. All sensor data is simulated (January 15-21, 2024). No live IoT systems are connected.
-> All cost, CO2, and recovery values are estimates -- not professional regulatory, financial, or engineering advice.
+> **Disclaimer:** RE:GEN AI is a prototype decision-support system built for the Google Kaggle
+> AI Agents Capstone (June 2026). All sensor data is simulated (January 15-21, 2024).
+> No live IoT systems are connected. All cost, CO2, and recovery figures are estimates.
+> This is not professional regulatory, financial, or engineering advice.

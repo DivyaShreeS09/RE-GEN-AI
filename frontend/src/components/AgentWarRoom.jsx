@@ -1,6 +1,6 @@
 import { getWarRoom } from '../api'
 import { useState, useEffect, useRef } from 'react'
-import { RefreshCw, Clock, MessageSquare } from 'lucide-react'
+import { RefreshCw, Clock, MessageSquare, CheckCircle, Cpu, Zap, Brain } from 'lucide-react'
 
 const STATUS_CHIP = {
   active:    { label: 'ACTIVE',    bg: 'rgba(0,255,136,0.12)',  border: 'rgba(0,255,136,0.4)',   color: '#00ff88' },
@@ -16,32 +16,104 @@ const BADGE_CLS = {
   low: 'badge-low', none: 'badge-none', info: 'badge-info',
 }
 
-/* Extra messages that replay on a timer to make the feed feel alive */
+const PIPELINE_PHASES = [
+  {
+    id: 'rules',
+    label: 'Rule Engine',
+    icon: <Cpu className="w-3.5 h-3.5" />,
+    color: '#00e5ff',
+    description: 'Deterministic threshold analysis',
+    agentRange: [1, 3],
+  },
+  {
+    id: 'impact',
+    label: 'Impact & Decision',
+    icon: <Brain className="w-3.5 h-3.5" />,
+    color: '#a78bfa',
+    description: 'Cross-domain scoring & ranking',
+    agentRange: [4, 5],
+  },
+  {
+    id: 'report',
+    label: 'AI Reasoning & Report',
+    icon: <Zap className="w-3.5 h-3.5" />,
+    color: '#00ff88',
+    description: 'Gemini narrative + executive summary',
+    agentRange: [6, 7],
+  },
+]
+
 const EXTRA_FEED = [
-  { agent: 'Decision Engine',      message: 'Energy intervention promoted to Priority 1 — highest combined urgency and financial impact.', color: '#f97316' },
-  { agent: 'Impact Analyzer',      message: 'Cross-domain opportunity: combining water + energy fixes amplifies CO₂ reduction by ~35%.', color: '#a78bfa' },
-  { agent: 'Water Leakage Agent',  message: 'Leakage confidence increased to 92% — night-flow signature matches known pipe pressure failure pattern.', color: '#00e5ff' },
-  { agent: 'RE:GEN Score Agent',   message: 'Composite score finalized. Waste recovery pathway adds +8 pts to circular economy dimension.', color: '#3b82f6' },
-  { agent: 'Waste-to-Wealth Agent',message: 'Processing pathway confirmed as highest-value route: 1.8× estimated recovery versus raw sale.', color: '#00ff88' },
-  { agent: 'Report Agent',         message: 'Executive sustainability report finalized. Action plan exported to Priority Actions section.', color: '#22c55e' },
-  { agent: 'Energy Optimizer',     message: 'After-hours AC anomaly correlation confirmed across Seminar Hall (Jan 16) and Computer Lab (Jan 19).', color: '#eab308' },
+  { agent: 'Decision Engine',       message: 'Energy intervention promoted to Priority 1 — highest combined urgency and financial impact.', color: '#f97316' },
+  { agent: 'Impact Analyzer',       message: 'Cross-domain opportunity: combining water + energy fixes amplifies CO2 reduction by ~35%.', color: '#a78bfa' },
+  { agent: 'Water Leakage Agent',   message: 'Leakage confidence increased to 92% — night-flow signature matches known pipe pressure failure pattern.', color: '#00e5ff' },
+  { agent: 'RE:GEN Score Agent',    message: 'Composite score finalised. Campus Health Grade computed from 6-dimension weighted formula.', color: '#3b82f6' },
+  { agent: 'Waste-to-Wealth Agent', message: 'Processing pathway confirmed as highest-value route: 1.8x estimated recovery versus raw sale.', color: '#00ff88' },
+  { agent: 'Report Agent',          message: 'Executive sustainability report finalised. AI reasoning layer enriched narrative with Gemini.', color: '#22c55e' },
+  { agent: 'Energy Optimizer',      message: 'After-hours AC anomaly correlation confirmed: Seminar Hall (Jan 16) and Computer Lab (Jan 19).', color: '#eab308' },
 ]
 
 function StatusChip({ status }) {
   const s = STATUS_CHIP[status] || STATUS_CHIP.idle
   return (
-    <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{
-      background: s.bg, border: `1px solid ${s.border}`, color: s.color,
-    }}>{s.label}</span>
+    <span className="text-xs px-2 py-0.5 rounded-full font-bold"
+      style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color }}>
+      {s.label}
+    </span>
   )
 }
 
-function AgentCard({ agent, animDelay }) {
-  const urgency = agent.severity === 'critical' ? 95 : agent.severity === 'high' ? 75 :
-    agent.severity === 'medium' ? 55 : agent.severity === 'low' ? 30 : 15
+/* Mini 3-phase progress per card */
+function AgentPhaseBar({ visible, agentIdx }) {
+  const [phase, setPhase] = useState(0)
+  const phases = ['Loading data', 'Running rules', 'Finalising output']
+
+  useEffect(() => {
+    if (!visible) return
+    if (phase >= phases.length - 1) return
+    const delay = agentIdx * 180 + phase * 500
+    const t = setTimeout(() => setPhase(p => Math.min(p + 1, phases.length - 1)), delay)
+    return () => clearTimeout(t)
+  }, [visible, phase, agentIdx])
 
   return (
-    <div className="glass-card p-5 agent-card-hover fade-in" style={{ animationDelay: `${animDelay}s` }}>
+    <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="flex items-center gap-2">
+        {phases.map((label, i) => (
+          <div key={i} className="flex items-center gap-1">
+            <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${
+              i < phase  ? 'bg-green-400' :
+              i === phase ? 'bg-cyan-400 animate-pulse' :
+              'bg-slate-700'
+            }`} />
+            <span className={`text-xs transition-colors duration-300 ${
+              i < phase  ? 'text-green-500' :
+              i === phase ? 'text-cyan-400' :
+              'text-slate-700'
+            }`}>{label}</span>
+            {i < phases.length - 1 && (
+              <div className={`w-4 h-px transition-all duration-500 ${i < phase ? 'bg-green-600' : 'bg-slate-800'}`} />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AgentCard({ agent, animDelay, cardIdx, visible }) {
+  const urgency = agent.severity === 'critical' ? 95 : agent.severity === 'high' ? 75 :
+                  agent.severity === 'medium'   ? 55 : agent.severity === 'low'   ? 30 : 15
+
+  return (
+    <div
+      className="glass-card p-5 agent-card-hover"
+      style={{
+        opacity:    visible ? 1 : 0,
+        transform:  visible ? 'translateY(0)' : 'translateY(16px)',
+        transition: `opacity 0.45s ease ${animDelay}s, transform 0.45s ease ${animDelay}s`,
+      }}
+    >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -75,7 +147,7 @@ function AgentCard({ agent, animDelay }) {
         <p className="text-xs text-slate-300 leading-relaxed">{agent.finding}</p>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-3">
         <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Recommendation</p>
         <p className="text-xs text-green-400 leading-relaxed">{agent.recommendation}</p>
       </div>
@@ -102,7 +174,7 @@ function AgentCard({ agent, animDelay }) {
           </div>
           <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
             <div className="h-full rounded-full" style={{
-              width: `${urgency}%`,
+              width:      `${urgency}%`,
               background: urgency > 70
                 ? 'linear-gradient(90deg,#ef4444,#f97316)'
                 : 'linear-gradient(90deg,#eab308,#f97316)',
@@ -111,22 +183,65 @@ function AgentCard({ agent, animDelay }) {
           </div>
         </div>
       </div>
+
+      <AgentPhaseBar visible={visible} agentIdx={cardIdx} />
+    </div>
+  )
+}
+
+function PipelineHeader({ visibleCount }) {
+  return (
+    <div className="glass-card p-4 mb-6">
+      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">
+        Agent Pipeline — 3-Phase Execution
+      </p>
+      <div className="flex items-center gap-2 flex-wrap">
+        {PIPELINE_PHASES.map((phase, i) => {
+          const agentsInPhase = phase.agentRange[1] - phase.agentRange[0] + 1
+          const phaseStart    = phase.agentRange[0] - 1
+          const phaseDone     = visibleCount >= phase.agentRange[1]
+          const phaseActive   = visibleCount >= phaseStart && !phaseDone
+
+          return (
+            <div key={phase.id} className="flex items-center gap-2">
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-500 ${
+                phaseDone   ? 'bg-green-500/10 border border-green-500/25' :
+                phaseActive ? 'border animate-pulse' :
+                              'bg-slate-800/50 border border-slate-700/40'
+              }`}
+                style={phaseActive ? { borderColor: `${phase.color}60`, background: `${phase.color}08` } : {}}>
+                <span style={{ color: phaseDone ? '#22c55e' : phaseActive ? phase.color : '#374151' }}>
+                  {phaseDone ? <CheckCircle className="w-3.5 h-3.5" /> : phase.icon}
+                </span>
+                <span style={{ color: phaseDone ? '#22c55e' : phaseActive ? phase.color : '#374151' }}>
+                  {phase.label}
+                </span>
+                <span className="text-xs opacity-60" style={{ color: phaseDone ? '#22c55e' : phaseActive ? phase.color : '#374151' }}>
+                  ({agentsInPhase} agents)
+                </span>
+              </div>
+              {i < PIPELINE_PHASES.length - 1 && (
+                <div className={`w-6 h-px transition-all duration-500 ${phaseDone ? 'bg-green-600' : 'bg-slate-700'}`} />
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
 
 function AgentFeed({ agents }) {
-  const feedRef = useRef(null)
+  const feedRef    = useRef(null)
   const [extraMsgs, setExtraMsgs] = useState([])
   const counterRef = useRef(0)
 
-  /* Auto-scroll on new messages */
   const allMsgs = [
     ...agents.map((a, i) => ({
-      agent: a.agent,
+      agent:   a.agent,
       message: a.finding,
-      color: ['#00e5ff','#eab308','#00ff88','#a78bfa','#f97316','#3b82f6','#22c55e'][i % 7],
-      time: `00:0${String(i + 1).padStart(2, '0')}`,
+      color:   ['#00e5ff','#eab308','#00ff88','#a78bfa','#f97316','#3b82f6','#22c55e'][i % 7],
+      time:    `00:0${String(i + 1).padStart(2, '0')}`,
     })),
     ...extraMsgs,
   ]
@@ -135,25 +250,21 @@ function AgentFeed({ agents }) {
     if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight
   }, [allMsgs.length])
 
-  /* Add a new extra message every 2.8 s */
   useEffect(() => {
     const interval = setInterval(() => {
-      const idx = counterRef.current % EXTRA_FEED.length
+      const idx    = counterRef.current % EXTRA_FEED.length
       const baseIdx = agents.length + counterRef.current
-      const pad = n => String(n).padStart(2, '0')
-      const min = Math.floor(baseIdx / 60)
-      const sec = baseIdx % 60
-      setExtraMsgs(prev => [
-        ...prev,
-        { ...EXTRA_FEED[idx], time: `${pad(min)}:${pad(sec + 10)}` },
-      ])
+      const pad    = n => String(n).padStart(2, '0')
+      const min    = Math.floor(baseIdx / 60)
+      const sec    = baseIdx % 60
+      setExtraMsgs(prev => [...prev, { ...EXTRA_FEED[idx], time: `${pad(min)}:${pad(sec + 10)}` }])
       counterRef.current += 1
     }, 2800)
     return () => clearInterval(interval)
   }, [agents.length])
 
   return (
-    <div className="glass-card p-5 mb-8">
+    <div className="glass-card p-5 mb-6">
       <div className="flex items-center gap-2 mb-4">
         <MessageSquare className="w-4 h-4 text-cyan-400" />
         <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-widest">
@@ -184,19 +295,30 @@ function AgentFeed({ agents }) {
 }
 
 export default function AgentWarRoom({ initialData }) {
-  const [data, setData]     = useState(initialData)
+  const [data,    setData]    = useState(initialData)
   const [loading, setLoading] = useState(false)
+  const [visible, setVisible] = useState(0)   // how many cards are revealed
+
+  /* Sequential card reveal — one every 280 ms */
+  const agents = data || []
+  useEffect(() => {
+    if (!agents.length) return
+    setVisible(0)
+    const timers = agents.map((_, i) =>
+      setTimeout(() => setVisible(v => Math.max(v, i + 1)), i * 280)
+    )
+    return () => timers.forEach(clearTimeout)
+  }, [agents.length])
 
   const refresh = async () => {
     setLoading(true)
     try {
       const res = await getWarRoom()
       setData(res.data.war_room)
+      setVisible(0)
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
   }
-
-  const agents = data || []
 
   return (
     <section className="px-6 py-16 max-w-7xl mx-auto" id="warroom">
@@ -206,8 +328,8 @@ export default function AgentWarRoom({ initialData }) {
             Agent <span className="text-gradient-green">War Room</span>
           </h2>
           <p className="text-slate-400 text-sm">
-            7 autonomous agents — each analyzing a distinct resource domain and escalating
-            prioritized findings to the decision engine.
+            7 autonomous agents — each analysing a distinct resource domain and escalating
+            prioritised findings through a 3-phase execution pipeline.
           </p>
         </div>
         <button onClick={refresh} disabled={loading}
@@ -224,10 +346,17 @@ export default function AgentWarRoom({ initialData }) {
         </div>
       ) : (
         <>
+          <PipelineHeader visibleCount={visible} />
           <AgentFeed agents={agents} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {agents.map((agent, i) => (
-              <AgentCard key={i} agent={agent} animDelay={i * 0.08} />
+              <AgentCard
+                key={i}
+                agent={agent}
+                cardIdx={i}
+                animDelay={0}
+                visible={i < visible}
+              />
             ))}
           </div>
         </>

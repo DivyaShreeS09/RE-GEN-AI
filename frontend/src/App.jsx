@@ -275,7 +275,7 @@ export default function App() {
       {scanDone && (
         <div className="fade-in">
           <Divider />
-          <CommandCenterDashboard data={dashData} />
+          <CommandCenterDashboard data={dashData} planData={actionPlanData} />
 
           <Divider />
           <DigitalTwinCampus />
