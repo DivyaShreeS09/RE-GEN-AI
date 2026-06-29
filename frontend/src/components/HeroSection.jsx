@@ -65,6 +65,15 @@ export default function HeroSection({ onScan, loading }) {
             </span>
           </div>
 
+          <div className="flex justify-center lg:justify-start mb-6">
+            <img
+              src="/src/assets/logo.jpeg"
+              alt="RE:GEN AI Logo"
+              className="w-28 h-28 rounded-2xl object-cover"
+              style={{ boxShadow: '0 0 32px rgba(0,255,136,0.25), 0 0 64px rgba(0,229,255,0.10)' }}
+            />
+          </div>
+
           <h1 className="text-6xl lg:text-7xl font-black mb-4 leading-none tracking-tight">
             <span className="text-gradient-green">RE:GEN</span>
             <span className="text-white"> AI</span>
