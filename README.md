@@ -1,4 +1,4 @@
-﻿# RE:GEN AI â€” Autonomous Sustainability Command Center
+# RE:GEN AI â€” Autonomous Sustainability Command Center
 
 > A multi-agent decision-support prototype that detects hidden resource loss in simulated
 > smart-campus sensor logs, maps waste-to-value pathways, and generates agent-prioritized
