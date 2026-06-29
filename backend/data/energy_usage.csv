@@ -1,0 +1,169 @@
+date,hour,usage_kwh,zone,equipment,anomaly
+2024-01-15,0,2.1,Admin Block,Lighting,false
+2024-01-15,1,1.8,Admin Block,Lighting,false
+2024-01-15,2,1.9,Admin Block,Lighting,false
+2024-01-15,3,1.7,Admin Block,Lighting,false
+2024-01-15,4,1.8,Admin Block,Lighting,false
+2024-01-15,5,2.2,Admin Block,Lighting,false
+2024-01-15,6,8.5,Campus,Mixed,false
+2024-01-15,7,18.2,Campus,Mixed,false
+2024-01-15,8,35.6,Campus,AC+Lighting,false
+2024-01-15,9,48.2,Campus,AC+Lighting+Equipment,false
+2024-01-15,10,52.4,Campus,AC+Lighting+Equipment,false
+2024-01-15,11,54.1,Campus,AC+Lighting+Equipment,false
+2024-01-15,12,50.8,Campus,AC+Lighting+Equipment,false
+2024-01-15,13,51.3,Campus,AC+Lighting+Equipment,false
+2024-01-15,14,53.2,Campus,AC+Lighting+Equipment,false
+2024-01-15,15,52.0,Campus,AC+Lighting+Equipment,false
+2024-01-15,16,49.5,Campus,AC+Lighting+Equipment,false
+2024-01-15,17,44.2,Campus,AC+Lighting,false
+2024-01-15,18,35.8,Campus,AC+Lighting,false
+2024-01-15,19,28.4,Campus,Lighting,false
+2024-01-15,20,18.6,Campus,Lighting,false
+2024-01-15,21,12.3,Campus,Lighting,false
+2024-01-15,22,6.8,Campus,Lighting,false
+2024-01-15,23,3.2,Campus,Lighting,false
+2024-01-16,0,2.0,Admin Block,Lighting,false
+2024-01-16,1,1.9,Admin Block,Lighting,false
+2024-01-16,2,32.5,Seminar Hall,AC+Lighting,true
+2024-01-16,3,34.2,Seminar Hall,AC+Lighting,true
+2024-01-16,4,33.8,Seminar Hall,AC+Lighting,true
+2024-01-16,5,31.9,Seminar Hall,AC+Lighting,true
+2024-01-16,6,9.0,Campus,Mixed,false
+2024-01-16,7,19.0,Campus,Mixed,false
+2024-01-16,8,36.2,Campus,AC+Lighting,false
+2024-01-16,9,49.0,Campus,AC+Lighting+Equipment,false
+2024-01-16,10,53.0,Campus,AC+Lighting+Equipment,false
+2024-01-16,11,54.8,Campus,AC+Lighting+Equipment,false
+2024-01-16,12,51.5,Campus,AC+Lighting+Equipment,false
+2024-01-16,13,52.0,Campus,AC+Lighting+Equipment,false
+2024-01-16,14,53.8,Campus,AC+Lighting+Equipment,false
+2024-01-16,15,52.5,Campus,AC+Lighting+Equipment,false
+2024-01-16,16,50.0,Campus,AC+Lighting+Equipment,false
+2024-01-16,17,44.8,Campus,AC+Lighting,false
+2024-01-16,18,36.2,Campus,AC+Lighting,false
+2024-01-16,19,29.0,Campus,Lighting,false
+2024-01-16,20,19.2,Campus,Lighting,false
+2024-01-16,21,12.8,Campus,Lighting,false
+2024-01-16,22,7.2,Campus,Lighting,false
+2024-01-16,23,3.5,Campus,Lighting,false
+2024-01-17,0,2.1,Admin Block,Lighting,false
+2024-01-17,1,1.8,Admin Block,Lighting,false
+2024-01-17,2,2.0,Admin Block,Lighting,false
+2024-01-17,3,1.8,Admin Block,Lighting,false
+2024-01-17,4,2.0,Admin Block,Lighting,false
+2024-01-17,5,2.4,Admin Block,Lighting,false
+2024-01-17,6,8.8,Campus,Mixed,false
+2024-01-17,7,18.5,Campus,Mixed,false
+2024-01-17,8,36.0,Campus,AC+Lighting,false
+2024-01-17,9,48.5,Campus,AC+Lighting+Equipment,false
+2024-01-17,10,52.8,Campus,AC+Lighting+Equipment,false
+2024-01-17,11,54.4,Campus,AC+Lighting+Equipment,false
+2024-01-17,12,51.1,Campus,AC+Lighting+Equipment,false
+2024-01-17,13,51.6,Campus,AC+Lighting+Equipment,false
+2024-01-17,14,53.4,Campus,AC+Lighting+Equipment,false
+2024-01-17,15,52.2,Campus,AC+Lighting+Equipment,false
+2024-01-17,16,49.8,Campus,AC+Lighting+Equipment,false
+2024-01-17,17,44.5,Campus,AC+Lighting,false
+2024-01-17,18,36.0,Campus,AC+Lighting,false
+2024-01-17,19,28.7,Campus,Lighting,false
+2024-01-17,20,18.9,Campus,Lighting,false
+2024-01-17,21,12.5,Campus,Lighting,false
+2024-01-17,22,6.9,Campus,Lighting,false
+2024-01-17,23,3.3,Campus,Lighting,false
+2024-01-18,0,2.0,Admin Block,Lighting,false
+2024-01-18,1,1.7,Admin Block,Lighting,false
+2024-01-18,2,1.9,Admin Block,Lighting,false
+2024-01-18,3,1.7,Admin Block,Lighting,false
+2024-01-18,4,1.9,Admin Block,Lighting,false
+2024-01-18,5,2.3,Admin Block,Lighting,false
+2024-01-18,6,8.4,Campus,Mixed,false
+2024-01-18,7,18.0,Campus,Mixed,false
+2024-01-18,8,35.4,Campus,AC+Lighting,false
+2024-01-18,9,47.9,Campus,AC+Lighting+Equipment,false
+2024-01-18,10,52.1,Campus,AC+Lighting+Equipment,false
+2024-01-18,11,53.8,Campus,AC+Lighting+Equipment,false
+2024-01-18,12,50.5,Campus,AC+Lighting+Equipment,false
+2024-01-18,13,51.0,Campus,AC+Lighting+Equipment,false
+2024-01-18,14,52.9,Campus,AC+Lighting+Equipment,false
+2024-01-18,15,51.7,Campus,AC+Lighting+Equipment,false
+2024-01-18,16,49.2,Campus,AC+Lighting+Equipment,false
+2024-01-18,17,43.9,Campus,AC+Lighting,false
+2024-01-18,18,35.5,Campus,AC+Lighting,false
+2024-01-18,19,28.1,Campus,Lighting,false
+2024-01-18,20,18.3,Campus,Lighting,false
+2024-01-18,21,12.1,Campus,Lighting,false
+2024-01-18,22,6.6,Campus,Lighting,false
+2024-01-18,23,3.1,Campus,Lighting,false
+2024-01-19,0,2.2,Admin Block,Lighting,false
+2024-01-19,1,28.4,Computer Lab,Equipment+AC,true
+2024-01-19,2,30.1,Computer Lab,Equipment+AC,true
+2024-01-19,3,29.8,Computer Lab,Equipment+AC,true
+2024-01-19,4,31.2,Computer Lab,Equipment+AC,true
+2024-01-19,5,2.5,Admin Block,Lighting,false
+2024-01-19,6,8.6,Campus,Mixed,false
+2024-01-19,7,18.3,Campus,Mixed,false
+2024-01-19,8,35.8,Campus,AC+Lighting,false
+2024-01-19,9,48.4,Campus,AC+Lighting+Equipment,false
+2024-01-19,10,52.6,Campus,AC+Lighting+Equipment,false
+2024-01-19,11,54.3,Campus,AC+Lighting+Equipment,false
+2024-01-19,12,51.0,Campus,AC+Lighting+Equipment,false
+2024-01-19,13,51.5,Campus,AC+Lighting+Equipment,false
+2024-01-19,14,53.4,Campus,AC+Lighting+Equipment,false
+2024-01-19,15,52.1,Campus,AC+Lighting+Equipment,false
+2024-01-19,16,49.6,Campus,AC+Lighting+Equipment,false
+2024-01-19,17,44.3,Campus,AC+Lighting,false
+2024-01-19,18,35.9,Campus,AC+Lighting,false
+2024-01-19,19,28.5,Campus,Lighting,false
+2024-01-19,20,18.7,Campus,Lighting,false
+2024-01-19,21,12.4,Campus,Lighting,false
+2024-01-19,22,6.8,Campus,Lighting,false
+2024-01-19,23,3.3,Campus,Lighting,false
+2024-01-20,0,2.1,Admin Block,Lighting,false
+2024-01-20,1,1.8,Admin Block,Lighting,false
+2024-01-20,2,1.9,Admin Block,Lighting,false
+2024-01-20,3,1.7,Admin Block,Lighting,false
+2024-01-20,4,1.8,Admin Block,Lighting,false
+2024-01-20,5,2.2,Admin Block,Lighting,false
+2024-01-20,6,8.5,Campus,Mixed,false
+2024-01-20,7,18.1,Campus,Mixed,false
+2024-01-20,8,35.5,Campus,AC+Lighting,false
+2024-01-20,9,48.0,Campus,AC+Lighting+Equipment,false
+2024-01-20,10,52.2,Campus,AC+Lighting+Equipment,false
+2024-01-20,11,53.9,Campus,AC+Lighting+Equipment,false
+2024-01-20,12,50.6,Campus,AC+Lighting+Equipment,false
+2024-01-20,13,51.1,Campus,AC+Lighting+Equipment,false
+2024-01-20,14,53.0,Campus,AC+Lighting+Equipment,false
+2024-01-20,15,51.8,Campus,AC+Lighting+Equipment,false
+2024-01-20,16,49.3,Campus,AC+Lighting+Equipment,false
+2024-01-20,17,44.0,Campus,AC+Lighting,false
+2024-01-20,18,35.6,Campus,AC+Lighting,false
+2024-01-20,19,28.2,Campus,Lighting,false
+2024-01-20,20,18.4,Campus,Lighting,false
+2024-01-20,21,12.2,Campus,Lighting,false
+2024-01-20,22,6.7,Campus,Lighting,false
+2024-01-20,23,3.2,Campus,Lighting,false
+2024-01-21,0,2.0,Admin Block,Lighting,false
+2024-01-21,1,1.8,Admin Block,Lighting,false
+2024-01-21,2,1.9,Admin Block,Lighting,false
+2024-01-21,3,1.8,Admin Block,Lighting,false
+2024-01-21,4,1.9,Admin Block,Lighting,false
+2024-01-21,5,2.3,Admin Block,Lighting,false
+2024-01-21,6,8.6,Campus,Mixed,false
+2024-01-21,7,18.2,Campus,Mixed,false
+2024-01-21,8,35.7,Campus,AC+Lighting,false
+2024-01-21,9,48.2,Campus,AC+Lighting+Equipment,false
+2024-01-21,10,52.4,Campus,AC+Lighting+Equipment,false
+2024-01-21,11,54.1,Campus,AC+Lighting+Equipment,false
+2024-01-21,12,50.8,Campus,AC+Lighting+Equipment,false
+2024-01-21,13,51.3,Campus,AC+Lighting+Equipment,false
+2024-01-21,14,53.2,Campus,AC+Lighting+Equipment,false
+2024-01-21,15,52.0,Campus,AC+Lighting+Equipment,false
+2024-01-21,16,49.5,Campus,AC+Lighting+Equipment,false
+2024-01-21,17,44.2,Campus,AC+Lighting,false
+2024-01-21,18,35.8,Campus,AC+Lighting,false
+2024-01-21,19,28.4,Campus,Lighting,false
+2024-01-21,20,18.6,Campus,Lighting,false
+2024-01-21,21,12.3,Campus,Lighting,false
+2024-01-21,22,6.8,Campus,Lighting,false
+2024-01-21,23,3.2,Campus,Lighting,false
