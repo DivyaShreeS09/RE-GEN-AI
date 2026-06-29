@@ -6,7 +6,7 @@ load_dotenv()
 
 GEMINI_AVAILABLE = False
 _client = None
-_MODEL = "gemini-2.0-flash"
+_MODEL = "gemini-2.5-flash-lite"
 
 try:
     from google import genai
