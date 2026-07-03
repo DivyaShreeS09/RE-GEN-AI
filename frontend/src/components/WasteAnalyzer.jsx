@@ -1,6 +1,77 @@
 import { useState } from 'react'
 import { analyzeWaste } from '../api'
-import { AlertTriangle, CheckCircle, Search, Package, Star, TrendingUp } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Search, Package, Star, TrendingUp, BarChart3 } from 'lucide-react'
+
+/* ── Waste Market Intelligence (static reference data) ────── */
+const MARKET_INTEL = [
+  { material: 'Organic / Food Waste',  pathway: 'Composting · Biogas',    buyer: 'Farm co-ops · Municipal plants', range: '₹2 – 8 /kg',   feasibility: 'High',   confidence: 85, risk: 'Low'  },
+  { material: 'Paper & Cardboard',     pathway: 'Recycled pulp',           buyer: 'Paper mills · Kabadiwala',       range: '₹8 – 15 /kg',  feasibility: 'High',   confidence: 90, risk: 'Low'  },
+  { material: 'PET / Plastic Bottles', pathway: 'Recycled pellets',        buyer: 'Plastic recyclers',              range: '₹5 – 20 /kg',  feasibility: 'Medium', confidence: 80, risk: 'Med'  },
+  { material: 'Metal & Aluminium',     pathway: 'Foundry scrap',           buyer: 'Scrap dealers · Foundries',      range: '₹30 – 80 /kg', feasibility: 'High',   confidence: 92, risk: 'Low'  },
+  { material: 'Coconut Shell',         pathway: 'Activated carbon / fuel', buyer: 'Industrial buyers',              range: '₹10 – 35 /kg', feasibility: 'High',   confidence: 88, risk: 'Low'  },
+  { material: 'E-waste',               pathway: 'Certified recycler',      buyer: 'CPCB-authorized vendors',        range: 'Regulated',     feasibility: 'Low',    confidence: 70, risk: 'High' },
+]
+
+const FEASIBILITY_COLOR = { High: '#00ff88', Medium: '#eab308', Low: '#ef4444' }
+const RISK_COLOR        = { Low: '#00ff88',  Med: '#eab308',    High: '#ef4444' }
+
+function MarketIntelPanel() {
+  return (
+    <div className="glass-card p-5 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 text-cyan-400" />
+          <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-wider">Waste Market Intelligence</h3>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <div className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+          Estimated market reference · Not live pricing · AI-compiled from public data
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="text-left" style={{ color: '#475569' }}>
+              <th className="pb-2 pr-4 font-semibold uppercase tracking-wider">Material</th>
+              <th className="pb-2 pr-4 font-semibold uppercase tracking-wider hidden sm:table-cell">Recovery Pathway</th>
+              <th className="pb-2 pr-4 font-semibold uppercase tracking-wider hidden lg:table-cell">Buyer Type</th>
+              <th className="pb-2 pr-4 font-semibold uppercase tracking-wider">Est. Value Range</th>
+              <th className="pb-2 pr-4 font-semibold uppercase tracking-wider">Feasibility</th>
+              <th className="pb-2 font-semibold uppercase tracking-wider hidden sm:table-cell">Confidence</th>
+            </tr>
+          </thead>
+          <tbody>
+            {MARKET_INTEL.map((row, i) => (
+              <tr key={i} className="border-t" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+                <td className="py-2.5 pr-4 font-medium text-slate-200">{row.material}</td>
+                <td className="py-2.5 pr-4 text-slate-400 hidden sm:table-cell">{row.pathway}</td>
+                <td className="py-2.5 pr-4 text-slate-500 hidden lg:table-cell">{row.buyer}</td>
+                <td className="py-2.5 pr-4 font-bold" style={{ color: row.risk === 'High' ? '#ef4444' : '#00ff88' }}>
+                  {row.range}
+                </td>
+                <td className="py-2.5 pr-4">
+                  <span className="px-2 py-0.5 rounded-full font-bold"
+                    style={{ background: FEASIBILITY_COLOR[row.feasibility] + '15', color: FEASIBILITY_COLOR[row.feasibility], border: `1px solid ${FEASIBILITY_COLOR[row.feasibility]}30` }}>
+                    {row.feasibility}
+                  </span>
+                </td>
+                <td className="py-2.5 hidden sm:table-cell">
+                  <div className="flex items-center gap-2">
+                    <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${row.confidence}%`, background: 'linear-gradient(90deg,#00ff88,#00e5ff)' }} />
+                    </div>
+                    <span className="text-slate-500">{row.confidence}%</span>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
 
 const WASTE_TYPES = [
   'coconut shell','rice husk','banana peel','food waste','textile waste',
@@ -123,13 +194,15 @@ export default function WasteAnalyzer({ onResult }) {
     <section className="px-6 py-16 max-w-7xl mx-auto" id="waste">
       <div className="mb-8">
         <h2 className="text-3xl font-black text-white mb-2">
-          Waste-to-Wealth <span className="text-gradient-green">Analyzer</span>
+          Waste <span className="text-gradient-green">Intelligence</span>
         </h2>
-        <p className="text-slate-400 text-sm">
-          Select a campus waste stream to identify its recovery pathway, estimated value range,
-          and agent-assessed feasibility. Hazardous materials trigger mandatory CPCB safety notices.
+        <p className="text-slate-400 text-sm max-w-2xl">
+          Market intelligence for 30 campus waste streams — recovery pathways, estimated value ranges,
+          and feasibility scoring. Select a material below to run agent-based analysis.
         </p>
       </div>
+
+      <MarketIntelPanel />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Input Panel */}
