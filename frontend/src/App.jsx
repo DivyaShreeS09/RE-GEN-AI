@@ -14,7 +14,7 @@ import DigitalTwinCampus from './components/DigitalTwinCampus'
 import SustainabilityAchievements from './components/SustainabilityAchievements'
 import IndiaGlobalSection from './components/IndiaGlobalSection'
 import { getDashboardSummary, analyzeWater, analyzeEnergy, getWarRoom, generateActionPlan } from './api'
-import { CheckCircle, Cpu } from 'lucide-react'
+import { CheckCircle, Cpu, Sun, Moon } from 'lucide-react'
 
 /* ── Mission Control sequence ─────────────────────────────── */
 const MISSION_STEPS = [
@@ -60,7 +60,7 @@ function MissionControlOverlay({ step, isComplete }) {
             <span className="text-xs text-cyan-400 uppercase tracking-[0.3em] font-bold">Mission Control</span>
           </div>
           <h1 className="text-4xl font-black text-gradient-green">RE:GEN AI</h1>
-          <p className="text-slate-500 text-xs mt-1">Sustainability Intelligence OS · Campus Scan Initializing</p>
+          <p className="text-xs mt-1" style={{ color: '#64748b' }}>Sustainability Intelligence OS · Campus Scan Initializing</p>
         </div>
 
         {/* Progress bar */}
@@ -177,6 +177,13 @@ export default function App() {
   const [missionStep, setMissionStep]         = useState(0)
   const [missionComplete, setMissionComplete] = useState(false)
 
+  const [theme, setTheme] = useState(() => localStorage.getItem('regen-theme') || 'dark')
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    localStorage.setItem('regen-theme', theme)
+  }, [theme])
+
   const runScan = async () => {
     setLoading(true)
     setError(null)
@@ -227,7 +234,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#030712' }}>
+    <div className="min-h-screen" style={{ background: theme === 'light' ? '#f0f4f1' : '#030712' }}>
 
       {showMission && (
         <MissionControlOverlay step={missionStep} isComplete={missionComplete} />
@@ -236,9 +243,9 @@ export default function App() {
       {/* Fixed nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-2.5 no-print"
         style={{
-          background: 'rgba(3,7,18,0.93)',
+          background: theme === 'light' ? 'rgba(240,244,241,0.96)' : 'rgba(3,7,18,0.93)',
           backdropFilter: 'blur(16px)',
-          borderBottom: '1px solid rgba(0,229,255,0.07)',
+          borderBottom: theme === 'light' ? '1px solid rgba(0,100,60,0.1)' : '1px solid rgba(0,229,255,0.07)',
         }}>
 
         {/* Logo + brand */}
@@ -257,11 +264,31 @@ export default function App() {
               {l.label}
             </a>
           ))}
+
+          {/* Version badge */}
           <div className="ml-2 flex items-center gap-1.5 px-3 py-1 rounded-full flex-shrink-0"
-            style={{ background: 'rgba(0,255,136,0.07)', border: '1px solid rgba(0,255,136,0.18)' }}>
+            style={{
+              background: theme === 'light' ? 'rgba(0,200,100,0.07)' : 'rgba(0,255,136,0.07)',
+              border: theme === 'light' ? '1px solid rgba(0,200,100,0.2)' : '1px solid rgba(0,255,136,0.18)',
+            }}>
             <div className="w-1.5 h-1.5 rounded-full bg-green-400 status-dot-live" />
-            <span style={{ color: '#00ff88' }} className="text-xs font-bold">v1.0</span>
+            <span style={{ color: '#00cc77' }} className="text-xs font-bold">v1.0</span>
           </div>
+
+          {/* Theme toggle */}
+          <button
+            onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+            className="ml-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex-shrink-0"
+            style={theme === 'light'
+              ? { background: 'rgba(0,0,0,0.05)', color: '#475569', border: '1px solid rgba(0,0,0,0.09)' }
+              : { background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.09)' }}
+            title={theme === 'dark' ? 'Executive Mode (Light)' : 'Mission Control (Dark)'}
+          >
+            {theme === 'dark'
+              ? <><Sun className="w-3.5 h-3.5" /><span className="hidden sm:block">Light</span></>
+              : <><Moon className="w-3.5 h-3.5" /><span className="hidden sm:block">Dark</span></>
+            }
+          </button>
         </div>
       </nav>
 
@@ -322,15 +349,17 @@ export default function App() {
         </div>
       )}
 
-      <footer className="mt-16 py-10 text-center no-print" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+      <footer className="mt-16 py-10 text-center no-print"
+        style={{ borderTop: theme === 'light' ? '1px solid rgba(0,0,0,0.07)' : '1px solid rgba(255,255,255,0.04)' }}>
         <div className="max-w-2xl mx-auto px-6">
           <img src="/src/assets/logo.jpeg" alt="RE:GEN AI"
             style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', margin: '0 auto 12px',
               boxShadow: '0 0 12px rgba(0,255,136,0.2)' }} />
           <p className="text-sm font-black text-gradient-green mb-1">RE:GEN AI</p>
-          <p className="text-xs text-slate-600 mb-4">Sustainability Intelligence OS · Google Kaggle AI Agents Capstone 2025</p>
-          <div className="h-px bg-slate-800 mb-4" />
-          <p className="text-xs text-slate-700 leading-relaxed">
+          <p className="text-xs mb-4" style={{ color: theme === 'light' ? '#64748b' : '#475569' }}>
+            Sustainability Intelligence OS · Google Kaggle AI Agents Capstone 2025</p>
+          <div className="h-px mb-4" style={{ background: theme === 'light' ? 'rgba(0,0,0,0.08)' : '#1e293b' }} />
+          <p className="text-xs leading-relaxed" style={{ color: theme === 'light' ? '#9ca3af' : '#374151' }}>
             All data used is simulated for capstone demonstration purposes.
             RE:GEN AI is a decision-support prototype and not professional regulatory, financial, or engineering advice.
             Architecture is designed for future integration with live IoT data sources.

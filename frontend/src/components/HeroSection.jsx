@@ -172,14 +172,14 @@ export default function HeroSection({ onScan, loading }) {
                 </>
               ) : (
                 <>
-                  Launch Sustainability Scan
+                  Launch Campus Scan
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </button>
 
-            <a href="#warroom" className="btn-secondary">
-              View Agent War Room
+            <a href="#action-plan" className="btn-secondary">
+              View Executive Report
             </a>
           </div>
 
