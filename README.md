@@ -4,6 +4,9 @@
 
 **Google Kaggle AI Agents: Intensive Vibe Coding Capstone Project 2026**
 
+**Live demo:** [https://frontend-two-rho-85.vercel.app](https://frontend-two-rho-85.vercel.app)  
+**Backend API:** [https://regen-ai-backend.onrender.com/health](https://regen-ai-backend.onrender.com/health)
+
 ---
 
 ## The Problem
@@ -189,6 +192,18 @@ sequenceDiagram
 
 ---
 
+## Screenshots
+
+| View | Screenshot |
+|---|---|
+| Hero | ![Hero](docs/screenshots/hero.png) |
+| Digital Twin | ![Digital Twin](docs/screenshots/digital-twin.png) |
+| Agent War Room | ![War Room](docs/screenshots/war-room.png) |
+| Waste Analyzer | ![Waste Agent](docs/screenshots/waste-agent.png) |
+| Report | ![Report](docs/screenshots/report.png) |
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -255,6 +270,13 @@ The application works without a Gemini API key — all agents fall back to deter
 ---
 
 ## Deployment
+
+### Deployed URLs
+
+| Service | URL |
+|---|---|
+| Frontend (Vercel) | [https://frontend-two-rho-85.vercel.app](https://frontend-two-rho-85.vercel.app) |
+| Backend (Render) | [https://regen-ai-backend.onrender.com](https://regen-ai-backend.onrender.com) |
 
 ### Backend — Render
 
