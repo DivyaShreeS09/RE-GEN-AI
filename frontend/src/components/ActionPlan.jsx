@@ -44,7 +44,7 @@ function gradeStyle(grade) {
   return GRADE_CONFIG[key] || GRADE_CONFIG['C']
 }
 
-function PlanSection({ sectionKey, icon, title, color, items, timeline }) {
+function PlanSection({ sectionKey, icon, title, color, items, timeline, highlightDomains }) {
   const pc = PRIORITY_CONFIG[sectionKey] || PRIORITY_CONFIG.long_term
   const ec = EFFORT_CONFIG[sectionKey]   || EFFORT_CONFIG.long_term
 
@@ -77,16 +77,27 @@ function PlanSection({ sectionKey, icon, title, color, items, timeline }) {
           const domainKey = (item.domain || 'general').toLowerCase()
           const ownerInfo = DOMAIN_OWNERS[domainKey] || DOMAIN_OWNERS.general
 
+          const isHighlighted = highlightDomains?.length && highlightDomains.includes(domainKey)
           return (
             <div key={i} className="flex items-start gap-3 p-3 rounded-lg"
-              style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(255,255,255,0.04)' }}>
-              <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color }} />
+              style={{
+                background: isHighlighted ? 'rgba(0,229,255,0.07)' : 'rgba(15,23,42,0.5)',
+                border: isHighlighted ? '1px solid rgba(0,229,255,0.32)' : '1px solid rgba(255,255,255,0.04)',
+                transition: 'background 0.3s, border-color 0.3s',
+              }}>
+              <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: isHighlighted ? '#00e5ff' : color }} />
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-slate-200 leading-relaxed">{item.action}</p>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
                   <span className="text-xs text-slate-500 uppercase tracking-wide">
                     {item.domain || 'General'}
                   </span>
+                  {isHighlighted && (
+                    <span className="text-xs px-1.5 py-0.5 rounded font-medium"
+                      style={{ background: 'rgba(0,229,255,0.12)', color: '#00e5ff', border: '1px solid rgba(0,229,255,0.25)' }}>
+                      ↑ Digital Twin
+                    </span>
+                  )}
                   {item.estimated_saving_inr > 0 && (
                     <span className="text-xs text-green-400">
                       ≈ ₹{item.estimated_saving_inr?.toFixed(0)} est. saving
@@ -308,7 +319,7 @@ function BuildingRankingSection({ ranking }) {
   )
 }
 
-export default function ActionPlan({ data }) {
+export default function ActionPlan({ data, selectedBuilding }) {
   if (!data) return null
 
   const plan           = data?.report?.action_plan       || data?.action_plan
@@ -323,7 +334,7 @@ export default function ActionPlan({ data }) {
   const handleExportJSON = () => {
     const exportData = {
       generated:  new Date().toISOString(),
-      system:     'RE:GEN AI -- Sustainability Command Center',
+      system:     'RE:GEN AI — Sustainability Intelligence OS',
       disclaimer: 'Prototype decision-support system. All data simulated. Not professional advice.',
       action_plan:       plan,
       executive_summary: summary || '',
@@ -335,12 +346,281 @@ export default function ActionPlan({ data }) {
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
     a.href     = url
-    a.download = `regen-ai-sustainability-report-${Date.now()}.json`
+    a.download = `regen-ai-report-${Date.now()}.json`
     a.click()
     URL.revokeObjectURL(url)
   }
 
-  const handlePrint = () => window.print()
+  const handleExportPDF = () => {
+    const now = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })
+    const allActions = [
+      ...(plan.immediate    || []).map(a => ({ ...a, _priority: 'CRITICAL',  _color: '#b91c1c', _timeline: 'Within 24 hours'  })),
+      ...(plan.next_7_days  || []).map(a => ({ ...a, _priority: 'HIGH',      _color: '#c2410c', _timeline: 'Within 7 days'    })),
+      ...(plan.next_30_days || []).map(a => ({ ...a, _priority: 'MEDIUM',    _color: '#92400e', _timeline: 'Within 30 days'   })),
+      ...(plan.long_term    || []).map(a => ({ ...a, _priority: 'STRATEGIC', _color: '#15803d', _timeline: '12+ months'       })),
+    ]
+
+    const actionRows = allActions.map(a => `
+      <tr>
+        <td><span style="color:${a._color};font-weight:700;">${a._priority}</span></td>
+        <td>${a.action || '—'}</td>
+        <td>${a.domain || 'General'}</td>
+        <td>${a._timeline}</td>
+        <td>${a.estimated_saving_inr > 0 ? '≈ ₹' + Number(a.estimated_saving_inr).toFixed(0) : '—'}</td>
+      </tr>`).join('')
+
+    const buildingRows = (buildingRanking || []).map((b, i) => {
+      const rc = i === 0 ? '#b91c1c' : i === 1 ? '#c2410c' : i === 2 ? '#92400e' : '#374151'
+      return `<tr>
+        <td style="color:${rc};font-weight:700;">#${b.rank || i+1}</td>
+        <td style="font-weight:600;">${b.building || '—'}</td>
+        <td>${(b.water_loss_liters || 0).toLocaleString()} L</td>
+        <td>${(b.energy_loss_kwh || 0).toFixed(1)} kWh</td>
+        <td>${b.risk_score?.toFixed(0) ?? '—'}</td>
+        <td>${(b.water_severity || 'none').toUpperCase()}</td>
+        <td>${(b.energy_severity || 'none').toUpperCase()}</td>
+      </tr>`}).join('')
+
+    const sdgCards = (sdgAlignment || []).map(sdg => {
+      const color = { 6:'#26bde2',7:'#fcc30b',9:'#fd6925',11:'#fd9d24',12:'#bf8b2e',13:'#3f7e44' }[sdg.goal] || '#3b82f6'
+      return `<div class="sdg-item">
+        <div class="sdg-badge" style="background:${color};">SDG ${sdg.goal}</div>
+        <div class="sdg-title">${sdg.title || ''}</div>
+        <div class="sdg-text">${sdg.relevance || ''}</div>
+      </div>`}).join('')
+
+    const curGrade = campusHealth?.current?.grade || '—'
+    const curScore = campusHealth?.current?.score || '—'
+    const curLabel = campusHealth?.current?.label || '—'
+    const tgtGrade = campusHealth?.target?.grade  || '—'
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RE:GEN AI — Sustainability Report</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  @page{size:A4;margin:18mm 16mm 14mm 16mm;}
+  @page:first{margin-top:0;}
+  body{font-family:'Segoe UI',Arial,sans-serif;color:#111827;background:#fff;font-size:9.5pt;line-height:1.6;}
+
+  /* ── Cover ── */
+  .cover{
+    background:linear-gradient(135deg,#0a1f0d 0%,#0d2240 55%,#030912 100%);
+    color:#fff;min-height:26cm;display:flex;flex-direction:column;
+    justify-content:flex-end;padding:2.5cm 2cm 2cm;
+    page-break-after:always;
+  }
+  .cover-tag{font-size:8pt;color:rgba(0,255,136,0.8);letter-spacing:0.22em;text-transform:uppercase;margin-bottom:14pt;
+    border:1px solid rgba(0,255,136,0.25);display:inline-block;padding:4pt 12pt;border-radius:99pt;}
+  .cover-title{font-size:36pt;font-weight:900;line-height:1.05;letter-spacing:-0.02em;margin-bottom:10pt;}
+  .cover-sub{font-size:12pt;color:rgba(255,255,255,0.55);margin-bottom:36pt;line-height:1.5;}
+  .cover-chips{display:flex;gap:8pt;flex-wrap:wrap;margin-bottom:32pt;}
+  .cover-chip{font-size:8pt;padding:4pt 10pt;border-radius:99pt;background:rgba(255,255,255,0.07);
+    border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.65);}
+  .cover-meta{font-size:8pt;color:rgba(255,255,255,0.28);padding-top:14pt;
+    border-top:1px solid rgba(255,255,255,0.08);line-height:1.8;}
+
+  /* ── Header (non-cover pages) ── */
+  .page-header{display:flex;align-items:center;justify-content:space-between;
+    padding-bottom:8pt;border-bottom:1.5pt solid #15803d;margin-bottom:20pt;}
+  .page-header-logo{font-size:11pt;font-weight:900;color:#15803d;letter-spacing:0.04em;}
+  .page-header-meta{font-size:7.5pt;color:#9ca3af;}
+
+  /* ── Section heads ── */
+  .section{margin-bottom:22pt;}
+  .section-title{font-size:13pt;font-weight:800;color:#111827;margin-bottom:4pt;}
+  .section-rule{height:2pt;background:linear-gradient(90deg,#15803d,#047a8a);border-radius:1pt;margin-bottom:12pt;}
+  .section-sub{font-size:8.5pt;color:#6b7280;margin-bottom:10pt;}
+
+  /* ── Score block ── */
+  .score-row{display:flex;align-items:center;gap:20pt;padding:14pt;
+    background:#f0fdf4;border:1pt solid #bbf7d0;border-radius:8pt;margin-bottom:14pt;}
+  .score-num{font-size:52pt;font-weight:900;color:#15803d;line-height:1;letter-spacing:-0.02em;}
+  .score-info{flex:1;}
+  .score-grade{font-size:20pt;font-weight:800;color:#15803d;}
+  .score-label{font-size:9pt;color:#374151;}
+  .score-target{font-size:8.5pt;color:#6b7280;margin-top:4pt;}
+
+  /* ── Tables ── */
+  table{width:100%;border-collapse:collapse;font-size:8.5pt;margin-bottom:14pt;}
+  th{background:#f3f4f6;color:#374151;font-weight:700;text-align:left;
+    padding:5pt 7pt;border:1pt solid #e5e7eb;font-size:7.5pt;text-transform:uppercase;letter-spacing:0.05em;}
+  td{padding:4.5pt 7pt;border:1pt solid #e5e7eb;color:#374151;vertical-align:top;}
+  tr:nth-child(even) td{background:#f9fafb;}
+
+  /* ── SDG cards ── */
+  .sdg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7pt;}
+  .sdg-item{padding:8pt;border-radius:6pt;background:#f9fafb;border:1pt solid #e5e7eb;}
+  .sdg-badge{display:inline-block;font-size:7.5pt;font-weight:800;color:#fff;
+    padding:2pt 7pt;border-radius:4pt;margin-bottom:4pt;}
+  .sdg-title{font-size:8.5pt;font-weight:700;color:#111827;margin-bottom:2pt;}
+  .sdg-text{font-size:7.5pt;color:#6b7280;line-height:1.4;}
+
+  /* ── Summary pre ── */
+  .summary-box{background:#f9fafb;border-left:2.5pt solid #15803d;padding:12pt 14pt;
+    border-radius:0 6pt 6pt 0;font-size:9pt;color:#374151;line-height:1.8;
+    white-space:pre-wrap;font-family:inherit;}
+
+  /* ── Disclaimer ── */
+  .disclaimer{background:#fffbeb;border:1pt solid #fde68a;border-radius:6pt;
+    padding:10pt 12pt;font-size:8pt;color:#92400e;line-height:1.6;margin-top:20pt;}
+
+  /* ── Footer ── */
+  .page-footer{font-size:7pt;color:#9ca3af;text-align:center;margin-top:18pt;
+    border-top:1pt solid #e5e7eb;padding-top:6pt;}
+
+  .page-break{page-break-before:always;padding-top:16pt;}
+</style>
+</head>
+<body>
+
+<!-- ─── Cover ─── -->
+<div class="cover">
+  <div class="cover-tag">Capstone Project 2026</div>
+  <div class="cover-title">RE:GEN AI<br>Sustainability<br>Intelligence Report</div>
+  <div class="cover-sub">Agent-Prioritized Campus Resource Analysis<br>Multi-Domain Decision Support · 7 AI Agents</div>
+  <div class="cover-chips">
+    <span class="cover-chip">💧 Water Leakage Detection</span>
+    <span class="cover-chip">⚡ Energy Anomaly Audit</span>
+    <span class="cover-chip">♻ Waste-to-Wealth Pathways</span>
+    <span class="cover-chip">📊 Impact Analysis</span>
+    <span class="cover-chip">🤖 Gemini AI Reasoning</span>
+  </div>
+  <div class="cover-meta">
+    Report generated: ${now}<br>
+    Google Kaggle AI Agents: Intensive Vibe Coding Capstone Project 2026<br>
+    All data is simulated for demonstration. RE:GEN AI is a decision-support prototype — not professional regulatory, financial, or engineering advice.
+  </div>
+</div>
+
+<!-- ─── Page 2: Score + Executive Summary ─── -->
+<div class="page-header">
+  <span class="page-header-logo">RE:GEN AI</span>
+  <span class="page-header-meta">Sustainability Intelligence Report · ${now}</span>
+</div>
+
+${campusHealth?.current ? `
+<div class="section">
+  <div class="section-title">Campus Health Index</div>
+  <div class="section-rule"></div>
+  <div class="score-row">
+    <div class="score-num">${curScore}</div>
+    <div class="score-info">
+      <div class="score-grade">${curGrade}</div>
+      <div class="score-label">${curLabel}</div>
+      <div class="score-target">Target: ${tgtGrade} &nbsp;·&nbsp; Composite of 6 sustainability dimensions</div>
+    </div>
+  </div>
+  ${campusHealth.interpretation ? `<div class="summary-box">${campusHealth.interpretation}</div>` : ''}
+</div>` : ''}
+
+${summary ? `
+<div class="section">
+  <div class="section-title">Executive Summary</div>
+  <div class="section-rule"></div>
+  <div class="section-sub">${geminiUsed ? 'Generated by Gemini 2.5 Flash · Multi-agent synthesis' : 'Rule-based analysis summary'}</div>
+  <div class="summary-box">${summary}</div>
+</div>` : ''}
+
+<!-- ─── Page 3: Action Plan ─── -->
+<div class="page-break">
+<div class="page-header">
+  <span class="page-header-logo">RE:GEN AI · Action Plan</span>
+  <span class="page-header-meta">${now}</span>
+</div>
+
+<div class="section">
+  <div class="section-title">Agent-Prioritized Action Plan</div>
+  <div class="section-rule"></div>
+  <div class="section-sub">Ranked by urgency × cost-saving × environmental impact × feasibility. All savings are estimates only.</div>
+  <table>
+    <thead><tr><th>Priority</th><th>Action</th><th>Domain</th><th>Timeline</th><th>Est. Saving</th></tr></thead>
+    <tbody>${actionRows || '<tr><td colspan="5" style="color:#9ca3af;font-style:italic;">No actions generated.</td></tr>'}</tbody>
+  </table>
+</div>
+</div>
+
+${buildingRanking?.length ? `
+<!-- ─── Page 4: Building Risk ─── -->
+<div class="page-break">
+<div class="page-header">
+  <span class="page-header-logo">RE:GEN AI · Building Risk Ranking</span>
+  <span class="page-header-meta">${now}</span>
+</div>
+<div class="section">
+  <div class="section-title">Building Risk Ranking</div>
+  <div class="section-rule"></div>
+  <div class="section-sub">Merged water + energy anomaly data across campus infrastructure.</div>
+  <table>
+    <thead><tr><th>Rank</th><th>Building</th><th>Water Loss</th><th>Energy Loss</th><th>Risk Score</th><th>Water</th><th>Energy</th></tr></thead>
+    <tbody>${buildingRows}</tbody>
+  </table>
+</div>
+</div>` : ''}
+
+${sdgAlignment?.length ? `
+<!-- ─── Page 5: SDG Alignment ─── -->
+<div class="page-break">
+<div class="page-header">
+  <span class="page-header-logo">RE:GEN AI · SDG Alignment</span>
+  <span class="page-header-meta">${now}</span>
+</div>
+<div class="section">
+  <div class="section-title">UN Sustainable Development Goal Alignment</div>
+  <div class="section-rule"></div>
+  <div class="section-sub">Mapped by the Impact Analyzer Agent across all interventions.</div>
+  <div class="sdg-grid">${sdgCards}</div>
+</div>
+</div>` : ''}
+
+<!-- ─── Final page: Disclaimer ─── -->
+<div class="page-break">
+<div class="page-header">
+  <span class="page-header-logo">RE:GEN AI</span>
+  <span class="page-header-meta">${now}</span>
+</div>
+<div class="section">
+  <div class="section-title">System Information</div>
+  <div class="section-rule"></div>
+  <table>
+    <tbody>
+      <tr><td style="font-weight:700;width:160pt;">System</td><td>RE:GEN AI — Sustainability Intelligence OS</td></tr>
+      <tr><td style="font-weight:700;">Version</td><td>Capstone 2026 · Google Kaggle AI Agents: Intensive Vibe Coding</td></tr>
+      <tr><td style="font-weight:700;">Agents</td><td>Water Leakage · Energy Optimizer · Waste-to-Wealth · Impact Analyzer · Campus Score · Decision Priority · Report Narrative</td></tr>
+      <tr><td style="font-weight:700;">AI Layer</td><td>Google Gemini 2.5 Flash (multi-agent coordination)</td></tr>
+      <tr><td style="font-weight:700;">Data Source</td><td>Simulated smart-campus resource logs (demonstration only)</td></tr>
+      <tr><td style="font-weight:700;">Generated</td><td>${new Date().toISOString()}</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="disclaimer">
+  ⚠ Important Disclaimer: All data presented in this report is simulated for capstone demonstration purposes.
+  RE:GEN AI is a prototype decision-support system and not professional regulatory, financial, or engineering advice.
+  Financial saving estimates are illustrative only — actual results will vary based on real infrastructure conditions,
+  usage patterns, and local regulations. Consult certified engineering, waste management, and environmental
+  professionals before implementing any intervention. Hazardous waste determinations require licensed waste auditors.
+</div>
+<div class="page-footer">
+  RE:GEN AI · Sustainability Intelligence OS · Google Kaggle AI Agents: Intensive Vibe Coding Capstone Project 2026<br>
+  Decision-support prototype · Data simulated · Not professional advice
+</div>
+</div>
+
+</body></html>`
+
+    const win = window.open('', '_blank', 'width=900,height=700')
+    if (!win) { alert('Please allow pop-ups to export the PDF.'); return }
+    win.document.write(html)
+    win.document.close()
+    win.addEventListener('load', () => {
+      setTimeout(() => {
+        win.focus()
+        win.print()
+      }, 400)
+    })
+  }
 
   return (
     <section className="px-6 py-16 max-w-7xl mx-auto" id="action-plan">
@@ -362,9 +642,9 @@ export default function ActionPlan({ data }) {
           )}
         </div>
         <div className="flex items-center gap-2 no-print flex-shrink-0">
-          <button onClick={handlePrint} className="btn-secondary">
+          <button onClick={handleExportPDF} className="btn-secondary">
             <Printer className="w-4 h-4" />
-            Print PDF
+            Export PDF
           </button>
           <button onClick={handleExportJSON} className="btn-secondary">
             <Download className="w-4 h-4" />
@@ -373,21 +653,105 @@ export default function ActionPlan({ data }) {
         </div>
       </div>
 
+      {/* Building context banner — shown when a Digital Twin building is selected */}
+      {selectedBuilding && (() => {
+        const b = selectedBuilding
+        const riskColors = { high: '#ef4444', critical: '#ef4444', medium: '#f97316', low: '#22c55e', none: '#475569' }
+        const riskLabels = { high: 'HIGH RISK', critical: 'CRITICAL', medium: 'MEDIUM RISK', low: 'LOW RISK', none: 'NORMAL' }
+        const domainRisks = ['water','energy','waste'].filter(d => b[d]?.level && b[d].level !== 'none' && b[d].level !== 'low')
+        const domainColors = { water: '#00b4ff', energy: '#fbbf24', waste: '#a78bfa' }
+        const domainIcons  = { water: '💧', energy: '⚡', waste: '♻️' }
+        const rc = riskColors[b.risk] || '#475569'
+        return (
+          <div className="mb-6 rounded-xl overflow-hidden no-print" style={{
+            border: '1px solid rgba(0,229,255,0.25)',
+            background: 'linear-gradient(135deg, rgba(0,229,255,0.06) 0%, rgba(15,23,42,0.85) 100%)',
+          }}>
+            <div className="flex items-center justify-between px-5 py-3" style={{
+              borderBottom: '1px solid rgba(0,229,255,0.12)',
+              background: 'rgba(0,229,255,0.05)',
+            }}>
+              <div className="flex items-center gap-3">
+                <span className="text-xl">{b.icon}</span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-white">{b.name}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-bold"
+                      style={{ background: `${rc}18`, border: `1px solid ${rc}55`, color: rc }}>
+                      {riskLabels[b.risk] || b.risk?.toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="text-xs text-slate-400">{b.type} · {b.buildingId} · {b.occupancy}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-cyan-400 font-medium">Filtered from Digital Twin</span>
+                <span className="w-2 h-2 rounded-full bg-cyan-400" style={{ animation: 'pulse 2s infinite' }} />
+              </div>
+            </div>
+            <div className="px-5 py-4 flex flex-wrap gap-6">
+              {/* Risk domains */}
+              <div className="flex-1 min-w-48">
+                <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider font-semibold">Risk Domains</p>
+                <div className="flex flex-wrap gap-2">
+                  {domainRisks.length ? domainRisks.map(d => (
+                    <span key={d} className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium"
+                      style={{ background: `${domainColors[d]}18`, border: `1px solid ${domainColors[d]}44`, color: domainColors[d] }}>
+                      {domainIcons[d]} {d.charAt(0).toUpperCase()+d.slice(1)} — {b[d]?.value}
+                    </span>
+                  )) : (
+                    <span className="text-xs text-slate-500 italic">No critical domains flagged</span>
+                  )}
+                </div>
+              </div>
+              {/* Building-specific recommendations */}
+              {b.recommendations?.length > 0 && (
+                <div className="flex-1 min-w-56">
+                  <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider font-semibold">Building Insights</p>
+                  <ul className="space-y-1">
+                    {b.recommendations.slice(0, 3).map((r, i) => (
+                      <li key={i} className="text-xs text-slate-300 flex items-start gap-1.5">
+                        <span className="text-cyan-500 mt-0.5">›</span>
+                        {r}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            {domainRisks.length > 0 && (
+              <div className="px-5 pb-3">
+                <p className="text-xs text-cyan-500/70 italic">
+                  Action items matching risk domains ({domainRisks.join(', ')}) are highlighted below.
+                </p>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       {/* Action plan grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <PlanSection sectionKey="immediate"    icon={<Clock        className="w-5 h-5" />}
-          title="Immediate Actions"  color="#ef4444" timeline="Within 24 hours"
-          items={plan.immediate} />
-        <PlanSection sectionKey="next_7_days"  icon={<Calendar     className="w-5 h-5" />}
-          title="Next 7 Days"        color="#f97316" timeline="This week -- schedule now"
-          items={plan.next_7_days} />
-        <PlanSection sectionKey="next_30_days" icon={<CalendarDays className="w-5 h-5" />}
-          title="Next 30 Days"       color="#eab308" timeline="This month -- assign and track"
-          items={plan.next_30_days} />
-        <PlanSection sectionKey="long_term"    icon={<TrendingUp   className="w-5 h-5" />}
-          title="Long-Term Strategy" color="#00ff88" timeline="12+ months -- campus transformation"
-          items={plan.long_term} />
-      </div>
+      {(() => {
+        const highlightDomains = selectedBuilding
+          ? ['water','energy','waste'].filter(d => selectedBuilding[d]?.level && selectedBuilding[d].level !== 'none' && selectedBuilding[d].level !== 'low')
+          : []
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <PlanSection sectionKey="immediate"    icon={<Clock        className="w-5 h-5" />}
+              title="Immediate Actions"  color="#ef4444" timeline="Within 24 hours"
+              items={plan.immediate}    highlightDomains={highlightDomains} />
+            <PlanSection sectionKey="next_7_days"  icon={<Calendar     className="w-5 h-5" />}
+              title="Next 7 Days"        color="#f97316" timeline="This week -- schedule now"
+              items={plan.next_7_days}  highlightDomains={highlightDomains} />
+            <PlanSection sectionKey="next_30_days" icon={<CalendarDays className="w-5 h-5" />}
+              title="Next 30 Days"       color="#eab308" timeline="This month -- assign and track"
+              items={plan.next_30_days} highlightDomains={highlightDomains} />
+            <PlanSection sectionKey="long_term"    icon={<TrendingUp   className="w-5 h-5" />}
+              title="Long-Term Strategy" color="#00ff88" timeline="12+ months -- campus transformation"
+              items={plan.long_term}    highlightDomains={highlightDomains} />
+          </div>
+        )
+      })()}
 
       {/* Campus Health Index */}
       <CampusHealthSection healthIndex={campusHealth} />

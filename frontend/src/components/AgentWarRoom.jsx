@@ -1,375 +1,1187 @@
 import { getWarRoom } from '../api'
-import { useState, useEffect, useRef } from 'react'
-import { RefreshCw, Clock, MessageSquare, CheckCircle, Cpu, Zap, Brain } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { RefreshCw } from 'lucide-react'
 
-const STATUS_CHIP = {
-  active:    { label: 'ACTIVE',    bg: 'rgba(0,255,136,0.12)',  border: 'rgba(0,255,136,0.4)',   color: '#00ff88' },
-  reasoning: { label: 'REASONING', bg: 'rgba(0,229,255,0.1)',   border: 'rgba(0,229,255,0.4)',   color: '#00e5ff' },
-  escalated: { label: 'ESCALATED', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.4)',   color: '#ef4444' },
-  standby:   { label: 'STANDBY',   bg: 'rgba(59,130,246,0.1)',  border: 'rgba(59,130,246,0.35)', color: '#3b82f6' },
-  completed: { label: 'COMPLETED', bg: 'rgba(34,197,94,0.1)',   border: 'rgba(34,197,94,0.3)',   color: '#22c55e' },
-  idle:      { label: 'IDLE',      bg: 'rgba(107,114,128,0.08)',border: 'rgba(107,114,128,0.2)', color: '#6b7280' },
-}
-
-const BADGE_CLS = {
-  critical: 'badge-critical', high: 'badge-high', medium: 'badge-medium',
-  low: 'badge-low', none: 'badge-none', info: 'badge-info',
-}
-
-const PIPELINE_PHASES = [
-  {
-    id: 'rules',
-    label: 'Rule Engine',
-    icon: <Cpu className="w-3.5 h-3.5" />,
-    color: '#00e5ff',
-    description: 'Deterministic threshold analysis',
-    agentRange: [1, 3],
+/* ── Agent definitions ─────────────────────────────── */
+const AGENT_META = [
+  { id: 'water',    label: 'Water',    sub: 'Leakage Detection',  color: '#00b4ff', icon: '💧', angle: -90,
+    observation: 'Night-flow anomaly detected at 03:14 — 380 L in 2 hrs. Hostel Block A plumbing shows sustained pressure differential.',
+    reasoning: 'Flow rate exceeds normal baseline by 3.2×. Pattern matches known micro-crack burst signature in ground-floor supply lines.',
+    impact: 'Est. 1,420 L/week hidden loss. Potential structural water damage if unaddressed.',
+    recommendation: 'Inspect ground-floor pipe fittings. Deploy auto-shutoff valve at main entry by Jan 22.',
+    confidence: 0.92, priority: 1, urgency: 'HIGH',
+    metric: '1,420 L/wk', metricLabel: 'Hidden Water Loss',
   },
-  {
-    id: 'impact',
-    label: 'Impact & Decision',
-    icon: <Brain className="w-3.5 h-3.5" />,
-    color: '#a78bfa',
-    description: 'Cross-domain scoring & ranking',
-    agentRange: [4, 5],
+  { id: 'energy',   label: 'Energy',   sub: 'Grid Optimizer',     color: '#eab308', icon: '⚡', angle: -38,
+    observation: 'HVAC continues running 6.5 hrs post-occupancy in Seminar Hall (Jan 16). 68 kWh overnight with zero occupants.',
+    reasoning: 'Occupancy sensor gap in main auditorium. HVAC schedule not linked to event calendar. Workstation power plans set to "never sleep".',
+    impact: 'Est. 68 kWh/night × 22 working days = 1,496 kWh/mo in wasted cooling energy.',
+    recommendation: 'Install occupancy-linked HVAC automation. Enforce default-off workstation policy campus-wide.',
+    confidence: 0.88, priority: 1, urgency: 'HIGH',
+    metric: '68 kWh', metricLabel: 'Nightly Waste',
   },
-  {
-    id: 'report',
-    label: 'AI Reasoning & Report',
-    icon: <Zap className="w-3.5 h-3.5" />,
-    color: '#00ff88',
-    description: 'Gemini narrative + executive summary',
-    agentRange: [6, 7],
+  { id: 'waste',    label: 'Waste',    sub: 'Wealth Agent',       color: '#00ff88', icon: '♻',  angle:  14,
+    observation: 'Canteen generates 28 kg organic waste/day. Currently routed to mixed disposal. High-value compostable fraction identified.',
+    reasoning: 'Organic fraction at 71% of total waste stream. Biogas pathway yields ~1.8× vs raw sale. Zero capital required for initial compost setup.',
+    impact: 'Est. resource recovery potential from compost + biogas pathway. Mixed disposal forfeits recovery opportunity.',
+    recommendation: 'Route organic waste to biogas digester. Transition to biodegradable packaging. Segregation bins at canteen entry.',
+    confidence: 0.81, priority: 2, urgency: 'MEDIUM',
+    metric: '28 kg/day', metricLabel: 'Organic Load',
+  },
+  { id: 'impact',   label: 'Impact',   sub: 'Analyzer',           color: '#f472b6', icon: '✦',  angle:  66,
+    observation: 'Cross-domain analysis: simultaneous water + energy interventions create compounding sustainability gains vs addressing each independently.',
+    reasoning: 'Energy-water nexus: fixing HVAC reduces condensate drain load (water). Fixing leaks reduces pump energy. Combined CO₂ reduction ~35% better than sequential fixes.',
+    impact: 'Campus carbon footprint reduction est. 4.8 tCO₂e/year with full intervention stack. SDG 6, 7, 13 alignment confirmed.',
+    recommendation: 'Prioritize Energy fix first (fastest payback), then Water (structural risk), then Waste (ongoing recovery).',
+    confidence: 0.79, priority: 2, urgency: 'MEDIUM',
+    metric: '~35%', metricLabel: 'CO₂ Synergy Gain',
+  },
+  { id: 'score',    label: 'Score',    sub: 'Campus Health',      color: '#a78bfa', icon: '◈',  angle: 118,
+    observation: 'Composite campus health index computed across 6 dimensions: water, energy, waste, carbon, compliance, infrastructure. Score: 61/100.',
+    reasoning: 'Energy dimension scores lowest (38/100) due to overnight consumption anomalies. Water at 52/100. Waste at 48/100. Carbon at 55/100.',
+    impact: 'Current grade: C. Target: B+ (75/100) achievable within 60 days with Priority 1 and 2 interventions.',
+    recommendation: 'Address Priority 1 items (Energy + Water) to lift score to ~74. Then target waste pathway for B+ territory.',
+    confidence: 0.85, priority: 3, urgency: 'LOW',
+    metric: '61/100', metricLabel: 'Campus Health Index',
+  },
+  { id: 'report',   label: 'Report',   sub: 'Narrative Engine',   color: '#22d3ee', icon: '◻',  angle: 170,
+    observation: 'All agent findings consolidated. Executive narrative layer generated via Gemini 2.5 reasoning. Report is multi-domain and action-ready.',
+    reasoning: 'Findings from 7 agents cross-validated. Conflicting signals reconciled. Priority stack confirmed by Decision Agent. Gemini narrative layer applied.',
+    impact: 'Decision-support report ready for campus administration and sustainability office. Action plan covers 13 prioritized interventions.',
+    recommendation: 'Distribute report to Facilities, Electrical, and Sustainability teams. Schedule monthly re-run to track intervention progress.',
+    confidence: 0.95, priority: 3, urgency: 'LOW',
+    metric: '13 items', metricLabel: 'Action Plan',
+  },
+  { id: 'decision', label: 'Decision', sub: 'Priority Engine',    color: '#e2e8f0', icon: '◆',  angle: 222,
+    observation: 'Priority engine ranked all interventions by urgency × estimated impact × implementation cost. Final stack dispatched to Report Agent.',
+    reasoning: 'Energy intervention: high urgency, low cost, fast payback → Priority 1. Water: structural risk escalation → Priority 1 co-ranked. Waste: medium urgency, medium payback → Priority 2.',
+    impact: 'Optimized intervention order minimizes time-to-impact while respecting available budget and team capacity constraints.',
+    recommendation: 'Begin with Seminar Hall HVAC automation (Week 1). Hostel plumbing inspection (Week 2). Canteen compost setup (Month 2).',
+    confidence: 0.90, priority: 1, urgency: 'HIGH',
+    metric: 'Priority 1', metricLabel: 'Decision Rank',
   },
 ]
 
-const EXTRA_FEED = [
-  { agent: 'Decision Engine',       message: 'Energy intervention promoted to Priority 1 — highest combined urgency and financial impact.', color: '#f97316' },
-  { agent: 'Impact Analyzer',       message: 'Cross-domain opportunity: combining water + energy fixes amplifies CO2 reduction by ~35%.', color: '#a78bfa' },
-  { agent: 'Water Leakage Agent',   message: 'Leakage confidence increased to 92% — night-flow signature matches known pipe pressure failure pattern.', color: '#00e5ff' },
-  { agent: 'RE:GEN Score Agent',    message: 'Composite score finalised. Campus Health Grade computed from 6-dimension weighted formula.', color: '#3b82f6' },
-  { agent: 'Waste-to-Wealth Agent', message: 'Processing pathway confirmed as highest-value route: 1.8x estimated recovery versus raw sale.', color: '#00ff88' },
-  { agent: 'Report Agent',          message: 'Executive sustainability report finalised. AI reasoning layer enriched narrative with Gemini.', color: '#22c55e' },
-  { agent: 'Energy Optimizer',      message: 'After-hours AC anomaly correlation confirmed: Seminar Hall (Jan 16) and Computer Lab (Jan 19).', color: '#eab308' },
+const REASONING_STREAM = [
+  { agent: 'water',    color: '#00b4ff', msg: 'Night-flow anomaly at 03:14 — 380 L in 2 hrs. Burst pattern confirmed.' },
+  { agent: 'energy',   color: '#eab308', msg: 'AC runtime +6.5 hrs post-occupancy. Seminar Hall Jan 16 correlation: 68 kWh.' },
+  { agent: 'waste',    color: '#00ff88', msg: 'Organic load 28 kg/day at Canteen. Compost pathway yields 1.8× vs raw sale.' },
+  { agent: 'impact',   color: '#f472b6', msg: 'Cross-domain synergy: water + energy co-fix amplifies CO₂ reduction ~35%.' },
+  { agent: 'score',    color: '#a78bfa', msg: 'Composite health grade computed from 6-dimension weighted formula. Score: 61/100.' },
+  { agent: 'decision', color: '#e2e8f0', msg: 'Energy intervention promoted to Priority 1 — highest urgency × financial impact.' },
+  { agent: 'report',   color: '#22d3ee', msg: 'Executive summary enriched. Gemini narrative layer finalised.' },
+  { agent: 'water',    color: '#00b4ff', msg: 'Leakage confidence escalated to 92% — matches known pipe pressure failure pattern.' },
+  { agent: 'impact',   color: '#f472b6', msg: 'Water loss estimated: ₹12,400–₹18,600 annually if unaddressed.' },
+  { agent: 'decision', color: '#e2e8f0', msg: 'Final priority stack: [1] Energy [2] Water [3] Waste. Dispatching to Report Agent.' },
+  { agent: 'report',   color: '#22d3ee', msg: 'Mission complete. All agent findings consolidated into decision-support report.' },
 ]
 
-function StatusChip({ status }) {
-  const s = STATUS_CHIP[status] || STATUS_CHIP.idle
+/* ── Coordinate system ─────────────────────────────── */
+const AW = 680, AH = 680          // logical artboard size
+const CX = AW / 2, CY = AH / 2   // core center
+const ORBIT_R = 270               // agent orbit radius (+35% scale)
+
+function agentCoord(meta) {
+  const r = (meta.angle * Math.PI) / 180
+  return { x: CX + ORBIT_R * Math.cos(r), y: CY + ORBIT_R * Math.sin(r) }
+}
+
+/* Full path for animateMotion (core → exact node center) */
+function buildFullPath(meta) {
+  const a = agentCoord(meta)
+  return `M ${CX},${CY} L ${a.x},${a.y}`
+}
+
+/* Visible path: core → just outside node edge (stops 50 logical units before center) */
+function buildPath(meta) {
+  const a = agentCoord(meta)
+  const dx = a.x - CX, dy = a.y - CY
+  const len = Math.sqrt(dx * dx + dy * dy)  // = ORBIT_R = 270
+  const stop = (len - 50) / len
+  return `M ${CX},${CY} L ${CX + dx * stop},${CY + dy * stop}`
+}
+
+/* ── Background floating particles ────────────────── */
+const PARTICLE_COLORS = ['#00e5ff', '#00ff88', '#a78bfa', '#f472b6', '#eab308']
+function BackgroundParticles() {
+  const pts = useMemo(() => Array.from({ length: 48 }, (_, i) => ({
+    id: i,
+    x: ((i * 7919 + 3571) % 10000) / 100,
+    y: ((i * 6271 + 1999) % 10000) / 100,
+    size: 1.0 + ((i * 2311) % 1000) / 500,
+    dur: 6 + ((i * 1999) % 10),
+    delay: -((i * 3211) % 13),
+    opacity: 0.10 + ((i * 1777) % 1000) / 4000,
+    color: PARTICLE_COLORS[i % PARTICLE_COLORS.length],
+  })), [])
+
   return (
-    <span className="text-xs px-2 py-0.5 rounded-full font-bold"
-      style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color }}>
-      {s.label}
-    </span>
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 2 }}>
+      {pts.map(p => (
+        <div
+          key={p.id}
+          style={{
+            position: 'absolute',
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+            borderRadius: '50%',
+            background: p.color,
+            opacity: p.opacity,
+            boxShadow: `0 0 ${p.size * 3}px ${p.color}`,
+            animation: `warParticleFloat ${p.dur}s ${p.delay}s linear infinite`,
+          }}
+        />
+      ))}
+    </div>
   )
 }
 
-/* Mini 3-phase progress per card */
-function AgentPhaseBar({ visible, agentIdx }) {
-  const [phase, setPhase] = useState(0)
-  const phases = ['Loading data', 'Running rules', 'Finalising output']
-
-  useEffect(() => {
-    if (!visible) return
-    if (phase >= phases.length - 1) return
-    const delay = agentIdx * 180 + phase * 500
-    const t = setTimeout(() => setPhase(p => Math.min(p + 1, phases.length - 1)), delay)
-    return () => clearTimeout(t)
-  }, [visible, phase, agentIdx])
-
+/* ── Gemini Core (CSS-only, no canvas) ─────────────── */
+function GeminiCore() {
+  const RAY_ANGLES = [0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180, 202.5, 225, 247.5, 270, 292.5, 315, 337.5]
   return (
-    <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-      <div className="flex items-center gap-2">
-        {phases.map((label, i) => (
-          <div key={i} className="flex items-center gap-1">
-            <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${
-              i < phase  ? 'bg-green-400' :
-              i === phase ? 'bg-cyan-400 animate-pulse' :
-              'bg-slate-700'
-            }`} />
-            <span className={`text-xs transition-colors duration-300 ${
-              i < phase  ? 'text-green-500' :
-              i === phase ? 'text-cyan-400' :
-              'text-slate-700'
-            }`}>{label}</span>
-            {i < phases.length - 1 && (
-              <div className={`w-4 h-px transition-all duration-500 ${i < phase ? 'bg-green-600' : 'bg-slate-800'}`} />
-            )}
-          </div>
-        ))}
+    <div style={{
+      position: 'absolute',
+      left: `${(CX / AW) * 100}%`,
+      top:  `${(CY / AH) * 100}%`,
+      width: 0, height: 0,
+      zIndex: 5,
+      pointerEvents: 'none',
+    }}>
+      {/* Outer halo bloom */}
+      <div className="war-core-halo" />
+
+      {/* Concentric rings */}
+      <div className="war-ring war-ring-1" />
+      <div className="war-ring war-ring-2" />
+      <div className="war-ring war-ring-3" />
+      <div className="war-ring war-ring-4" />
+
+      {/* 16 light rays — longer alternating pattern */}
+      {RAY_ANGLES.map((deg, i) => (
+        <div
+          key={deg}
+          className="war-ray"
+          style={{
+            height: i % 2 === 0 ? 68 : 46,
+            opacity: i % 2 === 0 ? 0.75 : 0.42,
+            transform: `rotate(${deg}deg) translateY(-100%)`,
+            animation: `warRayFlicker 3.8s ${deg * 8}ms ease-in-out infinite alternate`,
+          }}
+        />
+      ))}
+
+      {/* Core reactor sphere */}
+      <div className="war-core-sphere">
+        <div className="war-core-inner">
+          <span style={{ letterSpacing: '0.22em', fontSize: 12, fontWeight: 900, color: '#00ff88', opacity: 0.98, textShadow: '0 0 14px #00ff88, 0 0 28px #00ff8877' }}>GEMINI</span>
+          <span style={{ letterSpacing: '0.18em', fontSize: 15, fontWeight: 900, color: '#00e5ff', opacity: 1, textShadow: '0 0 18px #00e5ff, 0 0 36px #00e5ff88' }}>CORE</span>
+        </div>
       </div>
     </div>
   )
 }
 
-function AgentCard({ agent, animDelay, cardIdx, visible }) {
-  const urgency = agent.severity === 'critical' ? 95 : agent.severity === 'high' ? 75 :
-                  agent.severity === 'medium'   ? 55 : agent.severity === 'low'   ? 30 : 15
+/* ── SVG connection layer ───────────────────────────── */
+function ConnectionsSVG({ focused }) {
+  return (
+    <svg
+      viewBox={`0 0 ${AW} ${AH}`}
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible', zIndex: 3, pointerEvents: 'none' }}
+    >
+      <defs>
+        <filter id="war-glow-filter">
+          <feGaussianBlur stdDeviation="3.5" result="blur" />
+          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="war-glow-lg">
+          <feGaussianBlur stdDeviation="6" result="blur" />
+          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+      </defs>
+
+      {/* Orbit reference rings — more visible */}
+      <circle cx={CX} cy={CY} r={ORBIT_R + 8}  stroke="rgba(0,229,255,0.05)" strokeWidth="0.5" fill="none" />
+      <circle cx={CX} cy={CY} r={ORBIT_R}       stroke="rgba(0,229,255,0.15)" strokeWidth="1"   fill="none" />
+      <circle cx={CX} cy={CY} r={ORBIT_R - 22}  stroke="rgba(0,229,255,0.07)" strokeWidth="0.5" fill="none" strokeDasharray="4 9" />
+
+      {/* Hidden paths for animateMotion — full length so dots reach node center */}
+      {AGENT_META.map(meta => (
+        <path key={meta.id} id={`wcp-${meta.id}`} d={buildFullPath(meta)} fill="none" stroke="none" />
+      ))}
+
+      {/* Connection paths + pulses per agent */}
+      {AGENT_META.map((meta, idx) => {
+        const isFocused = focused === meta.id
+        const isDimmed  = focused !== null && !isFocused
+        const baseOpacity = isDimmed ? 0.30 : isFocused ? 1 : 0.68
+        const dotDur = isFocused ? '0.95s' : '2.0s'
+        const staggerBegin = `-${Math.round(idx * (2000 / AGENT_META.length))}ms`
+
+        return (
+          <g key={meta.id} style={{ opacity: baseOpacity, transition: 'opacity 0.4s ease' }}>
+            {/* Wide soft glow underneath for focused state */}
+            {isFocused && (
+              <path
+                d={buildPath(meta)}
+                stroke={meta.color}
+                strokeWidth="8"
+                fill="none"
+                strokeOpacity="0.15"
+                filter="url(#war-glow-lg)"
+              />
+            )}
+            {/* Base static path */}
+            <path
+              d={buildPath(meta)}
+              stroke={meta.color}
+              strokeWidth={isFocused ? 2 : 0.9}
+              fill="none"
+              strokeOpacity={isFocused ? 0.7 : 0.5}
+            />
+            {/* Animated dash — energy flow */}
+            <path
+              d={buildPath(meta)}
+              stroke={meta.color}
+              strokeWidth={isFocused ? 3 : 1.6}
+              fill="none"
+              strokeDasharray="8 26"
+              style={{
+                animation: `warDashOut ${isFocused ? '1.2s' : '1.8s'} linear infinite`,
+                animationDelay: `${-idx * 257}ms`,
+                filter: isFocused ? `drop-shadow(0 0 6px ${meta.color})` : `drop-shadow(0 0 2px ${meta.color}88)`,
+              }}
+            />
+            {/* Traveling glow dot */}
+            <circle
+              r={isFocused ? 5.5 : 3}
+              fill={meta.color}
+              opacity={isFocused ? 1 : 0.8}
+              filter={isFocused ? 'url(#war-glow-lg)' : 'url(#war-glow-filter)'}
+            >
+              <animateMotion dur={dotDur} repeatCount="indefinite" begin={staggerBegin}>
+                <mpath href={`#wcp-${meta.id}`} />
+              </animateMotion>
+            </circle>
+            {/* Second + third dots for focused — rapid bidirectional pulses */}
+            {isFocused && (
+              <>
+                <circle r="3.5" fill={meta.color} opacity="0.65" filter="url(#war-glow-filter)">
+                  <animateMotion dur="1.4s" repeatCount="indefinite" begin="-700ms" keyPoints="1;0" keyTimes="0;1" calcMode="linear">
+                    <mpath href={`#wcp-${meta.id}`} />
+                  </animateMotion>
+                </circle>
+                <circle r="2.5" fill={meta.color} opacity="0.45">
+                  <animateMotion dur="0.95s" repeatCount="indefinite" begin="-340ms">
+                    <mpath href={`#wcp-${meta.id}`} />
+                  </animateMotion>
+                </circle>
+              </>
+            )}
+            {/* Periodic energy burst — fires every ~4s from core to node */}
+            <circle r="11" fill={meta.color} filter="url(#war-glow-lg)">
+              <animateMotion
+                dur="4.2s"
+                repeatCount="indefinite"
+                begin={`-${(idx * 0.58).toFixed(2)}s`}
+                keyPoints="0;0.85;1;1"
+                keyTimes="0;0.22;0.27;1"
+                calcMode="linear"
+              >
+                <mpath href={`#wcp-${meta.id}`} />
+              </animateMotion>
+              <animate
+                attributeName="opacity"
+                values="0.92;0.92;0;0;0.92"
+                keyTimes="0;0.20;0.27;0.99;1"
+                dur="4.2s"
+                repeatCount="indefinite"
+                begin={`-${(idx * 0.58).toFixed(2)}s`}
+              />
+            </circle>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+/* ── Individual agent node ─────────────────────────── */
+function AgentNode({ meta, isActive, isHovered, isAnyFocused, onClick, onMouseEnter, onMouseLeave, agentData, isAnalyzed }) {
+  const isDimmed  = isAnyFocused && !isActive && !isHovered
+  const isLit     = isActive || isHovered
+  const coord     = agentCoord(meta)
+  const conf      = agentData?.confidence ? Math.round(agentData.confidence * 100) : 72
+  const floatDur  = 2.6 + Math.abs(meta.angle % 7) * 0.28
+  const baseSize  = 75
+  const litSize   = isActive ? 100 : 88
+
+  // currentSize: what the circle actually renders at
+  const cSize = isActive ? litSize : isHovered ? litSize : baseSize
+  const half  = cSize / 2
 
   return (
-    <div
-      className="glass-card p-5 agent-card-hover"
+    /* Zero-size anchor — sits exactly at the SVG coordinate point */
+    <motion.div
+      animate={{
+        scale: isActive ? 1.18 : isHovered ? 1.12 : isDimmed ? 0.94 : [1, 1.038, 1],
+        opacity: isDimmed ? 0.65 : 1,
+      }}
+      transition={{
+        scale: isActive || isHovered || isDimmed
+          ? { duration: 0.25, ease: [0.34, 1.56, 0.64, 1] }
+          : { duration: floatDur, repeat: Infinity, ease: 'easeInOut' },
+        opacity: { duration: 0.38 },
+      }}
+      onClick={() => onClick(meta.id)}
+      onMouseEnter={() => onMouseEnter(meta.id)}
+      onMouseLeave={onMouseLeave}
       style={{
-        opacity:    visible ? 1 : 0,
-        transform:  visible ? 'translateY(0)' : 'translateY(16px)',
-        transition: `opacity 0.45s ease ${animDelay}s, transform 0.45s ease ${animDelay}s`,
+        position: 'absolute',
+        left: `${(coord.x / AW) * 100}%`,
+        top:  `${(coord.y / AH) * 100}%`,
+        width: 0, height: 0,
+        zIndex: 10,
+        cursor: 'crosshair',
+        userSelect: 'none',
       }}
     >
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <span className="text-2xl">{agent.icon}</span>
-            {agent.status === 'active' && (
-              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-green-400 agent-pulse" />
-            )}
-          </div>
-          <div>
-            <h3 className="font-bold text-white text-sm leading-tight">{agent.agent}</h3>
-            <div className="mt-1"><StatusChip status={agent.status} /></div>
-          </div>
-        </div>
-        {agent.severity && (
-          <span className={`text-xs px-2 py-1 rounded-full font-medium ${BADGE_CLS[agent.severity] || 'badge-info'}`}>
-            {agent.severity?.toUpperCase()}
-          </span>
-        )}
+      {/* Soft halo bloom — centered on anchor */}
+      <div style={{
+        position: 'absolute',
+        width: cSize + 44,
+        height: cSize + 44,
+        top: -(cSize + 44) / 2,
+        left: -(cSize + 44) / 2,
+        borderRadius: '50%',
+        background: `radial-gradient(circle, ${meta.color}${isLit ? '18' : '08'} 0%, transparent 70%)`,
+        pointerEvents: 'none',
+        transition: 'all 0.3s ease',
+      }} />
+
+      {/* Node circle — centered exactly on anchor */}
+      <div style={{
+        position: 'absolute',
+        width: cSize,
+        height: cSize,
+        top: -half,
+        left: -half,
+        borderRadius: '50%',
+        background: isLit
+          ? `radial-gradient(circle at 35% 30%, ${meta.color}55, ${meta.color}18 50%, rgba(3,7,18,0.88))`
+          : `radial-gradient(circle at 38% 32%, ${meta.color}20, rgba(3,7,18,0.92))`,
+        border: isLit ? `2px solid ${meta.color}ee` : `1.5px solid ${meta.color}88`,
+        boxShadow: isActive
+          ? `0 0 30px ${meta.color}88, 0 0 70px ${meta.color}44, 0 0 130px ${meta.color}22, inset 0 0 26px ${meta.color}28`
+          : isHovered
+          ? `0 0 20px ${meta.color}66, 0 0 48px ${meta.color}28, inset 0 0 18px ${meta.color}14`
+          : `0 0 14px ${meta.color}44, 0 0 32px ${meta.color}22, inset 0 0 10px ${meta.color}0a`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: isLit ? (isActive ? 42 : 34) : 30,
+        transition: 'all 0.25s ease',
+      }}>
+        {meta.icon}
       </div>
 
-      {agent.key_metric && (
-        <div className="mb-3 p-2.5 rounded-lg text-center"
-          style={{ background: 'rgba(0,229,255,0.06)', border: '1px solid rgba(0,229,255,0.12)' }}>
-          <p className="text-cyan-400 font-black text-lg">{agent.key_metric}</p>
-          <p className="text-xs text-slate-500 mt-0.5">key metric</p>
+      {/* Label — hangs below circle */}
+      <div style={{
+        position: 'absolute',
+        top: half + 6,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        textAlign: 'center',
+        lineHeight: 1.3,
+        whiteSpace: 'nowrap',
+        pointerEvents: 'none',
+      }}>
+        <div style={{
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: '0.13em',
+          textTransform: 'uppercase',
+          color: isLit ? meta.color : 'rgba(255,255,255,0.72)',
+          textShadow: isLit ? `0 0 14px ${meta.color}` : 'none',
+          transition: 'all 0.25s ease',
+        }}>
+          {meta.label}
         </div>
+        {isAnalyzed && !isLit && (
+          <div style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.12em',
+            color: '#00ff88', marginTop: 2, textShadow: '0 0 10px #00ff88',
+          }}>
+            ✓ ANALYZED
+          </div>
+        )}
+        <AnimatePresence>
+          {isLit && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              style={{ fontSize: 10, color: meta.color + 'cc', letterSpacing: '0.06em', overflow: 'hidden', textShadow: `0 0 10px ${meta.color}` }}
+            >
+              {isAnalyzed ? '✓ Analyzed' : `${conf}% conf`}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Exploding pulse rings for active state */}
+      {isActive && [0, 0.4, 0.8].map((delay) => (
+        <motion.div
+          key={delay}
+          initial={{ scale: 1, opacity: 0.65 }}
+          animate={{ scale: 3.2, opacity: 0 }}
+          transition={{ duration: 1.6, delay, repeat: Infinity, ease: 'easeOut' }}
+          style={{
+            position: 'absolute',
+            width: litSize, height: litSize,
+            top: -litSize / 2, left: -litSize / 2,
+            borderRadius: '50%',
+            border: `1.5px solid ${meta.color}`,
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+
+      {/* Subtle hover ring */}
+      {isHovered && !isActive && (
+        <motion.div
+          initial={{ scale: 1, opacity: 0.5 }}
+          animate={{ scale: 2.6, opacity: 0 }}
+          transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
+          style={{
+            position: 'absolute',
+            width: litSize, height: litSize,
+            top: -litSize / 2, left: -litSize / 2,
+            borderRadius: '50%',
+            border: `1px solid ${meta.color}88`,
+            pointerEvents: 'none',
+          }}
+        />
       )}
-
-      <div className="mb-3">
-        <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Finding</p>
-        <p className="text-xs text-slate-300 leading-relaxed">{agent.finding}</p>
-      </div>
-
-      <div className="mb-3">
-        <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Recommendation</p>
-        <p className="text-xs text-green-400 leading-relaxed">{agent.recommendation}</p>
-      </div>
-
-      <div className="space-y-2.5">
-        {agent.confidence != null && (
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <p className="text-xs text-slate-500">Confidence</p>
-              <p className="text-xs text-cyan-400 font-bold">{Math.round(agent.confidence * 100)}%</p>
-            </div>
-            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-green-400"
-                style={{ width: `${agent.confidence * 100}%`, transition: 'width 1.2s ease-out' }} />
-            </div>
-          </div>
-        )}
-        <div>
-          <div className="flex justify-between items-center mb-1">
-            <p className="text-xs text-slate-500">Urgency</p>
-            <p className="text-xs font-bold" style={{
-              color: urgency > 70 ? '#ef4444' : urgency > 50 ? '#f97316' : '#eab308',
-            }}>{urgency}%</p>
-          </div>
-          <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-            <div className="h-full rounded-full" style={{
-              width:      `${urgency}%`,
-              background: urgency > 70
-                ? 'linear-gradient(90deg,#ef4444,#f97316)'
-                : 'linear-gradient(90deg,#eab308,#f97316)',
-              transition: 'width 1.2s ease-out 0.3s',
-            }} />
-          </div>
-        </div>
-      </div>
-
-      <AgentPhaseBar visible={visible} agentIdx={cardIdx} />
-    </div>
+    </motion.div>
   )
 }
 
-function PipelineHeader({ visibleCount }) {
-  return (
-    <div className="glass-card p-4 mb-6">
-      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">
-        Agent Pipeline — 3-Phase Execution
-      </p>
-      <div className="flex items-center gap-2 flex-wrap">
-        {PIPELINE_PHASES.map((phase, i) => {
-          const agentsInPhase = phase.agentRange[1] - phase.agentRange[0] + 1
-          const phaseStart    = phase.agentRange[0] - 1
-          const phaseDone     = visibleCount >= phase.agentRange[1]
-          const phaseActive   = visibleCount >= phaseStart && !phaseDone
+/* ── Typing text effect ─────────────────────────────── */
+function TypedText({ text, delayMs = 250, speed = 16 }) {
+  const [shown, setShown] = useState('')
+  useEffect(() => {
+    setShown('')
+    let i = 0
+    const t = setTimeout(() => {
+      const iv = setInterval(() => {
+        i++
+        setShown(text.slice(0, i))
+        if (i >= text.length) clearInterval(iv)
+      }, speed)
+      return () => clearInterval(iv)
+    }, delayMs)
+    return () => clearTimeout(t)
+  }, [text, delayMs, speed])
+  return <>{shown}{shown.length < text.length && <span style={{ opacity: 0.6, animation: 'terminalBlink 0.85s step-start infinite' }}>|</span>}</>
+}
 
+/* ── Live reasoning feed ────────────────────────────── */
+function LiveReasoningFeed({ filterAgent }) {
+  const [lines, setLines] = useState([REASONING_STREAM[0]])
+  const ref = useRef(null)
+  const idx = useRef(1)
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setLines(prev => [...prev.slice(-10), REASONING_STREAM[idx.current % REASONING_STREAM.length]])
+      idx.current++
+    }, 2600)
+    return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
+    if (ref.current) ref.current.scrollTop = ref.current.scrollHeight
+  }, [lines])
+
+  const visible = filterAgent ? lines.filter(l => l.agent === filterAgent) : lines
+
+  return (
+    <div ref={ref} style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none' }}>
+      <AnimatePresence initial={false}>
+        {visible.map((line, i) => {
+          const m = AGENT_META.find(a => a.id === line.agent)
           return (
-            <div key={phase.id} className="flex items-center gap-2">
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-500 ${
-                phaseDone   ? 'bg-green-500/10 border border-green-500/25' :
-                phaseActive ? 'border animate-pulse' :
-                              'bg-slate-800/50 border border-slate-700/40'
-              }`}
-                style={phaseActive ? { borderColor: `${phase.color}60`, background: `${phase.color}08` } : {}}>
-                <span style={{ color: phaseDone ? '#22c55e' : phaseActive ? phase.color : '#374151' }}>
-                  {phaseDone ? <CheckCircle className="w-3.5 h-3.5" /> : phase.icon}
-                </span>
-                <span style={{ color: phaseDone ? '#22c55e' : phaseActive ? phase.color : '#374151' }}>
-                  {phase.label}
-                </span>
-                <span className="text-xs opacity-60" style={{ color: phaseDone ? '#22c55e' : phaseActive ? phase.color : '#374151' }}>
-                  ({agentsInPhase} agents)
-                </span>
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              style={{ display: 'flex', gap: 9, marginBottom: 10, alignItems: 'flex-start' }}
+            >
+              <div style={{
+                width: 5, height: 5, borderRadius: '50%',
+                background: line.color, flexShrink: 0, marginTop: 5,
+                boxShadow: `0 0 6px ${line.color}`,
+              }} />
+              <div>
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: line.color }}>{m?.label ?? line.agent}</span>
+                <span style={{ fontSize: 11, color: 'rgba(226,232,240,0.62)', marginLeft: 7, lineHeight: 1.75 }}>{line.msg}</span>
               </div>
-              {i < PIPELINE_PHASES.length - 1 && (
-                <div className={`w-6 h-px transition-all duration-500 ${phaseDone ? 'bg-green-600' : 'bg-slate-700'}`} />
-              )}
-            </div>
+            </motion.div>
           )
         })}
-      </div>
+      </AnimatePresence>
+      {visible.length === 0 && (
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', textAlign: 'center', paddingTop: 16 }}>
+          No activity for this agent yet.
+        </p>
+      )}
     </div>
   )
 }
 
-function AgentFeed({ agents }) {
-  const feedRef    = useRef(null)
-  const [extraMsgs, setExtraMsgs] = useState([])
-  const counterRef = useRef(0)
-
-  const allMsgs = [
-    ...agents.map((a, i) => ({
-      agent:   a.agent,
-      message: a.finding,
-      color:   ['#00e5ff','#eab308','#00ff88','#a78bfa','#f97316','#3b82f6','#22c55e'][i % 7],
-      time:    `00:0${String(i + 1).padStart(2, '0')}`,
-    })),
-    ...extraMsgs,
+/* ── Pipeline status ────────────────────────────────── */
+function PipelinePanel() {
+  const phases = [
+    { label: 'Rule Engine',  color: '#00b4ff' },
+    { label: 'Impact Layer', color: '#a78bfa' },
+    { label: 'Report Layer', color: '#00ff88' },
   ]
+  return (
+    <div style={{
+      background: 'rgba(3,7,18,0.75)',
+      backdropFilter: 'blur(18px)',
+      border: '1px solid rgba(255,255,255,0.05)',
+      borderRadius: 16,
+      padding: '16px 18px',
+    }}>
+      <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', marginBottom: 14 }}>
+        Pipeline
+      </p>
+      {phases.map((ph, i) => (
+        <div key={i} style={{ marginBottom: i < phases.length - 1 ? 12 : 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 5, height: 5, borderRadius: '50%', background: ph.color, boxShadow: `0 0 4px ${ph.color}` }} />
+              <span style={{ fontSize: 11, color: ph.color }}>{ph.label}</span>
+            </div>
+            <span style={{ fontSize: 10, color: '#4ade80', fontWeight: 600 }}>✓ Done</span>
+          </div>
+          <div style={{ height: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 1, overflow: 'hidden' }}>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: '100%' }}
+              transition={{ duration: 1.2, delay: i * 0.35, ease: 'easeOut' }}
+              style={{ height: '100%', background: `linear-gradient(90deg, ${ph.color}55, ${ph.color})`, borderRadius: 1 }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
-  useEffect(() => {
-    if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight
-  }, [allMsgs.length])
+/* ── Agent detail panel (right panel content) ──────── */
+function AgentDetailPanel({ agentId, agents, wasteResult }) {
+  const meta = AGENT_META.find(m => m.id === agentId)
+  if (!meta) return null
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const idx    = counterRef.current % EXTRA_FEED.length
-      const baseIdx = agents.length + counterRef.current
-      const pad    = n => String(n).padStart(2, '0')
-      const min    = Math.floor(baseIdx / 60)
-      const sec    = baseIdx % 60
-      setExtraMsgs(prev => [...prev, { ...EXTRA_FEED[idx], time: `${pad(min)}:${pad(sec + 10)}` }])
-      counterRef.current += 1
-    }, 2800)
-    return () => clearInterval(interval)
-  }, [agents.length])
+  const backendData = agents?.find?.(a =>
+    a.agent?.toLowerCase().includes(meta.label.toLowerCase()) ||
+    (agentId === 'decision' && a.agent?.toLowerCase().includes('decision'))
+  )
+
+  /* Waste agent: merge live wasteResult */
+  const wasteOverride = agentId === 'waste' && wasteResult ? {
+    observation: wasteResult.finding || meta.observation,
+    recommendation: wasteResult.recommended_pathway || meta.recommendation,
+    metric: wasteResult.hidden_value_score != null ? `Score: ${wasteResult.hidden_value_score}/100` : meta.metric,
+    severity: wasteResult.hazard_warning ? 'HIGH' : meta.urgency,
+    confidence: wasteResult.confidence ?? meta.confidence,
+    hazard_warning: wasteResult.hazard_warning,
+    waste_type: wasteResult.waste_type,
+  } : null
+
+  const conf    = wasteOverride?.confidence ?? backendData?.confidence ?? meta.confidence
+  const confPct = Math.round((typeof conf === 'number' && conf <= 1 ? conf * 100 : conf))
+  const urgencyPct = meta.urgency === 'HIGH' ? 82 : meta.urgency === 'MEDIUM' ? 56 : 28
+  const urgencyColor = urgencyPct > 70 ? '#ef4444' : urgencyPct > 45 ? '#eab308' : '#22c55e'
+
+  const now = new Date()
+  const timestamp = `${now.toLocaleDateString('en-IN', { day:'2-digit', month:'short' })} · ${now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })}`
 
   return (
-    <div className="glass-card p-5 mb-6">
-      <div className="flex items-center gap-2 mb-4">
-        <MessageSquare className="w-4 h-4 text-cyan-400" />
-        <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-widest">
-          Agent Collaboration Feed
-        </h3>
-        <div className="ml-auto flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-green-400 pulse-ring" />
-          <span className="text-xs text-green-400">Live</span>
+    <motion.div
+      key={agentId}
+      initial={{ x: 50, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: 50, opacity: 0 }}
+      transition={{ type: 'spring', damping: 26, stiffness: 220 }}
+      style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        background: 'rgba(3,7,18,0.84)',
+        backdropFilter: 'blur(28px)',
+        border: `1px solid ${meta.color}1e`,
+        borderTop: `2px solid ${meta.color}`,
+        borderRadius: 20, padding: '20px 20px 16px',
+        overflowY: 'auto', scrollbarWidth: 'none',
+      }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: 13, flexShrink: 0,
+          background: `radial-gradient(circle at 35% 32%, ${meta.color}25, rgba(3,7,18,0.9))`,
+          border: `1px solid ${meta.color}44`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+          boxShadow: `0 0 20px ${meta.color}28`,
+        }}>
+          {meta.icon}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 800, fontSize: 16, color: '#fff', marginBottom: 2 }}>
+            {meta.label} Agent
+          </div>
+          <div style={{ fontSize: 11.5, color: meta.color, opacity: 0.92 }}>
+            {wasteOverride?.waste_type ? `Analyzing: ${wasteOverride.waste_type}` : meta.sub}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{
+            padding: '3px 9px', borderRadius: 20, marginBottom: 4,
+            background: meta.color + '18', border: `1px solid ${meta.color}40`,
+            fontSize: 8.5, fontWeight: 800, textTransform: 'uppercase',
+            letterSpacing: '0.10em', color: meta.color,
+          }}>
+            {meta.urgency}
+          </div>
+          <div style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.25)' }}>P{meta.priority}</div>
         </div>
       </div>
 
-      <div ref={feedRef} className="space-y-2 max-h-52 overflow-y-auto pr-1"
-        style={{ scrollbarWidth: 'thin' }}>
-        {allMsgs.map((m, i) => (
-          <div key={i} className="flex items-start gap-3 type-in"
-            style={{ animationDelay: `${Math.min(i, 8) * 0.1}s` }}>
-            <span className="text-xs text-slate-600 font-mono flex-shrink-0 mt-0.5">{m.time}</span>
-            <div className="flex-1 p-2 rounded-lg"
-              style={{ background: 'rgba(15,23,42,0.6)', border: `1px solid ${m.color}18` }}>
-              <span className="text-xs font-bold mr-2" style={{ color: m.color }}>{m.agent}:</span>
-              <span className="text-xs text-slate-400">{m.message}</span>
+      {/* Hazard warning */}
+      {wasteOverride?.hazard_warning && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+          style={{
+            marginBottom: 12, padding: '9px 13px', borderRadius: 8,
+            background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.35)',
+            display: 'flex', gap: 8, alignItems: 'flex-start',
+          }}
+        >
+          <span style={{ fontSize: 13, flexShrink: 0 }}>⚠</span>
+          <span style={{ fontSize: 10.5, color: '#fca5a5', lineHeight: 1.65 }}>
+            <strong>Hazard Warning:</strong> {wasteOverride.hazard_warning}
+          </span>
+        </motion.div>
+      )}
+
+      {/* Key metric */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
+        style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 14 }}
+      >
+        <span style={{ fontSize: 32, fontWeight: 900, color: meta.color, lineHeight: 1, letterSpacing: '-0.02em' }}>
+          {wasteOverride?.metric ?? meta.metric}
+        </span>
+        <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>
+          {meta.metricLabel}
+        </span>
+      </motion.div>
+
+      {/* Reasoning blocks */}
+      {[
+        { label: 'Observation', text: wasteOverride?.observation ?? meta.observation, color: meta.color },
+        { label: 'Reasoning',   text: meta.reasoning,      color: 'rgba(226,232,240,0.6)' },
+        { label: 'Impact',      text: meta.impact,         color: '#a78bfa' },
+        { label: 'Recommendation', text: wasteOverride?.recommendation ?? meta.recommendation, color: '#4ade80' },
+      ].map(({ label, text, color }, i) => (
+        <motion.div
+          key={label}
+          initial={{ opacity: 0, x: -8 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.25 + i * 0.14 }}
+          style={{ marginBottom: 11 }}
+        >
+          <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.38)', marginBottom: 5 }}>
+            {label}
+          </p>
+          <p style={{ fontSize: 12, color, lineHeight: 1.7 }}>
+            {text}
+          </p>
+        </motion.div>
+      ))}
+
+      {/* Confidence + Urgency bars */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4, marginBottom: 14 }}>
+        {[
+          { label: 'Confidence', value: confPct, color: meta.color },
+          { label: 'Urgency',    value: urgencyPct, color: urgencyColor },
+        ].map(({ label, value, color }) => (
+          <div key={label}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.32)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>{label}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color }}>{value}%</span>
+            </div>
+            <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${value}%` }}
+                transition={{ duration: 1.1, ease: 'easeOut', delay: 0.5 }}
+                style={{ height: '100%', borderRadius: 2, background: `linear-gradient(90deg, ${color}55, ${color})` }}
+              />
             </div>
           </div>
         ))}
       </div>
+
+      {/* Timestamp + Gemini attribution */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
+        <span style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.22)' }}>Last run: {timestamp}</span>
+        <span style={{ fontSize: 8.5, color: '#00e5ff', opacity: 0.6, fontWeight: 600 }}>Powered by Gemini 2.5</span>
+      </div>
+    </motion.div>
+  )
+}
+
+/* ── Right column ───────────────────────────────────── */
+function RightColumn({ focusedAgent, agents, wasteResult }) {
+  return (
+    <div style={{
+      height: '100%', display: 'flex', flexDirection: 'column',
+      padding: '8px 0 8px 0', gap: 12,
+      maxHeight: 'calc(100vh - 140px)',
+      overflowY: 'auto',
+      scrollbarWidth: 'none',
+    }}>
+      <AnimatePresence mode="wait">
+        {focusedAgent ? (
+          <AgentDetailPanel key={focusedAgent} agentId={focusedAgent} agents={agents} wasteResult={wasteResult} />
+        ) : (
+          <motion.div
+            key="idle"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}
+          >
+            {/* Live reasoning */}
+            <div style={{
+              flex: 1,
+              background: 'rgba(3,7,18,0.78)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 20,
+              padding: 20,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                <div className="war-dot-pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: '#00e5ff' }} />
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.16em', color: '#00e5ff', textTransform: 'uppercase' }}>
+                  Live Reasoning
+                </span>
+              </div>
+              <LiveReasoningFeed filterAgent={null} />
+            </div>
+            <PipelinePanel />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
 
-export default function AgentWarRoom({ initialData }) {
-  const [data,    setData]    = useState(initialData)
-  const [loading, setLoading] = useState(false)
-  const [visible, setVisible] = useState(0)   // how many cards are revealed
+/* ── Left column ────────────────────────────────────── */
+function LeftColumn({ loading, onRefresh, replayPhase, wasteResult, activeAgent, onSelectAgent }) {
+  return (
+    <div style={{
+      height: '100%', display: 'flex', flexDirection: 'column',
+      padding: '8px 0 8px 0', gap: 10,
+      overflowY: 'auto', scrollbarWidth: 'none',
+    }}>
+      {/* Mission title area */}
+      <div>
+        <h2 style={{ fontSize: 'clamp(36px, 3.2vw, 52px)', fontWeight: 900, lineHeight: 0.95, color: '#fff', marginBottom: 8 }}>
+          Agent<br />
+          <span className="text-gradient-green">War Room</span>
+        </h2>
 
-  /* Sequential card reveal — one every 280 ms */
-  const agents = data || []
-  useEffect(() => {
-    if (!agents.length) return
-    setVisible(0)
-    const timers = agents.map((_, i) =>
-      setTimeout(() => setVisible(v => Math.max(v, i + 1)), i * 280)
-    )
-    return () => timers.forEach(clearTimeout)
-  }, [agents.length])
+        <p style={{ fontSize: 11, color: 'rgba(226,232,240,0.48)', lineHeight: 1.65, maxWidth: 220 }}>
+          7 autonomous agents — parallel analysis, priority escalation,
+          reasoning through simulated smart-campus resource logs.
+        </p>
+      </div>
 
-  const refresh = async () => {
-    setLoading(true)
-    try {
-      const res = await getWarRoom()
-      setData(res.data.war_room)
-      setVisible(0)
-    } catch (e) { console.error(e) }
-    finally { setLoading(false) }
-  }
+      {/* Agent status list */}
+      <div style={{
+        background: 'rgba(3,7,18,0.75)',
+        backdropFilter: 'blur(18px)',
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderRadius: 16,
+        padding: '16px 18px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <div
+              className="war-dot-pulse"
+              style={{
+                width: 5, height: 5, borderRadius: '50%',
+                background: replayPhase === 'resetting' ? '#475569' : replayPhase === 'done' ? '#4ade80' : '#00ff88',
+                transition: 'background 0.3s ease',
+              }}
+            />
+            <span style={{
+              fontSize: 10, fontWeight: 600,
+              color: replayPhase === 'resetting' ? '#475569' : replayPhase === 'done' ? '#4ade80' : '#00ff88',
+              transition: 'color 0.3s ease',
+            }}>
+              {replayPhase === 'resetting'  ? 'Resetting System'    :
+               replayPhase === 'sequencing' ? 'Running Sequence'    :
+               replayPhase === 'done'       ? 'Sequence Complete'   :
+               'System Online'}
+            </span>
+          </div>
+          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)' }}>
+            {replayPhase ? 'Multi-agent pipeline' : 'All systems operational'}
+          </span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {AGENT_META.map((meta, i) => {
+            const currentIdx = AGENT_META.findIndex(m => m.id === activeAgent)
+            let statusLabel = 'Active'
+            let statusColor = meta.color
+
+            if (replayPhase === 'resetting') {
+              statusLabel = 'Resetting'
+              statusColor = '#334155'
+            } else if (replayPhase === 'sequencing') {
+              if (currentIdx === -1 || i > currentIdx) {
+                statusLabel = 'Waiting'
+                statusColor = '#334155'
+              } else if (i === currentIdx) {
+                statusLabel = '◉ Activating'
+                statusColor = meta.color
+              } else {
+                statusLabel = '✓ Analyzed'
+                statusColor = '#00ff88'
+              }
+            } else if (replayPhase === 'done') {
+              statusLabel = '✓ Complete'
+              statusColor = '#00ff88'
+            } else {
+              const isWasteAnalyzed = meta.id === 'waste' && !!wasteResult
+              statusLabel = isWasteAnalyzed ? '✓ Analyzed' : 'Active'
+              statusColor = isWasteAnalyzed ? '#00ff88' : meta.color
+            }
+
+            return (
+              <div key={meta.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  width: 4, height: 4, borderRadius: '50%', background: statusColor,
+                  boxShadow: `0 0 5px ${statusColor}`, flexShrink: 0,
+                  transition: 'background 0.3s ease, box-shadow 0.3s ease',
+                }} />
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', flex: 1 }}>{meta.label}</span>
+                <span style={{ fontSize: 9, color: statusColor, fontWeight: 600, transition: 'color 0.3s ease' }}>
+                  {statusLabel}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Re-run button */}
+      <button
+        onClick={onRefresh}
+        disabled={loading}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+          padding: '11px 18px',
+          borderRadius: 10,
+          background: loading ? 'rgba(0,229,255,0.10)' : 'rgba(0,229,255,0.06)',
+          border: `1px solid rgba(0,229,255,${loading ? '0.40' : '0.22'})`,
+          color: '#00e5ff',
+          fontSize: 12, fontWeight: 600,
+          cursor: loading ? 'not-allowed' : 'pointer',
+          transition: 'all 0.25s ease',
+          backdropFilter: 'blur(12px)',
+          boxShadow: loading ? '0 0 18px rgba(0,229,255,0.18)' : 'none',
+        }}
+        onMouseEnter={e => { if (!loading) e.currentTarget.style.background = 'rgba(0,229,255,0.12)' }}
+        onMouseLeave={e => { if (!loading) e.currentTarget.style.background = 'rgba(0,229,255,0.06)' }}
+      >
+        <RefreshCw size={13} style={{ animation: loading ? 'missionSpin 1s linear infinite' : 'none' }} />
+        {replayPhase === 'resetting'   ? 'Resetting…'   :
+         replayPhase === 'sequencing'  ? 'Activating…'  :
+         replayPhase === 'done'        ? 'Complete'     :
+         'Re-run Agents'}
+      </button>
+
+      {/* Hint glass badge */}
+      <div style={{
+        padding: '7px 12px',
+        borderRadius: 10,
+        background: 'rgba(0,229,255,0.04)',
+        border: '1px solid rgba(0,229,255,0.18)',
+        backdropFilter: 'blur(12px)',
+      }}>
+        <p style={{ fontSize: 10, color: 'rgba(0,229,255,0.70)', lineHeight: 1.55, letterSpacing: '0.04em' }}>
+          Select an agent node or control below to inspect Gemini reasoning.
+        </p>
+      </div>
+
+      {/* Agent selector grid */}
+      <div style={{
+        background: 'rgba(3,7,18,0.75)',
+        backdropFilter: 'blur(18px)',
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderRadius: 16,
+        padding: '12px 14px',
+      }}>
+        <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', marginBottom: 10 }}>
+          Agent Controls
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
+          {AGENT_META.map(meta => {
+            const isActive = activeAgent === meta.id
+            return (
+              <button
+                key={meta.id}
+                onClick={() => onSelectAgent(isActive ? null : meta.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '7px 10px',
+                  borderRadius: 8,
+                  background: isActive ? `${meta.color}14` : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${isActive ? meta.color + '55' : 'rgba(255,255,255,0.07)'}`,
+                  color: isActive ? meta.color : 'rgba(255,255,255,0.60)',
+                  fontSize: 10.5, fontWeight: isActive ? 700 : 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  textAlign: 'left',
+                  boxShadow: isActive ? `0 0 12px ${meta.color}22` : 'none',
+                  gridColumn: meta.id === 'decision' ? 'span 2' : undefined,
+                }}
+                onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#fff' } }}
+                onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.color = 'rgba(255,255,255,0.60)' } }}
+              >
+                <div style={{
+                  width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                  background: meta.color,
+                  boxShadow: isActive ? `0 0 8px ${meta.color}` : `0 0 4px ${meta.color}88`,
+                }} />
+                {meta.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Center stage ───────────────────────────────────── */
+function CenterStage({ agents, activeAgent, setActiveAgent, wasteResult }) {
+  const [hovered, setHovered] = useState(null)
+  const focused = hovered || activeAgent   // hovered takes visual priority
+
+  const handleClick = useCallback((id) => {
+    setActiveAgent(prev => prev === id ? null : id)
+  }, [setActiveAgent])
 
   return (
-    <section className="px-6 py-16 max-w-7xl mx-auto" id="warroom">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-3xl font-black text-white mb-2">
-            Agent <span className="text-gradient-green">War Room</span>
-          </h2>
-          <p className="text-slate-400 text-sm">
-            7 autonomous agents — each analysing a distinct resource domain and escalating
-            prioritised findings through a 3-phase execution pipeline.
-          </p>
-        </div>
-        <button onClick={refresh} disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-cyan-400 font-medium glass-card hover:border-cyan-400/40 transition-all">
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Re-run Agents
-        </button>
-      </div>
+    <div style={{ height: '100%', position: 'relative' }}>
+      {/* Positioning anchor: top=43% moves network UP onto the stage circle */}
+      <div style={{
+        position: 'absolute',
+        top: '40%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: `min(${AW}px, 60vh)`,
+        aspectRatio: '1 / 1',
+      }}>
+      {/* Scale wrapper for "focus" zoom */}
+      <motion.div
+        animate={{ scale: activeAgent ? 1.03 : 1 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+        }}
+      >
+        {/* Scanning sweep line — always animating */}
+        <div style={{
+          position: 'absolute', left: 0, right: 0, top: 0, height: 2, zIndex: 4, pointerEvents: 'none',
+          background: 'linear-gradient(90deg, transparent, rgba(0,229,255,0.55), rgba(0,255,136,0.35), transparent)',
+          animation: 'warScan 6s ease-in-out infinite',
+          boxShadow: '0 0 20px rgba(0,229,255,0.4), 0 2px 40px rgba(0,229,255,0.15)',
+        }} />
 
-      {agents.length === 0 ? (
-        <div className="glass-card p-16 text-center">
-          <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-400">Run a sustainability scan to activate the agent war room.</p>
+        {/* SVG connections */}
+        <ConnectionsSVG focused={focused} />
+
+        {/* Gemini Core rings + sphere */}
+        <GeminiCore />
+
+        {/* Agent nodes */}
+        {AGENT_META.map(meta => (
+          <AgentNode
+            key={meta.id}
+            meta={meta}
+            isActive={activeAgent === meta.id}
+            isHovered={hovered === meta.id}
+            isAnyFocused={!!(activeAgent || hovered)}
+            onClick={handleClick}
+            onMouseEnter={setHovered}
+            onMouseLeave={() => setHovered(null)}
+            agentData={agents?.find?.(a =>
+              a.agent?.toLowerCase().includes(meta.label.toLowerCase()) ||
+              (meta.id === 'decision' && a.agent?.toLowerCase().includes('decision'))
+            )}
+            isAnalyzed={meta.id === 'waste' && !!wasteResult}
+          />
+        ))}
+
+      </motion.div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Main export ────────────────────────────────────── */
+export default function AgentWarRoom({ initialData, wasteResult }) {
+  const [agents,       setAgents]      = useState(initialData)
+  const [loading,      setLoading]     = useState(false)
+  const [activeAgent,  setActiveAgent] = useState(null)
+  const [replayPhase,  setReplayPhase] = useState(null) // null | 'resetting' | 'sequencing' | 'done'
+
+  const delay = (ms) => new Promise(r => setTimeout(r, ms))
+
+  const replayAll = useCallback(async () => {
+    if (loading) return
+    setLoading(true)
+    setActiveAgent(null)
+    setReplayPhase('resetting')
+    await delay(500)
+
+    setReplayPhase('sequencing')
+    for (const meta of AGENT_META) {
+      setActiveAgent(meta.id)
+      await delay(680)
+    }
+
+    setActiveAgent(null)
+    setReplayPhase('done')
+    await delay(300)
+    setReplayPhase(null)
+
+    try {
+      const res = await getWarRoom()
+      setAgents(res.data.war_room)
+    } catch (e) { console.error(e) }
+    finally { setLoading(false) }
+  }, [loading])
+
+  const isEmpty = !agents?.length
+
+  const rightFocused = activeAgent
+
+  return (
+    <section
+      id="warroom"
+      style={{
+        width: '100%',
+        height: 'calc(100vh - 72px)',
+        position: 'relative',
+        overflow: 'hidden',
+        '--warroom-core-size': 'min(520px, 62vh)',
+        '--warroom-core-x': '50%',
+        '--warroom-core-y': '43%',
+      }}
+    >
+      {/* ── Background: provided war-room image + dark overlay ── */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0,
+        backgroundImage: 'url(/war-room-bg.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center center',
+        backgroundRepeat: 'no-repeat',
+      }} />
+      {/* Dark overlay for readability */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 1,
+        background: 'rgba(1,4,14,0.40)',
+      }} />
+      {/* Fine grid overlay */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 1,
+        backgroundImage: [
+          'linear-gradient(rgba(0,229,255,0.016) 1px, transparent 1px)',
+          'linear-gradient(90deg, rgba(0,229,255,0.016) 1px, transparent 1px)',
+        ].join(','),
+        backgroundSize: '54px 54px',
+        pointerEvents: 'none',
+      }} />
+      {/* Radial vignette */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 80% 80% at 50% 50%, transparent 25%, rgba(0,0,0,0.55) 100%)',
+      }} />
+      {/* Top + bottom fog */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
+        background: 'linear-gradient(0deg, rgba(0,2,8,0.55) 0%, transparent 12%, transparent 88%, rgba(0,2,8,0.50) 100%)',
+      }} />
+      {/* Central cyan reactor glow */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 38% 38% at 50% 50%, rgba(0,229,255,0.045) 0%, transparent 70%)',
+      }} />
+
+      {/* Ambient particles */}
+      <BackgroundParticles />
+
+      {/* ── Content ── */}
+      {isEmpty ? (
+        <div style={{
+          position: 'relative', zIndex: 10,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          height: '100vh',
+        }}>
+          <div style={{
+            background: 'rgba(3,7,18,0.88)', backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(0,229,255,0.1)', borderRadius: 20,
+            padding: '44px 64px', textAlign: 'center',
+          }}>
+            <p style={{ color: 'rgba(226,232,240,0.38)', fontSize: 14 }}>
+              Run a campus scan to activate the command center.
+            </p>
+          </div>
         </div>
       ) : (
-        <>
-          <PipelineHeader visibleCount={visible} />
-          <AgentFeed agents={agents} />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {agents.map((agent, i) => (
-              <AgentCard
-                key={i}
-                agent={agent}
-                cardIdx={i}
-                animDelay={0}
-                visible={i < visible}
-              />
-            ))}
-          </div>
-        </>
+        <div style={{
+          position: 'relative', zIndex: 10,
+          maxWidth: 1440, margin: '0 auto',
+          display: 'grid',
+          gridTemplateColumns: '280px 1fr 390px',
+          gap: 24,
+          height: '100%',
+          alignItems: 'stretch',
+          padding: '88px 48px 24px',
+        }}>
+          <LeftColumn loading={loading} onRefresh={replayAll} replayPhase={replayPhase} wasteResult={wasteResult} activeAgent={activeAgent} onSelectAgent={setActiveAgent} />
+          <CenterStage agents={agents} activeAgent={activeAgent} setActiveAgent={setActiveAgent} wasteResult={wasteResult} />
+          <RightColumn focusedAgent={rightFocused} agents={agents} wasteResult={wasteResult} />
+        </div>
       )}
-
-      <div className="mt-6 flex flex-wrap items-center gap-5 text-xs text-slate-600">
-        {Object.entries(STATUS_CHIP).map(([k, v]) => (
-          <div key={k} className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: v.color }} />
-            <span style={{ color: v.color }}>{v.label}</span>
-          </div>
-        ))}
-      </div>
     </section>
   )
 }

@@ -14,129 +14,197 @@ import DigitalTwinCampus from './components/DigitalTwinCampus'
 import SustainabilityAchievements from './components/SustainabilityAchievements'
 import IndiaGlobalSection from './components/IndiaGlobalSection'
 import { getDashboardSummary, analyzeWater, analyzeEnergy, getWarRoom, generateActionPlan } from './api'
-import { CheckCircle, Cpu, Sun, Moon } from 'lucide-react'
+import { CheckCircle } from 'lucide-react'
 
-/* ── Mission Control sequence ─────────────────────────────── */
+/* ── Mission sequence ─────────────────────────────── */
 const MISSION_STEPS = [
-  { icon: '🛰', text: 'Connecting to Campus Resource Network' },
-  { icon: '♻️', text: 'Waste Agent Online — Knowledge base loaded' },
-  { icon: '💧', text: 'Water Agent Online — Night-flow logs indexed' },
-  { icon: '⚡', text: 'Energy Agent Online — Anomaly detection active' },
-  { icon: '🌿', text: 'Environmental Intelligence — Impact models ready' },
-  { icon: '🧠', text: 'Decision Engine — Interventions ranked by priority' },
-  { icon: '📊', text: 'RE:GEN Score Calculated — Executive report ready' },
-  { icon: '✅', text: 'Campus Scan Complete' },
+  { phase: 'INIT',    text: 'Initializing RE:GEN intelligence layer' },
+  { phase: 'AGENTS',  text: 'Connecting 7 specialized agents' },
+  { phase: 'TWIN',    text: 'Loading campus digital twin' },
+  { phase: 'SCAN',    text: 'Scanning building infrastructure' },
+  { phase: 'WATER',   text: 'Detecting hidden water loss' },
+  { phase: 'ENERGY',  text: 'Auditing energy anomalies' },
+  { phase: 'CARBON',  text: 'Estimating carbon footprint' },
+  { phase: 'GEMINI',  text: 'Gemini reasoning over findings' },
+  { phase: 'REPORT',  text: 'Generating executive report' },
+  { phase: 'DONE',    text: 'Mission complete' },
 ]
 
+const RING_R    = 108
+const RING_CIRC = 2 * Math.PI * RING_R
+
 function MissionControlOverlay({ step, isComplete }) {
-  const pct = Math.round(
-    (Math.min(step, MISSION_STEPS.length - 1) / (MISSION_STEPS.length - 1)) * 100
-  )
+  const total     = MISSION_STEPS.length - 1
+  const pct       = Math.round((Math.min(step, total) / total) * 100)
+  const dashOff   = RING_CIRC * (1 - pct / 100)
+  const current   = MISSION_STEPS[Math.min(step, total)]
 
   return (
     <div className="mission-overlay">
-      {/* Aurora inside overlay */}
-      <div className="aurora-1" style={{ opacity: 0.3 }} />
-      <div className="aurora-2" style={{ opacity: 0.2 }} />
+      <div className="aurora-1" style={{ opacity: 0.25 }} />
+      <div className="aurora-2" style={{ opacity: 0.15 }} />
+      <div className="absolute inset-0 grid-bg pointer-events-none" style={{ opacity: 0.06 }} />
+      <div
+        className="scan-sweep absolute inset-x-0 h-px pointer-events-none"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(0,229,255,0.4), transparent)' }}
+      />
 
-      <div className="absolute inset-0 grid-bg opacity-10 pointer-events-none" />
-      <div className="scan-sweep absolute left-0 right-0 h-px pointer-events-none"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(0,229,255,0.35), transparent)' }} />
+      <div className="relative z-10 flex flex-col items-center px-6 max-w-md w-full">
 
-      <div className="relative z-10 max-w-lg w-full px-6 sm:px-10">
+        {/* Circular progress ring + logo */}
+        <div className="relative mb-5" style={{ width: 256, height: 256 }}>
+          <svg
+            className="absolute inset-0"
+            width="256"
+            height="256"
+            style={{ transform: 'rotate(-90deg)' }}
+          >
+            <circle
+              cx={128} cy={128} r={RING_R}
+              fill="none"
+              stroke="rgba(255,255,255,0.05)"
+              strokeWidth={1.5}
+            />
+            <circle
+              cx={128} cy={128} r={RING_R}
+              fill="none"
+              stroke="url(#missionGrad)"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeDasharray={RING_CIRC}
+              strokeDashoffset={dashOff}
+              style={{
+                transition: 'stroke-dashoffset 0.75s cubic-bezier(0.4,0,0.2,1)',
+                filter: 'drop-shadow(0 0 8px rgba(0,255,136,0.5))',
+              }}
+            />
+            <defs>
+              <linearGradient id="missionGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%"   stopColor="#00ff88" />
+                <stop offset="100%" stopColor="#00e5ff" />
+              </linearGradient>
+            </defs>
+          </svg>
 
-        {/* Logo + header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
+          <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative">
-              <div className="absolute -inset-3 rounded-2xl hero-logo-ring" />
-              <img src="/src/assets/logo.jpeg" alt="RE:GEN AI"
-                style={{ width: 72, height: 72, borderRadius: 12, objectFit: 'cover', position: 'relative', zIndex: 10,
-                  boxShadow: '0 0 20px rgba(0,255,136,0.3)' }} />
+              <div className="absolute hero-logo-ring" style={{ inset: -5, borderRadius: 18 }} />
+              <img
+                src="/src/assets/logo.jpeg"
+                alt="RE:GEN AI"
+                style={{
+                  width: 92, height: 92,
+                  borderRadius: 14,
+                  objectFit: 'cover',
+                  position: 'relative',
+                  zIndex: 10,
+                  boxShadow: '0 0 28px rgba(0,255,136,0.4)',
+                }}
+              />
             </div>
           </div>
-          <div className="inline-flex items-center gap-2 mb-3">
-            <Cpu className="w-4 h-4 text-cyan-400" />
-            <span className="text-xs text-cyan-400 uppercase tracking-[0.3em] font-bold">Mission Control</span>
-          </div>
-          <h1 className="text-4xl font-black text-gradient-green">RE:GEN AI</h1>
-          <p className="text-xs mt-1" style={{ color: '#64748b' }}>Sustainability Intelligence OS · Campus Scan Initializing</p>
         </div>
 
-        {/* Progress bar */}
-        <div className="mb-7">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs text-slate-500 uppercase tracking-wider">Scan Progress</span>
-            <span className="text-xs font-bold" style={{ color: isComplete ? '#00ff88' : '#00e5ff' }}>
-              {pct}%
+        {/* Percentage */}
+        <div className="text-center mb-4">
+          <p
+            className="font-black text-gradient-green"
+            style={{ fontSize: 52, lineHeight: 1 }}
+          >
+            {pct}%
+          </p>
+          <p
+            className="text-xs uppercase mt-1"
+            style={{ color: '#475569', letterSpacing: '0.22em' }}
+          >
+            Campus Scan
+          </p>
+        </div>
+
+        {/* Phase chip + current step */}
+        <div className="text-center mb-5">
+          <div
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-2"
+            style={
+              isComplete
+                ? { background: 'rgba(0,255,136,0.08)', border: '1px solid rgba(0,255,136,0.22)' }
+                : { background: 'rgba(0,229,255,0.05)', border: '1px solid rgba(0,229,255,0.18)' }
+            }
+          >
+            <div
+              className={`w-1.5 h-1.5 rounded-full ${
+                isComplete ? 'bg-green-400' : 'bg-cyan-400 animate-pulse'
+              }`}
+            />
+            <span
+              className={`text-xs font-bold uppercase ${
+                isComplete ? 'text-green-400' : 'text-cyan-400'
+              }`}
+              style={{ letterSpacing: '0.2em' }}
+            >
+              {current.phase}
             </span>
           </div>
-          <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-700 ease-out" style={{
-              width: `${pct}%`,
-              background: isComplete
-                ? 'linear-gradient(90deg, #00ff88, #00e5ff)'
-                : 'linear-gradient(90deg, #00e5ff, #3b82f6)',
-              boxShadow: isComplete
-                ? '0 0 14px rgba(0,255,136,0.55)'
-                : '0 0 12px rgba(0,229,255,0.4)',
-            }} />
-          </div>
+          <p className="text-sm font-medium" style={{ color: '#cbd5e1' }}>
+            {current.text}
+            {!isComplete && <span className="terminal-cursor" />}
+          </p>
         </div>
 
         {/* Step list */}
-        <div className="space-y-2 mb-7">
-          {MISSION_STEPS.map((s, i) => {
-            const done    = i < step || isComplete
-            const active  = i === step && !isComplete
-            const pending = i > step && !isComplete
+        <div className="w-full space-y-1">
+          {MISSION_STEPS.slice(0, -1).map((s, i) => {
+            const done   = i < step || isComplete
+            const active = i === step && !isComplete
             return (
-              <div key={i} className={`flex items-center gap-3 transition-all duration-500 ${pending ? 'opacity-20' : ''}`}>
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 transition-all duration-500 ${
-                  done   ? 'bg-green-500/20' :
-                  active ? 'bg-cyan-500/20 ring-1 ring-cyan-400/50' :
-                           'bg-slate-800'
-                }`}>
-                  {done   ? <span className="text-green-400 text-xs">✓</span> :
-                   active ? <span className="text-cyan-400 animate-pulse">→</span> :
-                            <span className="text-slate-600 text-xs">○</span>}
+              <div
+                key={i}
+                className="flex items-center gap-2.5 px-3 py-1 rounded-lg transition-all duration-500"
+                style={{
+                  opacity: i > step && !isComplete ? 0.2 : 1,
+                  background: active ? 'rgba(0,229,255,0.05)' : 'transparent',
+                }}
+              >
+                <div
+                  className="w-3.5 h-3.5 rounded-full flex-shrink-0 flex items-center justify-center"
+                  style={{
+                    background: done
+                      ? 'rgba(0,255,136,0.14)'
+                      : active
+                      ? 'rgba(0,229,255,0.14)'
+                      : 'rgba(30,41,59,1)',
+                    boxShadow: active ? '0 0 0 1px rgba(0,229,255,0.35)' : 'none',
+                    fontSize: 9,
+                    color: done ? '#00ff88' : active ? '#00e5ff' : '#475569',
+                  }}
+                >
+                  {done ? '✓' : active ? '→' : '·'}
                 </div>
-                <span className={`text-sm transition-all duration-300 ${
-                  done   ? 'text-green-400' :
-                  active ? 'text-cyan-300 font-semibold mission-step-active' :
-                           'text-slate-700'
-                }`}>
-                  <span className="mr-2">{s.icon}</span>{s.text}
+                <span
+                  className="text-xs"
+                  style={{
+                    color: done ? '#00ff88' : active ? '#7dd3fc' : '#475569',
+                    fontWeight: active ? 600 : 400,
+                  }}
+                >
+                  {s.text}
                 </span>
               </div>
             )
           })}
         </div>
 
-        {/* Status chip */}
-        <div className={`p-4 rounded-xl text-center border transition-all duration-700 ${
-          isComplete
-            ? 'bg-green-500/8 border-green-500/30'
-            : 'bg-cyan-500/5 border-cyan-500/18'
-        }`}>
-          <div className="flex items-center justify-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isComplete ? 'bg-green-400' : 'bg-cyan-400 animate-pulse'}`} />
-            <span className={`text-xs uppercase tracking-widest font-bold ${isComplete ? 'text-green-400' : 'text-cyan-400'}`}>
-              {isComplete ? 'Scan Complete — Loading Dashboard...' : 'Scanning Campus Systems'}
-            </span>
-          </div>
-          {isComplete && (
-            <p className="text-xs text-slate-400 fade-in mt-1">
-              7 agents — multi-domain analysis complete
-            </p>
-          )}
-        </div>
+        {isComplete && (
+          <p className="fade-in text-xs font-medium mt-4" style={{ color: '#4ade80' }}>
+            Loading dashboard...
+          </p>
+        )}
       </div>
     </div>
   )
 }
 
-/* ── Toast ──────────────────────────────────────────────────── */
+/* ── Toast ──────────────────────────────────────────── */
 function Toast({ message, onDone }) {
   useEffect(() => {
     const t = setTimeout(onDone, 4000)
@@ -151,38 +219,29 @@ function Toast({ message, onDone }) {
 }
 
 const NAV_MODULES = [
-  { href: '#dashboard',   label: 'Dashboard'     },
-  { href: '#twin',        label: 'Digital Twin'  },
-  { href: '#waste',       label: 'Waste Intel'   },
-  { href: '#water',       label: 'Water'         },
-  { href: '#energy',      label: 'Energy'        },
-  { href: '#heatmap',     label: 'Loss Map'      },
-  { href: '#warroom',     label: 'War Room'      },
-  { href: '#action-plan', label: 'Action Plan'   },
-  { href: '#india',       label: 'India / Global'},
+  { href: '#dashboard',   label: 'Dashboard' },
+  { href: '#twin',        label: 'Twin'      },
+  { href: '#heatmap',     label: 'Loss Map'  },
+  { href: '#warroom',     label: 'War Room'  },
+  { href: '#action-plan', label: 'Report'    },
+  { href: '#india',       label: 'Global'    },
 ]
 
 export default function App() {
-  const [scanDone, setScanDone]             = useState(false)
-  const [loading, setLoading]               = useState(false)
-  const [dashData, setDashData]             = useState(null)
-  const [waterData, setWaterData]           = useState(null)
-  const [energyData, setEnergyData]         = useState(null)
-  const [warRoomData, setWarRoomData]       = useState(null)
-  const [actionPlanData, setActionPlanData] = useState(null)
-  const [error, setError]                   = useState(null)
-  const [toast, setToast]                   = useState(null)
-
+  const [scanDone, setScanDone]               = useState(false)
+  const [loading, setLoading]                 = useState(false)
+  const [dashData, setDashData]               = useState(null)
+  const [waterData, setWaterData]             = useState(null)
+  const [energyData, setEnergyData]           = useState(null)
+  const [warRoomData, setWarRoomData]         = useState(null)
+  const [actionPlanData, setActionPlanData]   = useState(null)
+  const [error, setError]                     = useState(null)
+  const [toast, setToast]                     = useState(null)
   const [showMission, setShowMission]         = useState(false)
   const [missionStep, setMissionStep]         = useState(0)
   const [missionComplete, setMissionComplete] = useState(false)
-
-  const [theme, setTheme] = useState(() => localStorage.getItem('regen-theme') || 'dark')
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme
-    localStorage.setItem('regen-theme', theme)
-  }, [theme])
+  const [wasteResult, setWasteResult]         = useState(null)
+  const [selectedBuilding, setSelectedBuilding] = useState(null)
 
   const runScan = async () => {
     setLoading(true)
@@ -218,7 +277,7 @@ export default function App() {
       setTimeout(() => {
         setShowMission(false)
         setScanDone(true)
-        setToast('7 agents completed campus sustainability scan.')
+        setToast('Campus scan complete — 7 agents, multi-domain analysis.')
         setTimeout(() => {
           document.getElementById('dashboard')?.scrollIntoView({ behavior: 'smooth' })
         }, 300)
@@ -227,94 +286,161 @@ export default function App() {
       console.error(err)
       stepTimers.forEach(clearTimeout)
       setShowMission(false)
-      setError('Unable to reach RE:GEN AI backend. Ensure the FastAPI server is running on port 8000.')
+      setError(
+        'Unable to reach RE:GEN AI backend. Ensure the FastAPI server is running on port 8000.'
+      )
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen" style={{ background: theme === 'light' ? '#f0f4f1' : '#030712' }}>
-
+    <div className="min-h-screen" style={{ background: '#030712' }}>
       {showMission && (
         <MissionControlOverlay step={missionStep} isComplete={missionComplete} />
       )}
 
-      {/* Fixed nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-2.5 no-print"
+      {/* ── Transparent hero nav (always visible) ── */}
+      <nav
+        className="fixed top-0 left-0 right-0 z-50 no-print"
         style={{
-          background: theme === 'light' ? 'rgba(240,244,241,0.96)' : 'rgba(3,7,18,0.93)',
-          backdropFilter: 'blur(16px)',
-          borderBottom: theme === 'light' ? '1px solid rgba(0,100,60,0.1)' : '1px solid rgba(0,229,255,0.07)',
+          background: scanDone ? 'rgba(3,7,18,0.88)' : 'transparent',
+          backdropFilter: scanDone ? 'blur(20px)' : 'none',
+          WebkitBackdropFilter: scanDone ? 'blur(20px)' : 'none',
+          borderBottom: scanDone ? '1px solid rgba(255,255,255,0.05)' : 'none',
+          transition: 'background 0.5s ease, backdrop-filter 0.5s ease',
+        }}
+      >
+        <div style={{
+          maxWidth: 1440, margin: '0 auto',
+          display: 'grid', gridTemplateColumns: '1fr auto 1fr',
+          alignItems: 'center',
+          padding: '0 28px', height: 64,
+          gap: 16,
         }}>
 
-        {/* Logo + brand */}
-        <a href="#" className="flex items-center gap-2.5 flex-shrink-0">
-          <img src="/src/assets/logo.jpeg" alt="RE:GEN AI"
-            style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover',
-              boxShadow: '0 0 10px rgba(0,255,136,0.3)' }} />
-          <span className="text-sm font-black text-gradient-green">RE:GEN AI</span>
-          <span className="text-xs text-slate-600 hidden sm:block font-medium">Sustainability OS</span>
-        </a>
+          {/* Logo — left cell */}
+          <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none' }}>
+            <img
+              src="/src/assets/logo.jpeg"
+              alt="RE:GEN AI"
+              style={{ width: 26, height: 26, borderRadius: 5, objectFit: 'cover', boxShadow: '0 0 8px rgba(0,255,136,0.30)' }}
+            />
+            <span className="text-sm font-black text-gradient-green">RE:GEN AI</span>
+          </a>
 
-        {/* Module nav */}
-        <div className="flex items-center gap-0.5 overflow-x-auto">
-          {scanDone && NAV_MODULES.map(l => (
-            <a key={l.href} href={l.href} className="nav-module hidden md:inline-flex">
-              {l.label}
-            </a>
-          ))}
-
-          {/* Version badge */}
-          <div className="ml-2 flex items-center gap-1.5 px-3 py-1 rounded-full flex-shrink-0"
-            style={{
-              background: theme === 'light' ? 'rgba(0,200,100,0.07)' : 'rgba(0,255,136,0.07)',
-              border: theme === 'light' ? '1px solid rgba(0,200,100,0.2)' : '1px solid rgba(0,255,136,0.18)',
-            }}>
-            <div className="w-1.5 h-1.5 rounded-full bg-green-400 status-dot-live" />
-            <span style={{ color: '#00cc77' }} className="text-xs font-bold">v1.0</span>
+          {/* Centre nav links — pre-scan: 6 anchors; post-scan: module pills only */}
+          <div
+            className="hidden md:flex items-center justify-center"
+            style={{ gap: scanDone ? 5 : 22, overflow: 'hidden', minWidth: 0 }}
+          >
+            {!scanDone && [
+              { label: 'Mission',      href: '#' },
+              { label: 'Digital Twin', href: '#twin' },
+              { label: 'War Room',     href: '#warroom' },
+              { label: 'Impact',       href: '#india' },
+              { label: 'Reports',      href: '#action-plan' },
+              { label: 'Global',       href: '#india' },
+            ].map(l => (
+              <a
+                key={l.label}
+                href={l.href}
+                style={{
+                  fontSize: 12.5, fontWeight: 500,
+                  color: 'rgba(255,255,255,0.62)',
+                  textDecoration: 'none', letterSpacing: '0.01em',
+                  position: 'relative', paddingBottom: 2,
+                  transition: 'color 0.2s', whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.95)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.62)'}
+              >
+                {l.label}
+              </a>
+            ))}
+            {scanDone && NAV_MODULES.map(l => (
+              <a key={l.href} href={l.href} className="nav-module" style={{ whiteSpace: 'nowrap' }}>{l.label}</a>
+            ))}
           </div>
 
-          {/* Theme toggle */}
-          <button
-            onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-            className="ml-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex-shrink-0"
-            style={theme === 'light'
-              ? { background: 'rgba(0,0,0,0.05)', color: '#475569', border: '1px solid rgba(0,0,0,0.09)' }
-              : { background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.09)' }}
-            title={theme === 'dark' ? 'Executive Mode (Light)' : 'Mission Control (Dark)'}
-          >
-            {theme === 'dark'
-              ? <><Sun className="w-3.5 h-3.5" /><span className="hidden sm:block">Light</span></>
-              : <><Moon className="w-3.5 h-3.5" /><span className="hidden sm:block">Dark</span></>
-            }
-          </button>
+          {/* Right controls — right cell, justify to end */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'flex-end' }}>
+            {/* Launch Mission CTA */}
+            <button
+              onClick={runScan}
+              disabled={loading}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+                padding: '8px 18px',
+                background: 'rgba(255,255,255,0.10)',
+                border: '1px solid rgba(255,255,255,0.20)',
+                borderRadius: 50,
+                color: 'rgba(255,255,255,0.88)',
+                fontSize: 13, fontWeight: 600,
+                cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                transition: 'background 0.2s, border-color 0.2s, transform 0.15s',
+                opacity: loading ? 0.6 : 1,
+              }}
+              onMouseEnter={e => {
+                if (!loading) {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.16)'
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.34)'
+                  e.currentTarget.style.transform = 'translateY(-1px)'
+                }
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.10)'
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.20)'
+                e.currentTarget.style.transform = ''
+              }}
+            >
+              Launch Mission
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.6"
+                  strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {/* LIVE badge */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '5px 10px', borderRadius: 50,
+              background: 'rgba(0,255,136,0.08)',
+              border: '1px solid rgba(0,255,136,0.18)',
+            }}>
+              <div className="w-1.5 h-1.5 rounded-full status-dot-live" style={{ background: '#4ade80' }} />
+              <span style={{ color: '#00cc77', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em' }}>LIVE</span>
+            </div>
+          </div>
         </div>
       </nav>
 
-      <div className="pt-12">
-        <HeroSection onScan={runScan} loading={loading} />
-      </div>
+      {/* ── Hero ── */}
+      <HeroSection onScan={runScan} loading={loading} />
 
       {error && (
-        <div className="mx-6 my-4 p-4 rounded-lg text-sm text-center" style={{
-          background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444',
-        }}>
+        <div
+          className="mx-6 my-4 p-4 rounded-lg text-sm text-center"
+          style={{
+            background: 'rgba(239,68,68,0.08)',
+            border: '1px solid rgba(239,68,68,0.25)',
+            color: '#ef4444',
+          }}
+        >
           {error}
         </div>
       )}
 
       {scanDone && (
         <div className="fade-in">
-
           <div className="section-divider" />
           <CommandCenterDashboard data={dashData} planData={actionPlanData} />
 
           <div className="section-divider" />
-          <DigitalTwinCampus />
+          <DigitalTwinCampus onBuildingSelect={setSelectedBuilding} />
 
           <div className="section-divider" />
-          <WasteAnalyzer />
+          <WasteAnalyzer onResult={setWasteResult} />
 
           <div className="section-divider" />
           <WaterPanel data={waterData} />
@@ -335,35 +461,49 @@ export default function App() {
           <SustainabilityAchievements dashData={dashData} waterData={waterData} energyData={energyData} />
 
           <div className="section-divider" />
-          <AgentWarRoom initialData={warRoomData} />
+          <AgentWarRoom initialData={warRoomData} wasteResult={wasteResult} />
 
           <div className="section-divider" />
-          <ActionPlan data={actionPlanData} />
+          <ActionPlan data={actionPlanData} selectedBuilding={selectedBuilding} />
 
           <div className="section-divider" />
           <WhyThisMatters />
 
           <div className="section-divider" />
           <IndiaGlobalSection />
-
         </div>
       )}
 
-      <footer className="mt-16 py-10 text-center no-print"
-        style={{ borderTop: theme === 'light' ? '1px solid rgba(0,0,0,0.07)' : '1px solid rgba(255,255,255,0.04)' }}>
-        <div className="max-w-2xl mx-auto px-6">
-          <img src="/src/assets/logo.jpeg" alt="RE:GEN AI"
-            style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', margin: '0 auto 12px',
-              boxShadow: '0 0 12px rgba(0,255,136,0.2)' }} />
-          <p className="text-sm font-black text-gradient-green mb-1">RE:GEN AI</p>
-          <p className="text-xs mb-4" style={{ color: theme === 'light' ? '#64748b' : '#475569' }}>
-            Sustainability Intelligence OS · Google Kaggle AI Agents Capstone 2025</p>
-          <div className="h-px mb-4" style={{ background: theme === 'light' ? 'rgba(0,0,0,0.08)' : '#1e293b' }} />
-          <p className="text-xs leading-relaxed" style={{ color: theme === 'light' ? '#9ca3af' : '#374151' }}>
-            All data used is simulated for capstone demonstration purposes.
-            RE:GEN AI is a decision-support prototype and not professional regulatory, financial, or engineering advice.
-            Architecture is designed for future integration with live IoT data sources.
-            No ML training was used — all analysis is rule-based with Gemini AI reasoning augmentation.
+      <footer
+        className="mt-20 py-14 text-center no-print"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
+      >
+        <div className="max-w-lg mx-auto px-6">
+          <img
+            src="/src/assets/logo.jpeg"
+            alt="RE:GEN AI"
+            style={{
+              width: 40, height: 40,
+              borderRadius: 8,
+              objectFit: 'cover',
+              margin: '0 auto 14px',
+              boxShadow: '0 0 16px rgba(0,255,136,0.22)',
+            }}
+          />
+          <p className="font-black text-gradient-green mb-1" style={{ fontSize: 14 }}>
+            RE:GEN AI
+          </p>
+          <p className="text-xs mb-6" style={{ color: '#94a3b8' }}>
+            Sustainability Intelligence OS · Google Kaggle AI Agents: Intensive Vibe Coding Capstone Project 2026
+          </p>
+          <div className="h-px mb-6" style={{ background: 'rgba(255,255,255,0.04)' }} />
+          <p
+            className="text-xs leading-relaxed max-w-md mx-auto"
+            style={{ color: '#64748b' }}
+          >
+            Data is simulated for demonstration purposes. RE:GEN AI is a decision-support
+            prototype — not professional regulatory, financial, or engineering advice.
+            Designed for future integration with live campus IoT infrastructure.
           </p>
         </div>
       </footer>
