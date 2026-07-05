@@ -4,8 +4,6 @@
 
 **Google Kaggle AI Agents: Intensive Vibe Coding Capstone Project 2026**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
 ---
 
 ## The Problem
@@ -191,20 +189,6 @@ sequenceDiagram
 
 ---
 
-## Screenshots
-
-| View | Screenshot |
-|---|---|
-| Hero | ![Hero](docs/screenshots/hero.png) |
-| Digital Twin | ![Digital Twin](docs/screenshots/digital-twin.png) |
-| Agent War Room | ![War Room](docs/screenshots/war-room.png) |
-| Waste Analyzer | ![Waste Agent](docs/screenshots/waste-agent.png) |
-| Report | ![Report](docs/screenshots/report.png) |
-
-> Screenshots must be captured manually — see [docs/screenshots/README.md](docs/screenshots/README.md) for instructions.
-
----
-
 ## Tech Stack
 
 | Layer | Technology |
@@ -272,16 +256,31 @@ The application works without a Gemini API key — all agents fall back to deter
 
 ## Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for full step-by-step instructions.
+### Backend — Render
 
-| Service | Platform | Root directory |
-|---|---|---|
-| Backend | Render (Web Service) | `backend` |
-| Frontend | Vercel | `frontend` |
+1. Create a new **Web Service** on [render.com](https://render.com)
+2. Connect your GitHub repository
+3. Set **Root Directory** to `backend`
+4. Set **Build Command** to `pip install -r requirements.txt`
+5. Set **Start Command** to `uvicorn main:app --host 0.0.0.0 --port $PORT`
+6. Add environment variable: `GEMINI_API_KEY` = your key (optional — app works without it)
 
-Backend start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+### Frontend — Vercel
 
-Frontend env variable: `VITE_API_URL=https://your-render-url.onrender.com`
+1. Import your repository on [vercel.com](https://vercel.com)
+2. Set **Root Directory** to `frontend`, **Framework Preset** to Vite
+3. Add environment variable: `VITE_API_URL` = your Render backend URL (no trailing slash)
+4. Deploy
+
+### Cold Starts
+
+Render free tier spins down after inactivity. The first request after a cold start may take 30–60 seconds. This is expected.
+
+---
+
+## Kaggle Notebook
+
+`regen_ai_capstone_demo.ipynb` — self-contained reproduction of all agent logic. Runs on Kaggle without a backend server. Gemini integration is optional and gracefully skips if no API key is found.
 
 ---
 
@@ -307,20 +306,12 @@ Frontend env variable: `VITE_API_URL=https://your-render-url.onrender.com`
 
 ---
 
-## Demo Video
+## Demo Video Script
 
-> [Watch the 3-minute demo](#) — link to be added after recording
-
-Script: [docs/demo_video_script.md](docs/demo_video_script.md)
+A full 3-minute timestamped script with screen recording checklist is in [docs/demo_video_script.md](docs/demo_video_script.md).
 
 ---
 
 ## Author
 
 **Divya Shree S** — Kaggle Capstone 2026
-
----
-
-## License
-
-MIT

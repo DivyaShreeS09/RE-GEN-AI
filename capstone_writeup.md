@@ -185,8 +185,8 @@ Visual components require human judgment that AI assistance cannot fully replace
 
 ## 13. Demo Links
 
-- **Live demo:** [To be added after deployment]
-- **Demo video:** [To be added after recording]
+- **Kaggle notebook:** `regen_ai_capstone_demo.ipynb` — self-contained, runs without backend, Gemini optional
+- **Demo video script:** `docs/demo_video_script.md` — 3-minute timestamped script
 
 ---
 
@@ -198,7 +198,4 @@ Visual components require human judgment that AI assistance cannot fully replace
 
 ## 15. Deployment
 
-- **Backend (Render):** [To be added after deployment]
-- **Frontend (Vercel):** [To be added after deployment]
-
-See [DEPLOYMENT.md](DEPLOYMENT.md) for full step-by-step deployment instructions.
+Deployment targets: Render (backend, root directory `backend`, start command `uvicorn main:app --host 0.0.0.0 --port $PORT`) and Vercel (frontend, root directory `frontend`, env var `VITE_API_URL`). Full steps are in the README.
