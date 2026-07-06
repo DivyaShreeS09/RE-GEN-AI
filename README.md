@@ -5,7 +5,8 @@
 **Google Kaggle AI Agents: Intensive Vibe Coding Capstone Project 2026**
 
 **Live demo:** [https://frontend-two-rho-85.vercel.app](https://frontend-two-rho-85.vercel.app)  
-**Backend API:** [https://regen-ai-backend.onrender.com/health](https://regen-ai-backend.onrender.com/health)
+**Backend API:** [https://regen-ai-backend.onrender.com/health](https://regen-ai-backend.onrender.com/health)  
+**GitHub:** [https://github.com/DivyaShreeS09/RE-GEN-AI](https://github.com/DivyaShreeS09/RE-GEN-AI)
 
 ---
 
@@ -199,7 +200,7 @@ sequenceDiagram
 | Hero | ![Hero](docs/screenshots/hero.png) |
 | Digital Twin | ![Digital Twin](docs/screenshots/digital-twin.png) |
 | Agent War Room | ![War Room](docs/screenshots/war-room.png) |
-| Waste Analyzer | ![Waste Agent](docs/screenshots/waste-agent.png) |
+| Waste Analyzer | ![Waste Analyzer](docs/screenshots/waste-analyzer.png) |
 | Report | ![Report](docs/screenshots/report.png) |
 
 ---
@@ -330,7 +331,7 @@ Render free tier spins down after inactivity. The first request after a cold sta
 
 ## Demo Video
 
-**Demo video:** To be added after recording.
+**Demo video:** Pending final recording.
 
 A full 3-minute timestamped script with screen recording checklist is in [docs/demo_video_script.md](docs/demo_video_script.md).
 
