@@ -6,7 +6,8 @@
 
 **Live demo:** [https://frontend-two-rho-85.vercel.app](https://frontend-two-rho-85.vercel.app)  
 **Backend API:** [https://regen-ai-backend.onrender.com/health](https://regen-ai-backend.onrender.com/health)  
-**GitHub:** [https://github.com/DivyaShreeS09/RE-GEN-AI](https://github.com/DivyaShreeS09/RE-GEN-AI)
+**GitHub:** [https://github.com/DivyaShreeS09/RE-GEN-AI](https://github.com/DivyaShreeS09/RE-GEN-AI)  
+**Demo video:** [https://youtu.be/pLlweeJ1piU](https://youtu.be/pLlweeJ1piU)
 
 ---
 
@@ -331,9 +332,11 @@ Render free tier spins down after inactivity. The first request after a cold sta
 
 ## Demo Video
 
-A 3-minute timestamped demo script covering every feature is in [docs/demo_video_script.md](docs/demo_video_script.md).
+[![RE:GEN AI — Full Walkthrough](https://img.youtube.com/vi/pLlweeJ1piU/maxresdefault.jpg)](https://youtu.be/pLlweeJ1piU)
 
-The script walks through: hero launch → digital twin → agent war room → waste analyzer → executive report, with exact UI interactions and expected outputs at each step.
+**[Watch on YouTube →](https://youtu.be/pLlweeJ1piU)**
+
+The walkthrough covers: hero launch → digital twin → agent war room → waste analyzer → executive report. A timestamped script is also in [docs/demo_video_script.md](docs/demo_video_script.md).
 
 ---
 
