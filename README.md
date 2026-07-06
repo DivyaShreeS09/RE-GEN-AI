@@ -197,11 +197,11 @@ sequenceDiagram
 
 | View | Screenshot |
 |---|---|
-| Hero | ![Hero](docs/screenshots/hero.png) |
-| Digital Twin | ![Digital Twin](docs/screenshots/digital-twin.png) |
-| Agent War Room | ![War Room](docs/screenshots/war-room.png) |
-| Waste Analyzer | ![Waste Analyzer](docs/screenshots/waste-analyzer.png) |
-| Report | ![Report](docs/screenshots/report.png) |
+| Hero | ![Hero](docs/screenshots/hero.jpg) |
+| Digital Twin | ![Digital Twin](docs/screenshots/digital-twin.jpg) |
+| Agent War Room | ![War Room](docs/screenshots/war-room.jpg) |
+| Waste Analyzer | ![Waste Analyzer](docs/screenshots/waste-analyzer.jpg) |
+| Report | ![Report](docs/screenshots/report.jpg) |
 
 ---
 
@@ -331,9 +331,9 @@ Render free tier spins down after inactivity. The first request after a cold sta
 
 ## Demo Video
 
-**Demo video:** Pending final recording.
+A 3-minute timestamped demo script covering every feature is in [docs/demo_video_script.md](docs/demo_video_script.md).
 
-A full 3-minute timestamped script with screen recording checklist is in [docs/demo_video_script.md](docs/demo_video_script.md).
+The script walks through: hero launch → digital twin → agent war room → waste analyzer → executive report, with exact UI interactions and expected outputs at each step.
 
 ---
 
