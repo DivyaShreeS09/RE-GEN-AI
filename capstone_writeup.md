@@ -46,7 +46,7 @@ RE:GEN AI demonstrates that a small, well-structured agent system can surface hi
 
 ## 4. Agent Architecture
 
-All agents live in `backend/agents/`. They are plain Python functions — no external agent framework required. Orchestration happens in `backend/main.py` via a FastAPI endpoint (`POST /api/war-room`) that sequences agents and passes outputs between them.
+All agents live in `backend/agents/`. They are plain Python functions — no external agent framework required. Orchestration happens in `backend/main.py` via a FastAPI endpoint (`GET /agent-war-room`) that sequences agents and passes outputs between them.
 
 ```
 Water Agent ─────┐
@@ -88,7 +88,7 @@ If `GEMINI_API_KEY` is absent or the API call fails, every call site falls back 
 
 **Tool and data lookup:** The Waste-to-Wealth agent performs a knowledge-base lookup (JSON) keyed by material type. Water and energy agents query pandas DataFrames loaded from CSVs. These are analogues of the tool-use pattern in LLM agent frameworks.
 
-**Agent orchestration:** `POST /api/war-room` sequences all agents, passes water and energy results to the Impact Agent, passes all three to the Decision Engine, and passes everything to the Score Agent. The sequence is explicit and auditable.
+**Agent orchestration:** `GET /agent-war-room` sequences all agents, passes water and energy results to the Impact Agent, passes all three to the Decision Engine, and passes everything to the Score Agent. The sequence is explicit and auditable.
 
 **State and memory:** Frontend React state holds all agent outputs after a War Room run. Downstream components (Action Plan, Dashboard, Report) read from this shared state. The Waste Agent caches its knowledge base in a module-level variable to avoid reloading on every call.
 
@@ -145,7 +145,7 @@ The Decision Engine uses a separate scoring formula for ranking interventions: u
 
 **Data:** Water and energy data are synthetic CSVs in `backend/data/`. The waste knowledge base is a JSON file with 30 material entries, each containing hazard level, estimated value range, possible products, buyer types, and sustainability notes.
 
-**API:** Primary endpoint `POST /api/war-room` runs the full pipeline. Individual endpoints allow per-agent debugging. `/api/generate-report` assembles the executive brief.
+**API:** Primary endpoint `GET /agent-war-room` runs the full pipeline. Individual endpoints allow per-agent debugging. `/api/generate-report` assembles the executive brief.
 
 ---
 
@@ -194,7 +194,7 @@ Visual components require human judgment that AI assistance cannot fully replace
 
 ## 14. GitHub
 
-[https://github.com/DivyaShreeS09/regen-ai](https://github.com/DivyaShreeS09/regen-ai)
+[https://github.com/DivyaShreeS09/RE-GEN-AI](https://github.com/DivyaShreeS09/RE-GEN-AI)
 
 ---
 

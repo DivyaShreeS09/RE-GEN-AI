@@ -16,7 +16,7 @@ Before recording:
 - [ ] Microphone tested — clear audio, no background noise
 - [ ] Browser dev tools closed
 - [ ] All test data pre-loaded (run War Room once before recording so data is ready)
-- [ ] Waste Analyzer: have "e-waste" and "50" ready to type
+- [ ] Waste Analyzer: coconut shell (50 kg) auto-runs on load; have "e-waste" ready to switch to for hazard demo
 - [ ] Screen recording software started and tested
 
 ---
@@ -91,13 +91,13 @@ Before recording:
 
 > "The Waste-to-Wealth Analyzer lets the sustainability officer look up any campus waste material."
 
-**[Screen: Type "e-waste" in the material field, "50" in the quantity field, click Analyze]**
+**[Screen: Waste Analyzer auto-loads with coconut shell 50 kg — result is already visible]**
 
-> "Fifty kilograms of e-waste. The agent looks up the material in a 30-category knowledge base, checks its hazard level, identifies possible recovery products — like refurbished components or extracted metals — and returns an estimated value range. Note the qualifier: these are estimates. Actual market prices vary."
+> "The agent auto-analyzes coconut shell — 50 kilograms. It looks up the material in a 30-category knowledge base, maps it to recovery pathways like activated carbon or biomass fuel, and returns an estimated value range with three pathway options. Note the qualifier: these are estimates. Actual market prices vary."
 
-**[Screen: If a hazardous material is tested — show the warning]**
+**[Screen: Change material to "e-waste" in the dropdown, click Analyze]**
 
-> "For hazardous materials, the agent suppresses all financial figures and shows a regulatory warning. Gemini is never called for hazardous waste. This is a deliberate safety guardrail."
+> "Switch to e-waste — classified as high hazard. The agent suppresses all financial figures and shows a regulatory warning. Gemini is never called for hazardous waste. This is a deliberate safety guardrail — the system will not generate financial estimates for materials that require licensed handlers."
 
 **[Screen: Scroll to Water Panel or Energy Panel briefly]**
 

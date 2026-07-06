@@ -30,8 +30,8 @@ RE:GEN AI runs a coordinated network of specialized AI agents against simulated 
 
 | Feature | Description |
 |---|---|
-| Digital Twin Campus | Live-updating campus visualization with per-zone resource health indicators |
-| Agent War Room | Real-time agent network visualization — watch agents analyze and report |
+| Digital Twin Campus | Campus visualization from analyzed sensor logs with per-zone resource health indicators |
+| Agent War Room | Animated agent pipeline visualization — watch agents activate and report findings |
 | Waste-to-Wealth Analyzer | Maps 30 waste material types to recovery pathways and estimated value |
 | Water Leakage Agent | Detects night-flow anomalies from 7-day hourly water usage logs |
 | Energy Optimization Agent | Identifies after-hours energy waste across campus zones |
@@ -130,7 +130,7 @@ RE:GEN AI uses **Gemini 2.5 Flash Lite** (`gemini-2.5-flash-lite`) via the `goog
 |---|---|
 | Multi-agent systems | 7 specialized agents, each with a single domain responsibility |
 | Tool / data lookup | Waste agent performs structured KB lookup; water/energy agents query CSVs |
-| Agent orchestration | FastAPI `/api/war-room` endpoint sequences all agents, passes outputs between them |
+| Agent orchestration | FastAPI `GET /agent-war-room` endpoint sequences all agents, passes outputs between them |
 | State and memory | Agent outputs are held in React state and shared across the UI pipeline |
 | Safety guardrails | `core/guardrails.py` — hazard blocking, disclaimer injection, simulated-data notice |
 | Evaluation and scoring | RE:GEN Score (0–100) with weighted sub-components and before/after projection |
@@ -175,7 +175,7 @@ sequenceDiagram
     participant SA as Score Agent
     participant GEM as Gemini 2.5
 
-    FE->>API: POST /api/war-room
+    FE->>API: GET /agent-war-room
     API->>WA: analyze_water()
     API->>EA: analyze_energy()
     WA-->>API: water_result

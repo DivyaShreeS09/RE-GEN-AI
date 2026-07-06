@@ -287,7 +287,7 @@ export default function App() {
       stepTimers.forEach(clearTimeout)
       setShowMission(false)
       setError(
-        'Unable to reach RE:GEN AI backend. Ensure the FastAPI server is running on port 8000.'
+        'Unable to reach the RE:GEN AI backend. The server may be waking from a Render free-tier cold start — wait 30–60 seconds and try again.'
       )
     } finally {
       setLoading(false)
