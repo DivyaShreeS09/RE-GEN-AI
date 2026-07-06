@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { analyzeWaste } from '../api'
 import { AlertTriangle, CheckCircle, Search, Package, Star, TrendingUp, BarChart3 } from 'lucide-react'
 
@@ -162,11 +162,21 @@ function PathwayCard({ title, emoji, description, pros, cons, valueMultiplier, f
 }
 
 export default function WasteAnalyzer({ onResult }) {
-  const [wasteType, setWasteType] = useState('coconut shell')
+  const [wasteType, setWasteType] = useState('e-waste')
   const [quantity, setQuantity] = useState(50)
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  // Auto-run e-waste demo on first load
+  useEffect(() => {
+    analyzeWaste('e-waste', 50)
+      .then(res => {
+        setResult(res.data)
+        if (onResult) onResult(res.data)
+      })
+      .catch(() => {})
+  }, [])
 
   const handleAnalyze = async () => {
     setLoading(true)

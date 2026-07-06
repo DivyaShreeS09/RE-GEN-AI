@@ -802,31 +802,31 @@ function LeftColumn({ loading, onRefresh, replayPhase, wasteResult, activeAgent,
   return (
     <div style={{
       height: '100%', display: 'flex', flexDirection: 'column',
-      padding: '8px 0 8px 0', gap: 10,
+      padding: '8px 0 8px 0', gap: 8,
       overflowY: 'auto', scrollbarWidth: 'none',
     }}>
       {/* Mission title area */}
-      <div>
-        <h2 style={{ fontSize: 'clamp(36px, 3.2vw, 52px)', fontWeight: 900, lineHeight: 0.95, color: '#fff', marginBottom: 8 }}>
+      <div style={{ flexShrink: 0 }}>
+        <h2 style={{ fontSize: 'clamp(24px, 2.8vw, 52px)', fontWeight: 900, lineHeight: 0.95, color: '#fff', marginBottom: 6 }}>
           Agent<br />
           <span className="text-gradient-green">War Room</span>
         </h2>
-
-        <p style={{ fontSize: 11, color: 'rgba(226,232,240,0.48)', lineHeight: 1.65, maxWidth: 220 }}>
+        <p style={{ fontSize: 11, color: 'rgba(226,232,240,0.48)', lineHeight: 1.55, maxWidth: 220 }}>
           7 autonomous agents — parallel analysis, priority escalation,
           reasoning through simulated smart-campus resource logs.
         </p>
       </div>
 
-      {/* Agent status list */}
+      {/* System Status */}
       <div style={{
         background: 'rgba(3,7,18,0.75)',
         backdropFilter: 'blur(18px)',
         border: '1px solid rgba(255,255,255,0.06)',
         borderRadius: 16,
-        padding: '16px 18px',
+        padding: '12px 14px',
+        flexShrink: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
             <div
               className="war-dot-pulse"
@@ -851,7 +851,7 @@ function LeftColumn({ loading, onRefresh, replayPhase, wasteResult, activeAgent,
             {replayPhase ? 'Multi-agent pipeline' : 'All systems operational'}
           </span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
           {AGENT_META.map((meta, i) => {
             const currentIdx = AGENT_META.findIndex(m => m.id === activeAgent)
             let statusLabel = 'Active'
@@ -876,8 +876,17 @@ function LeftColumn({ loading, onRefresh, replayPhase, wasteResult, activeAgent,
               statusColor = '#00ff88'
             } else {
               const isWasteAnalyzed = meta.id === 'waste' && !!wasteResult
-              statusLabel = isWasteAnalyzed ? '✓ Analyzed' : 'Active'
-              statusColor = isWasteAnalyzed ? '#00ff88' : meta.color
+              const isSelected = meta.id === activeAgent
+              if (isSelected) {
+                statusLabel = '◉ Active'
+                statusColor = meta.color
+              } else if (isWasteAnalyzed) {
+                statusLabel = '✓ Analyzed'
+                statusColor = '#00ff88'
+              } else {
+                statusLabel = 'Active'
+                statusColor = meta.color + '99'
+              }
             }
 
             return (
@@ -897,58 +906,19 @@ function LeftColumn({ loading, onRefresh, replayPhase, wasteResult, activeAgent,
         </div>
       </div>
 
-      {/* Re-run button */}
-      <button
-        onClick={onRefresh}
-        disabled={loading}
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-          padding: '11px 18px',
-          borderRadius: 10,
-          background: loading ? 'rgba(0,229,255,0.10)' : 'rgba(0,229,255,0.06)',
-          border: `1px solid rgba(0,229,255,${loading ? '0.40' : '0.22'})`,
-          color: '#00e5ff',
-          fontSize: 12, fontWeight: 600,
-          cursor: loading ? 'not-allowed' : 'pointer',
-          transition: 'all 0.25s ease',
-          backdropFilter: 'blur(12px)',
-          boxShadow: loading ? '0 0 18px rgba(0,229,255,0.18)' : 'none',
-        }}
-        onMouseEnter={e => { if (!loading) e.currentTarget.style.background = 'rgba(0,229,255,0.12)' }}
-        onMouseLeave={e => { if (!loading) e.currentTarget.style.background = 'rgba(0,229,255,0.06)' }}
-      >
-        <RefreshCw size={13} style={{ animation: loading ? 'missionSpin 1s linear infinite' : 'none' }} />
-        {replayPhase === 'resetting'   ? 'Resetting…'   :
-         replayPhase === 'sequencing'  ? 'Activating…'  :
-         replayPhase === 'done'        ? 'Complete'     :
-         'Re-run Agents'}
-      </button>
-
-      {/* Hint glass badge */}
-      <div style={{
-        padding: '7px 12px',
-        borderRadius: 10,
-        background: 'rgba(0,229,255,0.04)',
-        border: '1px solid rgba(0,229,255,0.18)',
-        backdropFilter: 'blur(12px)',
-      }}>
-        <p style={{ fontSize: 10, color: 'rgba(0,229,255,0.70)', lineHeight: 1.55, letterSpacing: '0.04em' }}>
-          Select an agent node or control below to inspect Gemini reasoning.
-        </p>
-      </div>
-
-      {/* Agent selector grid */}
+      {/* Agent selector — directly below System Status, ABOVE Re-run */}
       <div style={{
         background: 'rgba(3,7,18,0.75)',
         backdropFilter: 'blur(18px)',
         border: '1px solid rgba(255,255,255,0.06)',
         borderRadius: 16,
-        padding: '12px 14px',
+        padding: '10px 12px',
+        flexShrink: 0,
       }}>
-        <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', marginBottom: 10 }}>
+        <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', marginBottom: 8 }}>
           Agent Controls
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
           {AGENT_META.map(meta => {
             const isActive = activeAgent === meta.id
             return (
@@ -956,8 +926,8 @@ function LeftColumn({ loading, onRefresh, replayPhase, wasteResult, activeAgent,
                 key={meta.id}
                 onClick={() => onSelectAgent(isActive ? null : meta.id)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 7,
-                  padding: '7px 10px',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '6px 8px',
                   borderRadius: 8,
                   background: isActive ? `${meta.color}14` : 'rgba(255,255,255,0.03)',
                   border: `1px solid ${isActive ? meta.color + '55' : 'rgba(255,255,255,0.07)'}`,
@@ -982,6 +952,48 @@ function LeftColumn({ loading, onRefresh, replayPhase, wasteResult, activeAgent,
             )
           })}
         </div>
+      </div>
+
+      {/* Re-run button */}
+      <button
+        onClick={onRefresh}
+        disabled={loading}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+          padding: '10px 18px',
+          borderRadius: 10,
+          background: loading ? 'rgba(0,229,255,0.10)' : 'rgba(0,229,255,0.06)',
+          border: `1px solid rgba(0,229,255,${loading ? '0.40' : '0.22'})`,
+          color: '#00e5ff',
+          fontSize: 12, fontWeight: 600,
+          cursor: loading ? 'not-allowed' : 'pointer',
+          transition: 'all 0.25s ease',
+          backdropFilter: 'blur(12px)',
+          boxShadow: loading ? '0 0 18px rgba(0,229,255,0.18)' : 'none',
+          flexShrink: 0,
+        }}
+        onMouseEnter={e => { if (!loading) e.currentTarget.style.background = 'rgba(0,229,255,0.12)' }}
+        onMouseLeave={e => { if (!loading) e.currentTarget.style.background = 'rgba(0,229,255,0.06)' }}
+      >
+        <RefreshCw size={13} style={{ animation: loading ? 'missionSpin 1s linear infinite' : 'none' }} />
+        {replayPhase === 'resetting'   ? 'Resetting…'   :
+         replayPhase === 'sequencing'  ? 'Activating…'  :
+         replayPhase === 'done'        ? 'Complete'     :
+         'Re-run Agents'}
+      </button>
+
+      {/* Hint glass badge */}
+      <div style={{
+        padding: '6px 10px',
+        borderRadius: 10,
+        background: 'rgba(0,229,255,0.04)',
+        border: '1px solid rgba(0,229,255,0.18)',
+        backdropFilter: 'blur(12px)',
+        flexShrink: 0,
+      }}>
+        <p style={{ fontSize: 10, color: 'rgba(0,229,255,0.70)', lineHeight: 1.55, letterSpacing: '0.04em' }}>
+          Click an agent node or control above to inspect Gemini reasoning.
+        </p>
       </div>
     </div>
   )
@@ -1171,11 +1183,11 @@ export default function AgentWarRoom({ initialData, wasteResult }) {
           position: 'relative', zIndex: 10,
           maxWidth: 1440, margin: '0 auto',
           display: 'grid',
-          gridTemplateColumns: '280px 1fr 390px',
-          gap: 24,
+          gridTemplateColumns: 'clamp(200px, 20vw, 270px) 1fr clamp(260px, 27vw, 380px)',
+          gap: 'clamp(12px, 1.6vw, 24px)',
           height: '100%',
           alignItems: 'stretch',
-          padding: '88px 48px 24px',
+          padding: 'clamp(66px, 9vh, 88px) clamp(16px, 3.5vw, 48px) 16px',
         }}>
           <LeftColumn loading={loading} onRefresh={replayAll} replayPhase={replayPhase} wasteResult={wasteResult} activeAgent={activeAgent} onSelectAgent={setActiveAgent} />
           <CenterStage agents={agents} activeAgent={activeAgent} setActiveAgent={setActiveAgent} wasteResult={wasteResult} />
