@@ -328,7 +328,9 @@ Render free tier spins down after inactivity. The first request after a cold sta
 
 ---
 
-## Demo Video Script
+## Demo Video
+
+**Demo video:** To be added after recording.
 
 A full 3-minute timestamped script with screen recording checklist is in [docs/demo_video_script.md](docs/demo_video_script.md).
 
