@@ -287,7 +287,7 @@ export default function App() {
       stepTimers.forEach(clearTimeout)
       setShowMission(false)
       setError(
-        'Unable to reach the RE:GEN AI backend. The server may be waking from a Render free-tier cold start — wait 30–60 seconds and try again.'
+        'Unable to reach the RE:GEN AI backend. The server may be warming up from a Render free-tier cold start — please wait 30–60 seconds and try again.'
       )
     } finally {
       setLoading(false)
