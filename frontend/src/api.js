@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // In local dev, Vite proxies /api -> http://localhost:8000
 // In production (Vercel/Netlify), set VITE_API_URL to your backend URL
-const BASE = import.meta.env.VITE_API_URL || '/api'
+const BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/^﻿/, '').trim()
 
 const api = axios.create({ baseURL: BASE })
 

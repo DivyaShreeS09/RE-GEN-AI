@@ -90,7 +90,7 @@ function MissionControlOverlay({ step, isComplete }) {
             <div className="relative">
               <div className="absolute hero-logo-ring" style={{ inset: -5, borderRadius: 18 }} />
               <img
-                src="/src/assets/logo.jpeg"
+                src="/logo.jpeg"
                 alt="RE:GEN AI"
                 style={{
                   width: 92, height: 92,
@@ -322,7 +322,7 @@ export default function App() {
           {/* Logo — left cell */}
           <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none' }}>
             <img
-              src="/src/assets/logo.jpeg"
+              src="/logo.jpeg"
               alt="RE:GEN AI"
               style={{ width: 26, height: 26, borderRadius: 5, objectFit: 'cover', boxShadow: '0 0 8px rgba(0,255,136,0.30)' }}
             />
@@ -480,7 +480,7 @@ export default function App() {
       >
         <div className="max-w-lg mx-auto px-6">
           <img
-            src="/src/assets/logo.jpeg"
+            src="/logo.jpeg"
             alt="RE:GEN AI"
             style={{
               width: 40, height: 40,
