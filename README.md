@@ -244,6 +244,23 @@ RE:GEN AI was developed and refined with AI-assisted engineering throughout the 
 
 ---
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Landing Hero](docs/screenshots/01-landing-hero.png) | ![Analysis Mode Selector](docs/screenshots/02-analysis-mode-selector.png) |
+| **Landing Hero** | **Analysis Mode Selector** |
+| ![Demo Launch](docs/screenshots/03-demo-launch.png) | ![Command Center Dashboard](docs/screenshots/04-dashboard.png) |
+| **Demo Launch** | **Command Center Dashboard** |
+| ![Digital Twin](docs/screenshots/05-digital-twin.png) | ![Agent War Room](docs/screenshots/06-war-room.png) |
+| **Digital Twin** | **Agent War Room** |
+| ![Waste-to-Wealth](docs/screenshots/07-waste-to-wealth.png) | ![Action Plan](docs/screenshots/08-action-plan.png) |
+| **Waste-to-Wealth** | **Action Plan** |
+| ![RE:GEN Score](docs/screenshots/09-regen-score.png) | ![Impact Projection](docs/screenshots/10-impact-projection.png) |
+| **RE:GEN Score** | **Impact Projection** |
+
+---
+
 ## Formulae (Verified)
 
 | Calculation | Formula | Source |
