@@ -46,8 +46,8 @@ const AGENT_META = [
     metric: '61/100', metricLabel: 'Campus Health Index',
   },
   { id: 'report',   label: 'Report',   sub: 'Narrative Engine',   color: '#22d3ee', icon: '◻',  angle: 170,
-    observation: 'All agent findings consolidated. Executive narrative layer generated via Gemini 2.5 reasoning. Report is multi-domain and action-ready.',
-    reasoning: 'Findings from 7 agents cross-validated. Conflicting signals reconciled. Priority stack confirmed by Decision Agent. Gemini narrative layer applied.',
+    observation: 'All agent findings consolidated. Executive narrative layer generated via AI reasoning. Report is multi-domain and action-ready.',
+    reasoning: 'Findings from 7 agents cross-validated. Conflicting signals reconciled. Priority stack confirmed by Decision Agent. AI narrative layer applied.',
     impact: 'Decision-support report ready for campus administration and sustainability office. Action plan covers 13 prioritized interventions.',
     recommendation: 'Distribute report to Facilities, Electrical, and Sustainability teams. Schedule monthly re-run to track intervention progress.',
     confidence: 0.95, priority: 3, urgency: 'LOW',
@@ -70,7 +70,7 @@ const REASONING_STREAM = [
   { agent: 'impact',   color: '#f472b6', msg: 'Cross-domain synergy: water + energy co-fix amplifies CO₂ reduction ~35%.' },
   { agent: 'score',    color: '#a78bfa', msg: 'Composite health grade computed from 6-dimension weighted formula. Score: 61/100.' },
   { agent: 'decision', color: '#e2e8f0', msg: 'Energy intervention promoted to Priority 1 — highest urgency × financial impact.' },
-  { agent: 'report',   color: '#22d3ee', msg: 'Executive summary enriched. Gemini narrative layer finalised.' },
+  { agent: 'report',   color: '#22d3ee', msg: 'Executive summary enriched. AI narrative layer finalised.' },
   { agent: 'water',    color: '#00b4ff', msg: 'Leakage confidence escalated to 92% — matches known pipe pressure failure pattern.' },
   { agent: 'impact',   color: '#f472b6', msg: 'Water loss estimated: ₹12,400–₹18,600 annually if unaddressed.' },
   { agent: 'decision', color: '#e2e8f0', msg: 'Final priority stack: [1] Energy [2] Water [3] Waste. Dispatching to Report Agent.' },
@@ -139,8 +139,8 @@ function BackgroundParticles() {
   )
 }
 
-/* ── Gemini Core (CSS-only, no canvas) ─────────────── */
-function GeminiCore() {
+/* ── AI Core (CSS-only, no canvas) ─────────────────── */
+function AICore() {
   const RAY_ANGLES = [0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180, 202.5, 225, 247.5, 270, 292.5, 315, 337.5]
   return (
     <div style={{
@@ -177,7 +177,7 @@ function GeminiCore() {
       {/* Core reactor sphere */}
       <div className="war-core-sphere">
         <div className="war-core-inner">
-          <span style={{ letterSpacing: '0.22em', fontSize: 12, fontWeight: 900, color: '#00ff88', opacity: 0.98, textShadow: '0 0 14px #00ff88, 0 0 28px #00ff8877' }}>GEMINI</span>
+          <span style={{ letterSpacing: '0.22em', fontSize: 12, fontWeight: 900, color: '#00ff88', opacity: 0.98, textShadow: '0 0 14px #00ff88, 0 0 28px #00ff8877' }}>AI</span>
           <span style={{ letterSpacing: '0.18em', fontSize: 15, fontWeight: 900, color: '#00e5ff', opacity: 1, textShadow: '0 0 18px #00e5ff, 0 0 36px #00e5ff88' }}>CORE</span>
         </div>
       </div>
@@ -314,7 +314,7 @@ function AgentNode({ meta, isActive, isHovered, isAnyFocused, onClick, onMouseEn
   const isDimmed  = isAnyFocused && !isActive && !isHovered
   const isLit     = isActive || isHovered
   const coord     = agentCoord(meta)
-  const conf      = agentData?.confidence ? Math.round(agentData.confidence * 100) : 72
+  const conf      = agentData?.confidence != null ? Math.round(agentData.confidence * 100) : null
   const floatDur  = 2.6 + Math.abs(meta.angle % 7) * 0.28
   const baseSize  = 75
   const litSize   = isActive ? 100 : 88
@@ -426,7 +426,7 @@ function AgentNode({ meta, isActive, isHovered, isAnyFocused, onClick, onMouseEn
               exit={{ opacity: 0, height: 0 }}
               style={{ fontSize: 10, color: meta.color + 'cc', letterSpacing: '0.06em', overflow: 'hidden', textShadow: `0 0 10px ${meta.color}` }}
             >
-              {isAnalyzed ? '✓ Analyzed' : `${conf}% conf`}
+              {isAnalyzed ? '✓ Analyzed' : (conf != null ? `${conf}% conf` : '—')}
             </motion.div>
           )}
         </AnimatePresence>
@@ -490,18 +490,62 @@ function TypedText({ text, delayMs = 250, speed = 16 }) {
 }
 
 /* ── Live reasoning feed ────────────────────────────── */
-function LiveReasoningFeed({ filterAgent }) {
-  const [lines, setLines] = useState([REASONING_STREAM[0]])
+function buildUploadStream(agents) {
+  if (!agents?.length) return REASONING_STREAM
+  const idMap = {
+    'water':    { id: 'water',    color: '#00b4ff' },
+    'energy':   { id: 'energy',   color: '#eab308' },
+    'waste':    { id: 'waste',    color: '#00ff88' },
+    'impact':   { id: 'impact',   color: '#f472b6' },
+    'decision': { id: 'decision', color: '#e2e8f0' },
+    'score':    { id: 'score',    color: '#a78bfa' },
+    'report':   { id: 'report',   color: '#22d3ee' },
+  }
+  function agentMeta(agentName) {
+    const n = (agentName || '').toLowerCase()
+    if (n.includes('water'))    return idMap.water
+    if (n.includes('energy'))   return idMap.energy
+    if (n.includes('waste'))    return idMap.waste
+    if (n.includes('impact') || n.includes('pollution')) return idMap.impact
+    if (n.includes('decision')) return idMap.decision
+    if (n.includes('score') || n.includes('regen'))      return idMap.score
+    if (n.includes('report'))   return idMap.report
+    return { id: 'report', color: '#22d3ee' }
+  }
+  const lines = []
+  agents.forEach(a => {
+    const m = agentMeta(a.agent)
+    if (a.status === 'skipped') {
+      lines.push({ agent: m.id, color: m.color, msg: `${a.agent}: ⊘ Skipped — ${a.skip_reason || 'No data provided.'}` })
+    } else {
+      if (a.finding) lines.push({ agent: m.id, color: m.color, msg: `${a.agent}: ${a.finding}` })
+      if (a.reasoning && a.reasoning !== a.finding) lines.push({ agent: m.id, color: m.color, msg: a.reasoning })
+      if (a.recommendation) lines.push({ agent: m.id, color: m.color, msg: `Recommendation: ${a.recommendation}` })
+    }
+  })
+  /* In upload mode never fall back to hardcoded demo stream */
+  return lines.length ? lines : []
+}
+
+function LiveReasoningFeed({ filterAgent, isUploadMode, agents }) {
+  const stream = isUploadMode ? buildUploadStream(agents) : REASONING_STREAM
+  const [lines, setLines] = useState(stream.length ? [stream[0]] : [])
   const ref = useRef(null)
   const idx = useRef(1)
 
   useEffect(() => {
+    setLines(stream.length ? [stream[0]] : [])
+    idx.current = 1
+  }, [isUploadMode])
+
+  useEffect(() => {
+    if (!stream.length) return
     const t = setInterval(() => {
-      setLines(prev => [...prev.slice(-10), REASONING_STREAM[idx.current % REASONING_STREAM.length]])
+      setLines(prev => [...prev.slice(-10), stream[idx.current % stream.length]])
       idx.current++
     }, 2600)
     return () => clearInterval(t)
-  }, [])
+  }, [stream])
 
   useEffect(() => {
     if (ref.current) ref.current.scrollTop = ref.current.scrollHeight
@@ -536,7 +580,9 @@ function LiveReasoningFeed({ filterAgent }) {
       </AnimatePresence>
       {visible.length === 0 && (
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', textAlign: 'center', paddingTop: 16 }}>
-          No activity for this agent yet.
+          {stream.length === 0
+            ? 'No agent reasoning data returned for this analysis.'
+            : 'No activity for this agent yet.'}
         </p>
       )}
     </div>
@@ -585,7 +631,7 @@ function PipelinePanel() {
 }
 
 /* ── Agent detail panel (right panel content) ──────── */
-function AgentDetailPanel({ agentId, agents, wasteResult }) {
+function AgentDetailPanel({ agentId, agents, wasteResult, isUploadMode }) {
   const meta = AGENT_META.find(m => m.id === agentId)
   if (!meta) return null
 
@@ -594,15 +640,26 @@ function AgentDetailPanel({ agentId, agents, wasteResult }) {
     (agentId === 'decision' && a.agent?.toLowerCase().includes('decision'))
   )
 
-  /* Waste agent: merge live wasteResult */
+  /* In upload mode use only live backend data — never fall back to hardcoded demo text */
+  const liveObservation    = backendData?.finding        || null
+  const liveReasoning      = backendData?.reasoning      || null
+  const liveImpact         = backendData?.impact         || null
+  const liveRecommendation = backendData?.recommendation || null
+  const liveMetric         = backendData?.metric         || null
+  const isSkipped          = backendData?.status === 'skipped'
+  const anomalyGated       = isUploadMode && backendData?.anomaly_detection_available === false
+
+  /* Waste agent: merge live wasteResult — in upload mode never fall back to demo text */
   const wasteOverride = agentId === 'waste' && wasteResult ? {
-    observation: wasteResult.finding || meta.observation,
-    recommendation: wasteResult.recommended_pathway || meta.recommendation,
-    metric: wasteResult.hidden_value_score != null ? `Score: ${wasteResult.hidden_value_score}/100` : meta.metric,
-    severity: wasteResult.hazard_warning ? 'HIGH' : meta.urgency,
-    confidence: wasteResult.confidence ?? meta.confidence,
+    observation:     wasteResult.finding             || (isUploadMode ? null : meta.observation),
+    recommendation:  wasteResult.recommended_pathway || (isUploadMode ? null : meta.recommendation),
+    metric: wasteResult.hidden_value_score != null
+      ? `Score: ${wasteResult.hidden_value_score}/100`
+      : (isUploadMode ? null : meta.metric),
+    severity:      wasteResult.hazard_warning ? 'HIGH' : meta.urgency,
+    confidence:    wasteResult.confidence ?? meta.confidence,
     hazard_warning: wasteResult.hazard_warning,
-    waste_type: wasteResult.waste_type,
+    waste_type:    wasteResult.waste_type,
   } : null
 
   const conf    = wasteOverride?.confidence ?? backendData?.confidence ?? meta.confidence
@@ -685,20 +742,60 @@ function AgentDetailPanel({ agentId, agents, wasteResult }) {
         style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 14 }}
       >
         <span style={{ fontSize: 32, fontWeight: 900, color: meta.color, lineHeight: 1, letterSpacing: '-0.02em' }}>
-          {wasteOverride?.metric ?? meta.metric}
+          {wasteOverride?.metric ?? liveMetric ?? (isUploadMode ? '—' : meta.metric)}
         </span>
         <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.35)', lineHeight: 1.4 }}>
           {meta.metricLabel}
         </span>
       </motion.div>
 
-      {/* Reasoning blocks */}
+      {/* Skipped badge for upload mode */}
+      {isSkipped && (
+        <div style={{
+          marginBottom: 12, padding: '7px 12px', borderRadius: 8,
+          background: 'rgba(71,85,105,0.12)', border: '1px solid rgba(71,85,105,0.25)',
+          fontSize: 11, color: '#94a3b8',
+        }}>
+          ⊘ {backendData?.skip_reason || 'No data provided for this agent — analysis skipped.'}
+        </div>
+      )}
+
+      {/* Anomaly gating notice */}
+      {anomalyGated && (
+        <div style={{
+          marginBottom: 12, padding: '8px 12px', borderRadius: 8,
+          background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.22)',
+          fontSize: 11, color: '#fbbf24', lineHeight: 1.6,
+        }}>
+          <strong>Advanced detection unavailable.</strong>{' '}
+          {backendData?.anomaly_detection_reason ||
+            'Provide hourly operational logs or smart-meter exports to enable leak detection and predictive analytics.'}
+        </div>
+      )}
+
+      {/* Reasoning blocks — in upload mode never show hardcoded demo text */}
       {[
-        { label: 'Observation', text: wasteOverride?.observation ?? meta.observation, color: meta.color },
-        { label: 'Reasoning',   text: meta.reasoning,      color: 'rgba(226,232,240,0.6)' },
-        { label: 'Impact',      text: meta.impact,         color: '#a78bfa' },
-        { label: 'Recommendation', text: wasteOverride?.recommendation ?? meta.recommendation, color: '#4ade80' },
-      ].map(({ label, text, color }, i) => (
+        {
+          label: 'Observation',
+          text:  wasteOverride?.observation ?? liveObservation ?? (isUploadMode ? null : meta.observation),
+          color: meta.color,
+        },
+        {
+          label: 'Reasoning',
+          text:  wasteOverride?.reasoning ?? liveReasoning ?? (isUploadMode ? null : meta.reasoning),
+          color: 'rgba(226,232,240,0.6)',
+        },
+        {
+          label: 'Impact',
+          text:  wasteOverride?.impact ?? liveImpact ?? (isUploadMode ? null : meta.impact),
+          color: '#a78bfa',
+        },
+        {
+          label: 'Recommendation',
+          text:  wasteOverride?.recommendation ?? liveRecommendation ?? (isUploadMode ? null : meta.recommendation),
+          color: '#4ade80',
+        },
+      ].filter(({ text }) => text != null).map(({ label, text, color }, i) => (
         <motion.div
           key={label}
           initial={{ opacity: 0, x: -8 }}
@@ -738,17 +835,17 @@ function AgentDetailPanel({ agentId, agents, wasteResult }) {
         ))}
       </div>
 
-      {/* Timestamp + Gemini attribution */}
+      {/* Timestamp + AI attribution */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
         <span style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.22)' }}>Last run: {timestamp}</span>
-        <span style={{ fontSize: 8.5, color: '#00e5ff', opacity: 0.6, fontWeight: 600 }}>Powered by Gemini 2.5</span>
+        <span style={{ fontSize: 8.5, color: '#00e5ff', opacity: 0.6, fontWeight: 600 }}>Powered by AI Core</span>
       </div>
     </motion.div>
   )
 }
 
 /* ── Right column ───────────────────────────────────── */
-function RightColumn({ focusedAgent, agents, wasteResult }) {
+function RightColumn({ focusedAgent, agents, wasteResult, isUploadMode, uploadResult }) {
   return (
     <div style={{
       height: '100%', display: 'flex', flexDirection: 'column',
@@ -759,7 +856,7 @@ function RightColumn({ focusedAgent, agents, wasteResult }) {
     }}>
       <AnimatePresence mode="wait">
         {focusedAgent ? (
-          <AgentDetailPanel key={focusedAgent} agentId={focusedAgent} agents={agents} wasteResult={wasteResult} />
+          <AgentDetailPanel key={focusedAgent} agentId={focusedAgent} agents={agents} wasteResult={wasteResult} isUploadMode={isUploadMode} />
         ) : (
           <motion.div
             key="idle"
@@ -787,7 +884,7 @@ function RightColumn({ focusedAgent, agents, wasteResult }) {
                   Live Reasoning
                 </span>
               </div>
-              <LiveReasoningFeed filterAgent={null} />
+              <LiveReasoningFeed filterAgent={null} isUploadMode={isUploadMode} agents={agents} />
             </div>
             <PipelinePanel />
           </motion.div>
@@ -798,7 +895,7 @@ function RightColumn({ focusedAgent, agents, wasteResult }) {
 }
 
 /* ── Left column ────────────────────────────────────── */
-function LeftColumn({ loading, onRefresh, replayPhase, wasteResult, activeAgent, onSelectAgent }) {
+function LeftColumn({ loading, onRefresh, replayPhase, wasteResult, activeAgent, onSelectAgent, agents, isUploadMode }) {
   return (
     <div style={{
       height: '100%', display: 'flex', flexDirection: 'column',
@@ -813,7 +910,7 @@ function LeftColumn({ loading, onRefresh, replayPhase, wasteResult, activeAgent,
         </h2>
         <p style={{ fontSize: 11, color: 'rgba(226,232,240,0.48)', lineHeight: 1.55, maxWidth: 220 }}>
           7 autonomous agents — parallel analysis, priority escalation,
-          reasoning through simulated smart-campus resource logs.
+          reasoning through {isUploadMode ? 'your uploaded organizational data.' : 'simulated smart-campus resource logs.'}
         </p>
       </div>
 
@@ -857,23 +954,33 @@ function LeftColumn({ loading, onRefresh, replayPhase, wasteResult, activeAgent,
             let statusLabel = 'Active'
             let statusColor = meta.color
 
+            // Check if this agent was skipped in an upload run
+            const agentEntry = agents?.find?.(a =>
+              a.agent?.toLowerCase().includes(meta.label.toLowerCase()) ||
+              (meta.id === 'decision' && a.agent?.toLowerCase().includes('decision'))
+            )
+            const isSkipped = agentEntry?.status === 'skipped'
+
             if (replayPhase === 'resetting') {
-              statusLabel = 'Resetting'
+              statusLabel = '— Queued'
               statusColor = '#334155'
             } else if (replayPhase === 'sequencing') {
               if (currentIdx === -1 || i > currentIdx) {
-                statusLabel = 'Waiting'
+                statusLabel = '— Queued'
                 statusColor = '#334155'
               } else if (i === currentIdx) {
-                statusLabel = '◉ Activating'
+                statusLabel = '⟳ Running'
                 statusColor = meta.color
               } else {
-                statusLabel = '✓ Analyzed'
+                statusLabel = '✓ Done'
                 statusColor = '#00ff88'
               }
             } else if (replayPhase === 'done') {
-              statusLabel = '✓ Complete'
+              statusLabel = '✓ Completed'
               statusColor = '#00ff88'
+            } else if (isSkipped) {
+              statusLabel = '⊘ Skipped'
+              statusColor = '#475569'
             } else {
               const isWasteAnalyzed = meta.id === 'waste' && !!wasteResult
               const isSelected = meta.id === activeAgent
@@ -881,10 +988,10 @@ function LeftColumn({ loading, onRefresh, replayPhase, wasteResult, activeAgent,
                 statusLabel = '◉ Active'
                 statusColor = meta.color
               } else if (isWasteAnalyzed) {
-                statusLabel = '✓ Analyzed'
+                statusLabel = '✓ Done'
                 statusColor = '#00ff88'
               } else {
-                statusLabel = 'Active'
+                statusLabel = 'Online'
                 statusColor = meta.color + '99'
               }
             }
@@ -992,7 +1099,7 @@ function LeftColumn({ loading, onRefresh, replayPhase, wasteResult, activeAgent,
         flexShrink: 0,
       }}>
         <p style={{ fontSize: 10, color: 'rgba(0,229,255,0.70)', lineHeight: 1.55, letterSpacing: '0.04em' }}>
-          Click an agent node or control above to inspect Gemini reasoning.
+          Click an agent node or control above to inspect AI reasoning.
         </p>
       </div>
     </div>
@@ -1040,8 +1147,8 @@ function CenterStage({ agents, activeAgent, setActiveAgent, wasteResult }) {
         {/* SVG connections */}
         <ConnectionsSVG focused={focused} />
 
-        {/* Gemini Core rings + sphere */}
-        <GeminiCore />
+        {/* AI Core rings + sphere */}
+        <AICore />
 
         {/* Agent nodes */}
         {AGENT_META.map(meta => (
@@ -1069,11 +1176,15 @@ function CenterStage({ agents, activeAgent, setActiveAgent, wasteResult }) {
 }
 
 /* ── Main export ────────────────────────────────────── */
-export default function AgentWarRoom({ initialData, wasteResult }) {
-  const [agents,       setAgents]      = useState(initialData)
+export default function AgentWarRoom({ initialData, wasteResult, uploadResult }) {
+  const [agents,       setAgents]      = useState(uploadResult?.war_room || initialData)
   const [loading,      setLoading]     = useState(false)
   const [activeAgent,  setActiveAgent] = useState(null)
   const [replayPhase,  setReplayPhase] = useState(null) // null | 'resetting' | 'sequencing' | 'done'
+
+  useEffect(() => {
+    if (uploadResult?.war_room) setAgents(uploadResult.war_room)
+  }, [uploadResult])
 
   const delay = (ms) => new Promise(r => setTimeout(r, ms))
 
@@ -1095,12 +1206,16 @@ export default function AgentWarRoom({ initialData, wasteResult }) {
     await delay(300)
     setReplayPhase(null)
 
-    try {
-      const res = await getWarRoom()
-      setAgents(res.data.war_room)
-    } catch (e) { console.error(e) }
-    finally { setLoading(false) }
-  }, [loading])
+    if (uploadResult?.war_room) {
+      setAgents(uploadResult.war_room)
+    } else {
+      try {
+        const res = await getWarRoom()
+        setAgents(res.data.war_room)
+      } catch (_) { /* war room reload failed silently */ }
+    }
+    setLoading(false)
+  }, [loading, uploadResult])
 
   const isEmpty = !agents?.length
 
@@ -1174,7 +1289,7 @@ export default function AgentWarRoom({ initialData, wasteResult }) {
             padding: '44px 64px', textAlign: 'center',
           }}>
             <p style={{ color: 'rgba(226,232,240,0.38)', fontSize: 14 }}>
-              Run a campus scan to activate the command center.
+              Run an analysis to activate the command center.
             </p>
           </div>
         </div>
@@ -1189,9 +1304,9 @@ export default function AgentWarRoom({ initialData, wasteResult }) {
           alignItems: 'stretch',
           padding: 'clamp(66px, 9vh, 88px) clamp(16px, 3.5vw, 48px) 16px',
         }}>
-          <LeftColumn loading={loading} onRefresh={replayAll} replayPhase={replayPhase} wasteResult={wasteResult} activeAgent={activeAgent} onSelectAgent={setActiveAgent} />
+          <LeftColumn loading={loading} onRefresh={replayAll} replayPhase={replayPhase} wasteResult={wasteResult} activeAgent={activeAgent} onSelectAgent={setActiveAgent} agents={agents} isUploadMode={!!uploadResult} />
           <CenterStage agents={agents} activeAgent={activeAgent} setActiveAgent={setActiveAgent} wasteResult={wasteResult} />
-          <RightColumn focusedAgent={rightFocused} agents={agents} wasteResult={wasteResult} />
+          <RightColumn focusedAgent={rightFocused} agents={agents} wasteResult={wasteResult} isUploadMode={!!uploadResult} uploadResult={uploadResult} />
         </div>
       )}
     </section>

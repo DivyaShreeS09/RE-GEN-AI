@@ -42,7 +42,8 @@ function ProgressRow({ label, value, max, color, unit }) {
   )
 }
 
-export default function ImpactProjection({ waterData, energyData, dashData }) {
+export default function ImpactProjection({ waterData, energyData, dashData, uploadResult }) {
+  const isUploadMode = !!uploadResult
   if (!waterData || !energyData) return null
 
   const wasted7d    = waterData.total_wasted_liters  || 0
@@ -67,7 +68,7 @@ export default function ImpactProjection({ waterData, energyData, dashData }) {
         </h2>
         <p className="text-slate-400 text-sm">
           Estimated outcomes if all agent-recommended interventions are fully implemented.
-          Projections extrapolate the 7-day simulation window using standard fix-efficiency rates
+          Projections extrapolate the {isUploadMode ? 'uploaded data period' : '7-day simulation window'} using standard fix-efficiency rates
           (water: {Math.round(FIX_RATE_WATER*100)}%, energy: {Math.round(FIX_RATE_ENERGY*100)}%).
         </p>
       </div>
@@ -120,7 +121,7 @@ export default function ImpactProjection({ waterData, energyData, dashData }) {
         </div>
         <div className="grid grid-cols-3 gap-4 items-center mb-6">
           <div className="text-center">
-            <p className="text-xs text-slate-500 mb-1">Today (simulated)</p>
+            <p className="text-xs text-slate-500 mb-1">Today ({isUploadMode ? 'uploaded data' : 'simulated'})</p>
             <p className="text-3xl font-black text-red-400">{regenBefore}</p>
             <p className="text-xs text-slate-600 mt-1">Baseline state</p>
           </div>
@@ -159,10 +160,10 @@ export default function ImpactProjection({ waterData, energyData, dashData }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-400">
           <p>• Water fix efficiency: {Math.round(FIX_RATE_WATER*100)}% of detected leakage addressed</p>
           <p>• Energy fix efficiency: {Math.round(FIX_RATE_ENERGY*100)}% of after-hours waste eliminated</p>
-          <p>• Water cost: ₹{WATER_COST}/litre (standard campus utility rate)</p>
+          <p>• Water cost: ₹{WATER_COST}/litre (standard utility rate)</p>
           <p>• Electricity cost: ₹{ENERGY_COST}/kWh (standard Indian grid tariff)</p>
           <p>• CO₂ factor: {CO2_PER_KWH} kg/kWh (India grid average 2024)</p>
-          <p>• All figures extrapolated from simulated 7-day data — not measured</p>
+          <p>• All figures extrapolated from {isUploadMode ? 'uploaded data' : 'simulated 7-day data'} — not measured</p>
         </div>
       </div>
     </section>

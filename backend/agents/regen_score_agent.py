@@ -115,14 +115,20 @@ def compute_regen_score(water_result: dict, energy_result: dict,
     before_health = _campus_health_grade(before_score)
     after_health  = _campus_health_grade(after_score)
     campus_health_index = {
-        "current_grade":  before_health["grade"],
-        "current_label":  before_health["label"],
-        "current_color":  before_health["color"],
-        "target_grade":   after_health["grade"],
-        "target_label":   after_health["label"],
-        "target_color":   after_health["color"],
+        "current": {
+            "grade": before_health["grade"],
+            "label": before_health["label"],
+            "color": before_health["color"],
+            "score": before_score,
+        },
+        "target": {
+            "grade": after_health["grade"],
+            "label": after_health["label"],
+            "color": after_health["color"],
+            "score": after_score,
+        },
         "interpretation": (
-            f"Current campus sustainability posture is {before_health['label']} "
+            f"Current sustainability posture is {before_health['label']} "
             f"(Grade {before_health['grade']}). Implementing all agent-recommended "
             f"interventions is projected to lift this to {after_health['label']} "
             f"(Grade {after_health['grade']}) — a +{improvement}-point improvement."
@@ -156,7 +162,7 @@ def compute_regen_score(water_result: dict, energy_result: dict,
         f"Step 3 — Before-action score (current state): {before_score}/100.",
         f"Step 4 — After-action score (all fixes applied): {after_score}/100.",
         f"Step 5 — Score improvement: +{improvement} points.",
-        f"Step 6 — Campus Health Grade: {before_health['grade']} -> {after_health['grade']}.",
+        f"Step 6 — Sustainability Health Grade: {before_health['grade']} -> {after_health['grade']}.",
         f"Step 7 — Building risk ranking computed across {len(building_risk_ranking)} location(s).",
     ]
 

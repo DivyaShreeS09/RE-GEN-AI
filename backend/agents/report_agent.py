@@ -1,28 +1,41 @@
 from datetime import datetime
 from core.guardrails import get_disclaimer, get_simulated_notice
-from core.gemini_client import call_gemini, gemini_status
+from core.openai_client import call_openai, openai_status
 
 
-def _fallback_summary(water, energy, impact, regen, ranked) -> str:
+def _fallback_summary(water, energy, impact, regen, ranked,
+                      data_source: str = "Simulated sensor logs, January 15–21, 2024",
+                      org_name: str = None) -> str:
     total_loss = round(
         water.get("estimated_cost_inr", 0) + energy.get("estimated_cost_inr", 0), 2
     )
+    org_label = f"{org_name} " if org_name else ""
+    water_skip = water.get("status") == "skipped"
+    energy_skip = energy.get("status") == "skipped"
+    water_line = (
+        f"Water leakage analysis: {water.get('total_wasted_liters', 0)} L estimated wasted "
+        f"(Rs. {water.get('estimated_cost_inr', 0)}/week)."
+        if not water_skip else "Water data not provided — water analysis skipped."
+    )
+    energy_line = (
+        f"After-hours energy waste: {energy.get('total_wasted_kwh', 0)} kWh "
+        f"(Rs. {energy.get('estimated_cost_inr', 0)}/week)."
+        if not energy_skip else "Energy data not provided — energy analysis skipped."
+    )
     return (
-        f"RE:GEN AI Campus Sustainability Scan — {datetime.now().strftime('%B %d, %Y')}\n\n"
-        f"Simulated sensor logs (Jan 15-21, 2024) reveal significant hidden resource loss. "
-        f"Water leakage accounts for {water.get('total_wasted_liters', 0)} L wasted per week "
-        f"(estimated Rs. {water.get('estimated_cost_inr', 0)} loss), while after-hours energy waste "
-        f"totals {energy.get('total_wasted_kwh', 0)} kWh (estimated Rs. {energy.get('estimated_cost_inr', 0)} loss). "
-        f"Combined weekly utility loss is estimated at Rs. {total_loss}.\n\n"
-        f"The Decision Engine has ranked the top intervention as: "
+        f"RE:GEN AI {org_label}Sustainability Analysis — {datetime.now().strftime('%B %d, %Y')}\n\n"
+        f"Data source: {data_source}.\n"
+        f"{water_line} {energy_line} "
+        f"Combined estimated weekly utility loss: Rs. {total_loss}.\n\n"
+        f"Top recommended intervention: "
         f"{ranked[0]['recommended_action'] if ranked else 'No critical actions detected'}. "
-        f"This should be executed {ranked[0].get('timeline', 'immediately') if ranked else 'as a priority'}.\n\n"
+        f"Recommended timeline: {ranked[0].get('timeline', 'immediately') if ranked else 'as soon as possible'}.\n\n"
         f"Implementing all agent-recommended actions is projected to raise the RE:GEN Score from "
         f"{regen.get('before_score', 'N/A')}/100 to {regen.get('after_score', 'N/A')}/100, "
-        f"saving an estimated {impact.get('total_co2_saved_kg', 0)} kg CO2 per week — equivalent to "
+        f"with an estimated {impact.get('total_co2_saved_kg', 0)} kg CO2 reduction per week — equivalent to "
         f"{impact.get('trees_equivalent', 0)} trees or {impact.get('vehicle_km_equivalent', 0)} km "
         f"of car travel offset.\n\n"
-        "Note: RE:GEN AI is a prototype decision-support system. All data is simulated. "
+        "Note: RE:GEN AI is a prototype decision-support system. "
         "This is not professional regulatory, financial, or engineering advice."
     )
 
@@ -34,6 +47,11 @@ def generate_report(
     decision_result:   dict,
     regen_score_result: dict,
     waste_result:      dict = None,
+    org_name:          str = None,
+    org_type:          str = None,
+    data_source:       str = "Simulated sensor logs, January 15–21, 2024",
+    coverage:          dict = None,
+    analysis_metadata: dict = None,
 ) -> dict:
     ranked    = decision_result.get("ranked_actions", [])
     immediate = [a for a in ranked if a.get("timeline") == "Immediate"]
@@ -61,26 +79,40 @@ def generate_report(
             for a in week
         ],
         "next_30_days": [
-            {"action": "Conduct comprehensive energy audit across all campus buildings.", "domain": "Energy"},
-            {"action": "Install automated water sub-meters at Block-B, Lab Block, and canteen.", "domain": "Water"},
-            {"action": "Set up centralised waste segregation stations with colour-coded bins.", "domain": "Waste"},
+            {"action": "Conduct a comprehensive energy audit across all buildings and major load centres.", "domain": "Energy"},
+            {"action": "Install automated water sub-meters at high-consumption points and distribution headers.", "domain": "Water"},
+            {"action": "Set up centralised waste segregation stations with colour-coded bins at source points.", "domain": "Waste"},
         ],
         "long_term": [
             {"action": "Deploy IoT-based smart meters for real-time water and energy monitoring.", "domain": "Infrastructure"},
-            {"action": "Establish campus biogas plant to convert wet waste to cooking gas.", "domain": "Waste"},
+            {"action": "Establish on-site biogas plant to convert wet waste to cooking gas.", "domain": "Waste"},
             {"action": "Partner with certified e-waste and hazardous waste recyclers under EPR agreement.", "domain": "Compliance"},
             {"action": "Target RE:GEN Score > 80 (Excellent) within 12 months.", "domain": "Sustainability"},
         ],
     }
 
-    # --- Gemini executive summary ---
-    fallback = _fallback_summary(water_result, energy_result, impact_result, regen_score_result, ranked)
+    # --- AI executive summary ---
+    fallback = _fallback_summary(
+        water_result, energy_result, impact_result, regen_score_result, ranked,
+        data_source=data_source, org_name=org_name,
+    )
     total_loss = round(
         water_result.get("estimated_cost_inr", 0) + energy_result.get("estimated_cost_inr", 0), 2
     )
-    prompt = f"""You are a campus sustainability analyst. Write a professional 3-paragraph executive summary (max 160 words) for a university sustainability officer.
+    level_label  = analysis_metadata.get("overall_label", "Advanced AI Analysis") if analysis_metadata else "Advanced AI Analysis"
+    conf_pct     = analysis_metadata.get("confidence_pct", 89) if analysis_metadata else 89
+    skipped_mods = ", ".join(m["module"] for m in (analysis_metadata or {}).get("skipped_modules", [])) or "None"
+    anomaly_note = (
+        f"Note: Anomaly detection was unavailable at this data resolution (analysis level: {level_label}). "
+        f"Figures reflect consumption estimates only, not confirmed leakage or waste events. "
+        f"Confidence: {conf_pct}%."
+        if analysis_metadata and not analysis_metadata.get("anomaly_detection_available", True)
+        else ""
+    )
+    prompt = f"""You are a sustainability analyst. Write a professional 3-paragraph executive summary (max 180 words) for a sustainability officer.
 
-Scan source: Simulated campus sensor logs, January 15-21, 2024.
+Scan source: {data_source}.
+Analysis level: {level_label}. Confidence: {conf_pct}%. Skipped modules: {skipped_mods}.
 
 Key findings:
 - Water leakage: {water_result.get('total_wasted_liters', 0)} L wasted (severity: {water_result.get('severity','').upper()}, estimated Rs. {water_result.get('estimated_cost_inr', 0)}/week)
@@ -89,19 +121,23 @@ Key findings:
 - CO2 reduction potential: {impact_result.get('total_co2_saved_kg', 0)} kg/week ({impact_result.get('vehicle_km_equivalent', 0)} km of car travel)
 - RE:GEN Score: {regen_score_result.get('before_score','N/A')}/100 now -> {regen_score_result.get('after_score','N/A')}/100 post-action
 - Top priority action: {ranked[0]['recommended_action'] if ranked else 'None'}
+{anomaly_note}
 
-Paragraph 1: What is the current situation and what is at risk.
+Paragraph 1: What is the current situation and what is at risk — be honest about data limitations if analysis level is not Level 3.
 Paragraph 2: What the agents recommend doing first and why it matters.
 Paragraph 3: Expected impact if all interventions are applied.
 
 Rules:
 - Use "estimated" for all financial figures
-- Say "simulated campus sensor logs" not "real-time data"
-- Do not claim exact profits
+- Do not claim exact profits or guarantee outcomes
 - Do not say: revolutionary, powerful AI, real-time intelligence, next-generation solution
+- If analysis level is not Level 3, explicitly acknowledge findings are based on consumption estimates, not confirmed anomalies
+- Do NOT infer or describe operational behavior (pipe leaks, equipment faults, after-hours usage patterns, zone-specific events) that was not present in the provided data above
+- Only describe findings that appear in the Key findings section; do not add additional problems or losses
+- Reference the data source accurately: {data_source}
 - End with one sentence stating this is a prototype decision-support system"""
 
-    executive_summary, gemini_used = call_gemini(prompt, fallback)
+    executive_summary, ai_used = call_openai(prompt, fallback)
 
     # SDG summary narrative
     sdg_items = impact_result.get("sdg_alignment", [])
@@ -140,9 +176,14 @@ Rules:
         "agent":              "Report Agent",
         "status":             "generated",
         "generated_at":       datetime.now().isoformat(),
+        "org_name":           org_name or "Demo Organisation",
+        "org_type":           org_type or "University",
+        "data_source":        data_source,
+        "coverage":           coverage or {},
+        "analysis_metadata":  analysis_metadata or {},
         "executive_summary":  executive_summary,
-        "gemini_enhanced":    gemini_used,
-        "ai_layer":           gemini_status(),
+        "ai_enhanced":        ai_used,
+        "ai_layer":           openai_status(),
         "action_plan":        action_plan,
         "silent_losses":      silent_losses,
         "sdg_alignment":      sdg_items,
@@ -156,5 +197,8 @@ Rules:
             "rating":      regen_score_result.get("target_rating"),
         },
         "disclaimer":  get_disclaimer(),
-        "data_notice": get_simulated_notice(),
+        "data_notice": (
+            f"Analysis based on uploaded organisational data for {org_name or 'your organisation'}."
+            if org_name else get_simulated_notice()
+        ),
     }

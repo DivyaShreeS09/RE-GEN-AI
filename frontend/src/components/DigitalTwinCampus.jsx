@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 
 const RC  = { critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#22c55e', none: '#6b7280' }
 const RL  = { critical: 'CRITICAL', high: 'HIGH', medium: 'MODERATE', low: 'LOW', none: 'CLEAR' }
@@ -143,6 +143,265 @@ const BUILDINGS = [
   },
 ]
 
+/* ─── Org-type zone archetypes ─────────────────────────────────────────────── */
+const ORG_ARCHETYPES = {
+  University:       ['Research Wing', 'Lecture Hall', 'Admin Office', 'Library', 'Student Centre', 'Lab Block'],
+  Hotel:            ['Lobby & Reception', 'Guest Rooms', 'Kitchen & F&B', 'Conference Hall', 'Utilities Plant', 'Housekeeping'],
+  Hospital:         ['ICU & Critical Care', 'OPD Block', 'Operating Theatres', 'Pharmacy', 'Admin & Records', 'Laundry & Waste'],
+  Factory:          ['Production Floor', 'Warehouse', 'Quality Control', 'Admin & HR', 'Utilities & HVAC', 'Loading Bay'],
+  Airport:          ['Terminal Building', 'Runway Operations', 'Cargo Hub', 'Air Traffic Control', 'Maintenance Hangar', 'Ground Services'],
+  Mall:             ['Retail Atrium', 'Food Court', 'Anchor Store', 'Service Corridor', 'Parking Block', 'Management Office'],
+  Office:           ['Open Plan Office', 'Meeting Rooms', 'Server Room', 'Reception & Lobby', 'Cafeteria', 'Facilities Block'],
+  'Residential Campus': ['Block A — Residential', 'Block B — Residential', 'Common Amenities', 'Community Hall', 'Sports Zone', 'Management'],
+  'Industrial Park': ['Unit 1 — Manufacturing', 'Unit 2 — Assembly', 'Central Utilities', 'Logistics Hub', 'Admin Complex', 'Waste Treatment'],
+  Warehouse:        ['Cold Storage', 'Dry Warehouse', 'Dispatch Bay', 'Security Office', 'Charging Station', 'Admin'],
+  default:          ['Zone Alpha', 'Zone Beta', 'Zone Gamma', 'Zone Delta', 'Central Utilities', 'Administration'],
+}
+
+const ZONE_ICONS = {
+  University: ['🎓','📚','🏢','📖','🏫','🔬'],
+  Hotel: ['🏨','🛏','🍽','🎪','⚙️','🧹'],
+  Hospital: ['🏥','🏥','🩺','💊','🗂','♻️'],
+  Factory: ['🏭','📦','🔬','🏢','⚙️','🚛'],
+  Airport: ['✈️','🛬','📦','🗼','🔧','🚌'],
+  Mall: ['🏬','🍕','🏪','🔧','🅿️','🏢'],
+  Office: ['💼','🤝','🖥','🏢','☕','⚙️'],
+  default: ['🏗','⚡','🔬','♻️','⚙️','🏢'],
+}
+
+const HOT_POSITIONS = [
+  { hotX: 10, hotY: 45 }, { hotX: 37, hotY: 30 }, { hotX: 62, hotY: 30 },
+  { hotX: 5,  hotY: 66 }, { hotX: 63, hotY: 52 }, { hotX: 39, hotY: 66 },
+]
+
+/* ─── Level 1: Resource overview nodes (no fake zone anomalies) ─────────── */
+function buildResourceOverviewNodes(uploadResult) {
+  const water       = uploadResult.water
+  const energy      = uploadResult.energy
+  const waste       = uploadResult.waste
+  const impact      = uploadResult.impact
+  const fuelSummary = uploadResult.fuel_summary
+  const fuelCo2Kg   = uploadResult.fuel_co2_kg || 0
+  const meta        = uploadResult.analysis_metadata
+
+  const fmtL   = v => (v != null && v > 0) ? `${Number(v.toFixed(0)).toLocaleString()} L`   : 'Not provided'
+  const fmtKwh = v => (v != null && v > 0) ? `${Number(v.toFixed(0)).toLocaleString()} kWh` : 'Not provided'
+  const fmtKg  = v => (v != null && v > 0) ? `${Number(v.toFixed(0)).toLocaleString()} kg`  : 'Not provided'
+
+  const waterTotal  = water?.total_consumption_liters || 0
+  const energyTotal = energy?.total_consumption_kwh   || 0
+  const wasteTotal  = waste?.total_kg                 || 0
+  const fuelLiters  = fuelSummary?.total_liters       || 0
+  // Total carbon = impact agent's total_co2_saved_kg (sum of water + energy + fuel CO₂)
+  const carbonKg    = impact?.total_co2_saved_kg      || 0
+  const confLabel   = `${meta?.confidence_pct || 42}% confidence`
+
+  return [
+    {
+      id: 'water-overview', isResourceNode: true,
+      name: 'Water', icon: '💧', type: 'Resource', buildingId: 'RES-01',
+      risk: 'none', occupancy: confLabel, hotX: 18, hotY: 36,
+      nodeColor: '#00e5ff',
+      totalValue: fmtL(waterTotal), unit: 'period total',
+      resources: { water: fmtL(waterTotal), waterDelta: 0, energy: '—', energyDelta: 0, waste: '—', wasteDelta: 0, carbon: '—', carbonDelta: 0 },
+      insights: waterTotal > 0
+        ? `Total water consumption: ${fmtL(waterTotal)}. Anomaly detection requires hourly time-series data (Level 3). Current data supports baseline reporting only.`
+        : 'No water data provided. Upload hourly meter readings to enable leak and anomaly detection.',
+      recommendations: (water?.recommendations || []).slice(0, 3).length > 0
+        ? (water.recommendations || []).slice(0, 3)
+        : ['Collect hourly meter readings to enable anomaly detection', 'Benchmark against industry average for your facility type', 'Install smart meters for Level 3 analysis'],
+      impact: { water: -5, energy: 0, carbon: -2 },
+    },
+    {
+      id: 'energy-overview', isResourceNode: true,
+      name: 'Energy', icon: '⚡', type: 'Resource', buildingId: 'RES-02',
+      risk: 'none', occupancy: confLabel, hotX: 55, hotY: 26,
+      nodeColor: '#eab308',
+      totalValue: fmtKwh(energyTotal), unit: 'period total',
+      resources: { water: '—', waterDelta: 0, energy: fmtKwh(energyTotal), energyDelta: 0, waste: '—', wasteDelta: 0, carbon: '—', carbonDelta: 0 },
+      insights: energyTotal > 0
+        ? `Total energy consumption: ${fmtKwh(energyTotal)}. After-hours waste detection requires hourly smart meter data (Level 3). Recommendations are best-practice benchmarks.`
+        : 'No energy data provided. Upload smart meter logs to enable after-hours detection and efficiency analysis.',
+      recommendations: (energy?.recommendations || []).slice(0, 3).length > 0
+        ? (energy.recommendations || []).slice(0, 3)
+        : ['Collect hourly smart meter data for after-hours detection', 'Compare consumption with similar-sized facilities', 'Audit HVAC and lighting schedules'],
+      impact: { water: 0, energy: -8, carbon: -5 },
+    },
+    {
+      id: 'fuel-overview', isResourceNode: true,
+      name: 'Fuel', icon: '⛽', type: 'Resource', buildingId: 'RES-03',
+      risk: 'none', occupancy: confLabel, hotX: 79, hotY: 50,
+      nodeColor: '#f97316',
+      totalValue: fuelLiters > 0 ? `${Number(fuelLiters.toFixed(0)).toLocaleString()} L` : 'Not provided',
+      unit: 'period total',
+      resources: { water: '—', waterDelta: 0, energy: '—', energyDelta: 0, waste: fuelLiters > 0 ? `${Number(fuelLiters.toFixed(0)).toLocaleString()} L` : '—', wasteDelta: 0, carbon: '—', carbonDelta: 0 },
+      insights: fuelLiters > 0
+        ? `Total fuel usage: ${Number(fuelLiters.toFixed(0)).toLocaleString()} L. Carbon impact included in overall emissions estimate.`
+        : 'No fuel data provided. Fuel consumption data improves carbon footprint accuracy.',
+      recommendations: ['Track fuel by vehicle or generator for granular reporting', 'Explore electrification of fleet vehicles', 'Set monthly fuel budgets by department'],
+      impact: { water: 0, energy: -3, carbon: -10 },
+    },
+    {
+      id: 'waste-overview', isResourceNode: true,
+      name: 'Waste', icon: '♻', type: 'Resource', buildingId: 'RES-04',
+      risk: 'none', occupancy: confLabel, hotX: 26, hotY: 70,
+      nodeColor: '#22c55e',
+      totalValue: fmtKg(wasteTotal), unit: 'period total',
+      resources: { water: '—', waterDelta: 0, energy: '—', energyDelta: 0, waste: fmtKg(wasteTotal), wasteDelta: 0, carbon: '—', carbonDelta: 0 },
+      insights: wasteTotal > 0
+        ? `Total waste generated: ${fmtKg(wasteTotal)}. Diversion and recovery analysis available from waste stream composition data.`
+        : 'No waste data provided. Waste composition data enables recycling and biogas recovery planning.',
+      recommendations: (waste?.recommendations || []).slice(0, 3).length > 0
+        ? (waste.recommendations || []).slice(0, 3)
+        : ['Separate organic from dry waste at source', 'Track recyclable recovery percentage monthly', 'Explore biogas or composting pathways'],
+      impact: { water: 0, energy: -2, carbon: -7 },
+    },
+    {
+      id: 'carbon-overview', isResourceNode: true,
+      name: 'Carbon', icon: '☁', type: 'Resource', buildingId: 'RES-05',
+      risk: 'none', occupancy: confLabel, hotX: 62, hotY: 70,
+      nodeColor: '#a78bfa',
+      totalValue: carbonKg > 0 ? `${(carbonKg / 1000).toFixed(3)} tCO₂e` : 'Auto-Calculated',
+      unit: carbonKg > 0 ? 'addressable CO₂' : 'from uploaded datasets',
+      resources: { water: '—', waterDelta: 0, energy: '—', energyDelta: 0, waste: '—', wasteDelta: 0, carbon: carbonKg > 0 ? `${(carbonKg / 1000).toFixed(3)} tCO₂e` : '—', carbonDelta: 0 },
+      insights: (function() {
+        if (!carbonKg) return 'Automatically calculated from uploaded resource data using certified emission factors. Provide water, energy, or fuel data to populate this panel.'
+        const waterCo2 = water?.co2_equivalent_kg || 0
+        const energyCo2 = energy?.co2_equivalent_kg || 0
+        const fuelCo2 = fuelCo2Kg || 0
+        const parts = []
+        if (waterCo2 > 0) parts.push(`Water treatment: ${waterCo2.toFixed(2)} kg (0.001 kg CO₂/L)`)
+        if (energyCo2 > 0) parts.push(`Electricity: ${energyCo2.toFixed(2)} kg (0.82 kg CO₂/kWh, India grid)`)
+        if (fuelCo2 > 0) parts.push(`Fuel combustion: ${fuelCo2.toFixed(2)} kg (IPCC 2006 factors)`)
+        const formula = parts.length > 0 ? ` | Components: ${parts.join(' + ')}` : ''
+        return `Total addressable CO₂: ${carbonKg.toFixed(1)} kg (${(carbonKg / 1000).toFixed(3)} tCO₂e).${formula}. Emission factors: IPCC 2006 / BEE India. Scope 3 not included.`
+      })(),
+      recommendations: ['Verify Scope 1, 2, and 3 emission boundaries', 'Set science-based reduction targets', 'Report under GHG Protocol or ISO 14064'],
+      impact: { water: 0, energy: 0, carbon: -12 },
+    },
+  ]
+}
+
+/* ─── Level 2: Org zones with real consumption — no fake anomaly colors ──── */
+function buildLevel2Zones(uploadResult) {
+  const orgType = uploadResult.org_type || 'default'
+  const names   = ORG_ARCHETYPES[orgType] || ORG_ARCHETYPES.default
+  const icons   = ZONE_ICONS[orgType]     || ZONE_ICONS.default
+  const water   = uploadResult.water
+  const energy  = uploadResult.energy
+
+  const waterTotal  = water?.total_consumption_liters || 0
+  const energyTotal = energy?.total_consumption_kwh   || 0
+  const n = names.length
+
+  return names.map((name, i) => {
+    const pos   = HOT_POSITIONS[i] || { hotX: 30 + (i * 15) % 60, hotY: 40 + (i * 12) % 40 }
+    const wEst  = waterTotal  > 0 ? `${((waterTotal  / n) * 0.9 + ((waterTotal  / n) * 0.2 * (i % 3 - 1))).toFixed(0)} L/day est.` : 'N/A'
+    const eEst  = energyTotal > 0 ? `${((energyTotal / n) * 0.9 + ((energyTotal / n) * 0.2 * (i % 3 - 1))).toFixed(1)} kWh/day est.` : 'N/A'
+
+    return {
+      id:         name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+      name, icon: icons[i] || '🏢', type: orgType,
+      buildingId: `Z-${String(i + 1).padStart(2, '0')}`,
+      risk: 'none', occupancy: 'Variable',
+      hotX: pos.hotX, hotY: pos.hotY,
+      water:  { level: 'none', value: wEst, note: 'Anomaly detection not available at Level 2' },
+      energy: { level: 'none', value: eEst, note: 'After-hours detection requires hourly data' },
+      waste:  { level: 'none', value: 'N/A', note: 'Not provided' },
+      resources: { water: wEst, waterDelta: 0, energy: eEst, energyDelta: 0, waste: 'N/A', wasteDelta: 0, carbon: 'N/A', carbonDelta: 0 },
+      insights: `Operational data available for ${name}. Zone-level anomaly detection requires hourly time-series data — upgrade to Level 3 by uploading smart meter logs with ≥3 days of hourly readings.`,
+      recommendations: [
+        `Continue monitoring daily consumption trends for ${name}`,
+        'Upload hourly data to enable zone-level anomaly detection',
+        'Benchmark current usage against operational baselines',
+      ],
+      impact: { water: -3, energy: -5, carbon: -4 },
+      agent: 'Decision Engine',
+    }
+  })
+}
+
+/* ─── Level 3: Full anomaly-driven zone map (original behaviour) ─────────── */
+function buildLevel3Zones(uploadResult) {
+  const orgType = uploadResult.org_type || 'default'
+  const names   = ORG_ARCHETYPES[orgType] || ORG_ARCHETYPES.default
+  const icons   = ZONE_ICONS[orgType]     || ZONE_ICONS.default
+  const water   = uploadResult.water
+  const energy  = uploadResult.energy
+
+  const waterAnomalies = {}
+  if (water?.anomaly_events) {
+    water.anomaly_events.forEach(ev => {
+      const loc = ev.location || 'Main Zone'
+      if (!waterAnomalies[loc]) waterAnomalies[loc] = ev.severity || 'medium'
+    })
+  }
+  const energyAnomalies = {}
+  if (energy?.anomaly_events) {
+    energy.anomaly_events.forEach(ev => {
+      const zone = ev.zone || ev.location || 'Main Zone'
+      if (!energyAnomalies[zone]) energyAnomalies[zone] = ev.severity || 'medium'
+    })
+  }
+
+  const waterLocs  = Object.entries(waterAnomalies)
+  const energyLocs = Object.entries(energyAnomalies)
+  const riskMap    = { critical: 4, high: 3, medium: 2, low: 1, none: 0 }
+
+  return names.map((name, i) => {
+    const pos          = HOT_POSITIONS[i] || { hotX: 30 + (i * 15) % 60, hotY: 40 + (i * 12) % 40 }
+    const wAnomaly     = waterLocs[i]
+    const eAnomaly     = energyLocs[i]
+    const waterLevel   = wAnomaly ? (wAnomaly[1] || 'low') : 'none'
+    const energyLevel  = eAnomaly ? (eAnomaly[1] || 'low') : 'none'
+    const total        = (riskMap[waterLevel] || 0) + (riskMap[energyLevel] || 0)
+    const risk         = total >= 7 ? 'critical' : total >= 5 ? 'high' : total >= 3 ? 'medium' : total >= 1 ? 'low' : 'none'
+
+    const n     = names.length
+    const wLiters = water?.total_wasted_liters
+      ? `${(water.total_wasted_liters / Math.max(n, 1)).toFixed(0)} L/day est.`
+      : 'N/A'
+    const eKwh = energy?.total_wasted_kwh
+      ? `${(energy.total_wasted_kwh / Math.max(n, 1)).toFixed(1)} kWh/day est.`
+      : 'N/A'
+
+    return {
+      id:         name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+      name, icon: icons[i] || '🏢', type: orgType,
+      buildingId: `Z-${String(i + 1).padStart(2, '0')}`,
+      risk, occupancy: 'Variable',
+      hotX: pos.hotX, hotY: pos.hotY,
+      water:  { level: waterLevel,  value: wLiters, note: wAnomaly ? `Anomaly: ${wAnomaly[0]} — ${waterLevel} severity` : 'No anomalies detected' },
+      energy: { level: energyLevel, value: eKwh,    note: eAnomaly ? `After-hours: ${eAnomaly[0]} — ${energyLevel} severity` : 'Within normal range' },
+      waste:  { level: 'low', value: 'N/A', note: 'Not tracked at zone level' },
+      resources: {
+        water:  wLiters, waterDelta:  waterLevel  !== 'none' ? 10 : 2,
+        energy: eKwh,    energyDelta: energyLevel !== 'none' ? 12 : 2,
+        waste:  'N/A',   wasteDelta:  2,
+        carbon: 'N/A',   carbonDelta: 4,
+      },
+      insights: risk === 'none'
+        ? `${name} is operating within expected resource usage parameters.`
+        : `Resource anomalies detected in ${name}. ${waterLevel !== 'none' ? `Water: ${waterLevel} severity. ` : ''}${energyLevel !== 'none' ? `Energy: ${energyLevel} severity.` : ''}`,
+      recommendations: [
+        waterLevel  !== 'none' ? `Inspect water supply to ${name}` : `Maintain current water efficiency in ${name}`,
+        energyLevel !== 'none' ? `Review after-hours energy schedule for ${name}` : `Continue monitoring energy patterns`,
+        'Schedule quarterly resource audit',
+      ],
+      impact: { water: waterLevel !== 'none' ? -15 : -2, energy: energyLevel !== 'none' ? -18 : -2, carbon: -8 },
+      agent: 'Decision Engine',
+    }
+  })
+}
+
+function buildUploadBuildings(uploadResult) {
+  if (!uploadResult) return BUILDINGS
+  const level = uploadResult?.analysis_metadata?.overall_level ?? 3
+  if (level === 1) return buildResourceOverviewNodes(uploadResult)
+  if (level === 2) return buildLevel2Zones(uploadResult)
+  return buildLevel3Zones(uploadResult)
+}
+
 /* ─── Drone SVG ────────────────────────────────────────────────────────────── */
 function DroneSVG({ isScanning, isComplete }) {
   const beamColor = isComplete ? '#00ff88' : '#00e5ff'
@@ -282,9 +541,9 @@ function DroneSystem({ hotX, hotY, scanPhase }) {
 
 /* ─── Building hotspot label ─────────────────────────────────────────────── */
 function Hotspot({ b, isSelected, onSelect, pulse }) {
-  const color = RC[b.risk]
-  const label = RLS[b.risk]
-  const isCrit = b.risk === 'critical' || b.risk === 'high'
+  const color  = b.isResourceNode ? b.nodeColor : RC[b.risk]
+  const label  = b.isResourceNode ? 'RESOURCE'  : RLS[b.risk]
+  const isCrit = !b.isResourceNode && (b.risk === 'critical' || b.risk === 'high')
 
   return (
     <div
@@ -305,22 +564,30 @@ function Hotspot({ b, isSelected, onSelect, pulse }) {
           ? `0 0 22px ${color}55, 0 0 50px ${color}22`
           : `0 0 10px ${color}22`,
         transition: 'all 0.3s ease',
-        minWidth: 112, whiteSpace: 'nowrap',
+        minWidth: b.isResourceNode ? 88 : 112, whiteSpace: 'nowrap',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 2 }}>
-          <div style={{
-            width: 6, height: 6, borderRadius: '50%', background: color,
-            boxShadow: `0 0 7px ${color}`,
-            animation: isCrit ? 'dtHotPulse 1.4s ease-in-out infinite' : 'none',
-            flexShrink: 0,
-          }}/>
+          {b.isResourceNode
+            ? <span style={{ fontSize: 13, lineHeight: 1 }}>{b.icon}</span>
+            : <div style={{
+                width: 6, height: 6, borderRadius: '50%', background: color,
+                boxShadow: `0 0 7px ${color}`,
+                animation: isCrit ? 'dtHotPulse 1.4s ease-in-out infinite' : 'none',
+                flexShrink: 0,
+              }}/>
+          }
           <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: '0.03em' }}>
             {b.name}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, paddingLeft: 13 }}>
-          <span style={{ color, fontSize: 9, fontWeight: 700 }}>{RLIcon[b.risk]}</span>
-          <span style={{ color, fontSize: 9, fontWeight: 600 }}>{label}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, paddingLeft: b.isResourceNode ? 0 : 13 }}>
+          {b.isResourceNode
+            ? <span style={{ color, fontSize: 9, fontWeight: 600 }}>{b.totalValue}</span>
+            : <>
+                <span style={{ color, fontSize: 9, fontWeight: 700 }}>{RLIcon[b.risk]}</span>
+                <span style={{ color, fontSize: 9, fontWeight: 600 }}>{label}</span>
+              </>
+          }
         </div>
       </div>
     </div>
@@ -330,6 +597,98 @@ function Hotspot({ b, isSelected, onSelect, pulse }) {
 /* ─── Right analysis panel — compact, no internal scroll ────────────────── */
 function BuildingPanel({ building, onClose }) {
   if (!building) return null
+
+  const panelStyle = {
+    position: 'absolute', top: 0, right: 0, bottom: 0, width: 300,
+    background: 'rgba(2,7,22,0.94)',
+    backdropFilter: 'blur(24px)',
+    borderLeft: '1px solid rgba(255,255,255,0.07)',
+    zIndex: 20, display: 'flex', flexDirection: 'column',
+    padding: '64px 18px 20px', gap: 0,
+    animation: 'dtPanelIn 0.35s ease-out', overflowY: 'hidden',
+  }
+
+  const closeBtn = (
+    <button onClick={onClose} style={{ color: '#475569', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', lineHeight: 1, padding: '0 3px', transition: 'color 0.2s' }}
+      onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+      onMouseLeave={e => e.currentTarget.style.color = '#475569'}>×</button>
+  )
+
+  const viewPlanBtn = (
+    <button onClick={() => document.getElementById('action-plan')?.scrollIntoView({ behavior: 'smooth' })}
+      style={{ width: '100%', background: 'linear-gradient(135deg, rgba(0,255,136,0.12), rgba(0,229,255,0.08))', border: '1px solid rgba(0,255,136,0.40)', borderRadius: 8, color: '#00ff88', fontWeight: 700, fontSize: 12, padding: '11px', cursor: 'pointer', letterSpacing: '0.04em', transition: 'all 0.22s ease', boxShadow: '0 0 14px rgba(0,255,136,0.10)', flexShrink: 0 }}
+      onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,255,136,0.22), rgba(0,229,255,0.14))'; e.currentTarget.style.boxShadow = '0 0 24px rgba(0,255,136,0.22)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,255,136,0.12), rgba(0,229,255,0.08))'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,255,136,0.10)'; e.currentTarget.style.transform = '' }}>
+      View Action Plan →
+    </button>
+  )
+
+  /* ── Resource node layout (Level 1 upload mode) ── */
+  if (building.isResourceNode) {
+    const col = building.nodeColor || '#00e5ff'
+    return (
+      <div style={panelStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0 }}>
+          <span style={{ color: '#334155', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+            Resource Overview
+          </span>
+          {closeBtn}
+        </div>
+        {/* Resource identity */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexShrink: 0 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, background: `linear-gradient(135deg, ${col}22, ${col}08)`, border: `1px solid ${col}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
+            {building.icon}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {(() => {
+              const tv = building.totalValue
+              const hasData = tv && tv !== 'Not provided'
+              const isCalc  = tv === 'Auto-Calculated'
+              const badge   = isCalc ? 'CALCULATED' : hasData ? 'UPLOADED' : 'NO DATA'
+              const badgeBg = isCalc ? 'rgba(167,139,250,0.12)' : hasData ? 'rgba(0,255,136,0.10)' : 'rgba(100,116,139,0.15)'
+              const badgeBd = isCalc ? '1px solid rgba(167,139,250,0.4)' : hasData ? '1px solid rgba(0,255,136,0.35)' : '1px solid rgba(100,116,139,0.3)'
+              const badgeClr = isCalc ? '#a78bfa' : hasData ? '#00ff88' : '#94a3b8'
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3, flexWrap: 'wrap' }}>
+                  <span style={{ color: '#fff', fontWeight: 800, fontSize: 13 }}>{building.name}</span>
+                  <span style={{ background: badgeBg, border: badgeBd, color: badgeClr, fontSize: 8.5, fontWeight: 700, padding: '1px 7px', borderRadius: 10, letterSpacing: '0.07em', flexShrink: 0 }}>{badge}</span>
+                </div>
+              )
+            })()}
+            <div style={{ color: '#334155', fontSize: 9.5 }}>{building.buildingId} · {building.occupancy}</div>
+          </div>
+        </div>
+        {/* Total value */}
+        <div style={{ background: `${col}0a`, border: `1px solid ${col}28`, borderRadius: 10, padding: '14px 16px', marginBottom: 16, flexShrink: 0 }}>
+          <div style={{ color: '#475569', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Total Recorded</div>
+          <div style={{ color: col, fontSize: 24, fontWeight: 900, lineHeight: 1, marginBottom: 4 }}>{building.totalValue}</div>
+          <div style={{ color: '#475569', fontSize: 9.5 }}>{building.unit}</div>
+        </div>
+        {/* Level 1 notice */}
+        <div style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 8, padding: '10px 12px', marginBottom: 14, flexShrink: 0 }}>
+          <div style={{ color: '#f59e0b', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', marginBottom: 4 }}>LEVEL 1 — BASIC ASSESSMENT</div>
+          <div style={{ color: '#94a3b8', fontSize: 10, lineHeight: 1.55 }}>Anomaly and zone-level detection unavailable. Upload hourly time-series data for Level 3 analysis.</div>
+        </div>
+        {/* Insights */}
+        <PLabel>Insights</PLabel>
+        <p style={{ color: '#94a3b8', fontSize: 11, lineHeight: 1.62, marginBottom: 14, flexShrink: 0 }}>{building.insights}</p>
+        {/* Recommendations */}
+        <PLabel>Recommendations</PLabel>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16, flexShrink: 0 }}>
+          {building.recommendations.map((rec, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+              <span style={{ color: '#22c55e', fontSize: 11, flexShrink: 0, marginTop: 1 }}>✓</span>
+              <span style={{ color: '#cbd5e1', fontSize: 10.5, lineHeight: 1.55 }}>{rec}</span>
+            </div>
+          ))}
+        </div>
+        {viewPlanBtn}
+        <p style={{ color: '#1e293b', fontSize: 8.5, textAlign: 'center', marginTop: 10, lineHeight: 1.5, flexShrink: 0 }}>RE:GEN AI · Estimates only · Level 1 data</p>
+      </div>
+    )
+  }
+
+  /* ── Standard zone layout (Level 2 / Level 3 / Demo) ── */
   const col = RC[building.risk]
   const r   = building.resources
 
@@ -341,54 +700,26 @@ function BuildingPanel({ building, onClose }) {
   ]
 
   return (
-    <div style={{
-      position: 'absolute', top: 0, right: 0, bottom: 0, width: 300,
-      background: 'rgba(2,7,22,0.94)',
-      backdropFilter: 'blur(24px)',
-      borderLeft: '1px solid rgba(255,255,255,0.07)',
-      zIndex: 20,
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '64px 18px 20px',
-      gap: 0,
-      animation: 'dtPanelIn 0.35s ease-out',
-      overflowY: 'hidden',
-    }}>
+    <div style={panelStyle}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0 }}>
         <span style={{ color: '#334155', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-          Building Analysis
+          Zone Analysis
         </span>
-        <button
-          onClick={onClose}
-          style={{ color: '#475569', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', lineHeight: 1, padding: '0 3px', transition: 'color 0.2s' }}
-          onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-          onMouseLeave={e => e.currentTarget.style.color = '#475569'}
-        >×</button>
+        {closeBtn}
       </div>
 
-      {/* Building identity */}
+      {/* Zone identity */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexShrink: 0 }}>
-        <div style={{
-          width: 44, height: 44, borderRadius: 8, flexShrink: 0,
-          background: `linear-gradient(135deg, ${col}22, ${col}08)`,
-          border: `1px solid ${col}44`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
-        }}>
+        <div style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, background: `linear-gradient(135deg, ${col}22, ${col}08)`, border: `1px solid ${col}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
           {building.icon}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3, flexWrap: 'wrap' }}>
             <span style={{ color: '#fff', fontWeight: 800, fontSize: 13 }}>{building.name}</span>
-            <span style={{
-              background: col + '1e', border: `1px solid ${col}55`,
-              color: col, fontSize: 8.5, fontWeight: 700,
-              padding: '1px 7px', borderRadius: 10, letterSpacing: '0.07em', flexShrink: 0,
-            }}>{RL[building.risk]}</span>
+            <span style={{ background: col + '1e', border: `1px solid ${col}55`, color: col, fontSize: 8.5, fontWeight: 700, padding: '1px 7px', borderRadius: 10, letterSpacing: '0.07em', flexShrink: 0 }}>{RL[building.risk]}</span>
           </div>
-          <div style={{ color: '#334155', fontSize: 9.5 }}>
-            {building.buildingId} · {building.occupancy}
-          </div>
+          <div style={{ color: '#334155', fontSize: 9.5 }}>{building.buildingId} · {building.occupancy}</div>
         </div>
       </div>
 
@@ -396,27 +727,20 @@ function BuildingPanel({ building, onClose }) {
       <PLabel>Resource Overview</PLabel>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginBottom: 14, flexShrink: 0 }}>
         {resources.map(row => (
-          <div key={row.label} style={{
-            background: `${row.color}08`,
-            border: `1px solid ${row.color}1e`,
-            borderRadius: 8,
-            padding: '8px 10px',
-          }}>
+          <div key={row.label} style={{ background: `${row.color}08`, border: `1px solid ${row.color}1e`, borderRadius: 8, padding: '8px 10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
               <span style={{ fontSize: 12 }}>{row.icon}</span>
               <span style={{ color: '#475569', fontSize: 8.5, fontWeight: 600, letterSpacing: '0.05em' }}>{row.label}</span>
             </div>
             <div style={{ color: '#e2e8f0', fontSize: 11.5, fontWeight: 700, marginBottom: 2 }}>{row.value}</div>
-            <div style={{ color: '#ef4444', fontSize: 9, fontWeight: 700 }}>↑ {row.delta}%</div>
+            {row.delta > 0 && <div style={{ color: '#ef4444', fontSize: 9, fontWeight: 700 }}>↑ {row.delta}%</div>}
           </div>
         ))}
       </div>
 
       {/* AI Insights */}
-      <PLabel>Gemini Insights</PLabel>
-      <p style={{ color: '#94a3b8', fontSize: 11, lineHeight: 1.62, marginBottom: 14, flexShrink: 0 }}>
-        {building.insights}
-      </p>
+      <PLabel>AI Insights</PLabel>
+      <p style={{ color: '#94a3b8', fontSize: 11, lineHeight: 1.62, marginBottom: 14, flexShrink: 0 }}>{building.insights}</p>
 
       {/* Recommendations */}
       <PLabel>Recommendations</PLabel>
@@ -437,48 +761,15 @@ function BuildingPanel({ building, onClose }) {
           { color: '#eab308', bg: 'rgba(234,179,8,0.06)', v: building.impact.energy, label: 'Energy' },
           { color: '#a78bfa', bg: 'rgba(167,139,250,0.06)', v: building.impact.carbon, label: 'Carbon' },
         ].map(p => (
-          <div key={p.label} style={{
-            flex: 1, textAlign: 'center',
-            background: p.bg, border: `1px solid ${p.color}22`,
-            borderRadius: 8, padding: '8px 4px',
-          }}>
+          <div key={p.label} style={{ flex: 1, textAlign: 'center', background: p.bg, border: `1px solid ${p.color}22`, borderRadius: 8, padding: '8px 4px' }}>
             <div style={{ color: p.color, fontSize: 16, fontWeight: 900, marginBottom: 2 }}>{p.v}%</div>
             <div style={{ color: '#475569', fontSize: 8.5 }}>{p.label}</div>
           </div>
         ))}
       </div>
 
-      {/* View Action Plan — actually scrolls to the section */}
-      <button
-        onClick={() => document.getElementById('action-plan')?.scrollIntoView({ behavior: 'smooth' })}
-        style={{
-          width: '100%',
-          background: 'linear-gradient(135deg, rgba(0,255,136,0.12), rgba(0,229,255,0.08))',
-          border: '1px solid rgba(0,255,136,0.40)',
-          borderRadius: 8, color: '#00ff88',
-          fontWeight: 700, fontSize: 12, padding: '11px',
-          cursor: 'pointer', letterSpacing: '0.04em',
-          transition: 'all 0.22s ease',
-          boxShadow: '0 0 14px rgba(0,255,136,0.10)',
-          flexShrink: 0,
-        }}
-        onMouseEnter={e => {
-          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,255,136,0.22), rgba(0,229,255,0.14))'
-          e.currentTarget.style.boxShadow = '0 0 24px rgba(0,255,136,0.22)'
-          e.currentTarget.style.transform = 'translateY(-1px)'
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,255,136,0.12), rgba(0,229,255,0.08))'
-          e.currentTarget.style.boxShadow = '0 0 14px rgba(0,255,136,0.10)'
-          e.currentTarget.style.transform = ''
-        }}
-      >
-        View Action Plan →
-      </button>
-
-      <p style={{ color: '#1e293b', fontSize: 8.5, textAlign: 'center', marginTop: 10, lineHeight: 1.5, flexShrink: 0 }}>
-        Simulated smart-campus resource logs · Decision-support prototype
-      </p>
+      {viewPlanBtn}
+      <p style={{ color: '#1e293b', fontSize: 8.5, textAlign: 'center', marginTop: 10, lineHeight: 1.5, flexShrink: 0 }}>RE:GEN AI Decision-support system · Estimates only</p>
     </div>
   )
 }
@@ -496,8 +787,19 @@ function PLabel({ children }) {
 }
 
 /* ─── Main export ────────────────────────────────────────────────────────── */
-export default function DigitalTwinCampus({ onBuildingSelect }) {
-  const [selected, setSelected] = useState('computer')
+export default function DigitalTwinCampus({ onBuildingSelect, uploadResult }) {
+  const isUploadMode = !!uploadResult
+
+  const buildings = useMemo(
+    () => isUploadMode ? buildUploadBuildings(uploadResult) : BUILDINGS,
+    [isUploadMode, uploadResult]
+  )
+
+  const defaultSelected = isUploadMode
+    ? (buildings[0]?.id || null)
+    : 'computer'
+
+  const [selected, setSelected] = useState(defaultSelected)
   const [pulse, setPulse]       = useState(true)
   const [scanStep, setScanStep] = useState(3)
 
@@ -513,7 +815,7 @@ export default function DigitalTwinCampus({ onBuildingSelect }) {
       return
     }
     setSelected(id)
-    const b = BUILDINGS.find(x => x.id === id)
+    const b = buildings.find(x => x.id === id)
     onBuildingSelect?.(b ?? null)
     setScanStep(0)
     setTimeout(() => setScanStep(1), 600)
@@ -521,7 +823,7 @@ export default function DigitalTwinCampus({ onBuildingSelect }) {
     setTimeout(() => setScanStep(3), 2700)
   }
 
-  const sel = BUILDINGS.find(b => b.id === selected)
+  const sel = buildings.find(b => b.id === selected)
 
   return (
     <section id="twin" style={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden' }}>
@@ -550,7 +852,7 @@ export default function DigitalTwinCampus({ onBuildingSelect }) {
       {/* Campus background */}
       <img
         src="/twin-bg.jpg"
-        alt="Campus aerial view"
+        alt={isUploadMode ? `${uploadResult?.org_name || 'Facility'} aerial view` : 'Campus aerial view'}
         onError={e => { e.currentTarget.src = '/hero-campus.jpg' }}
         style={{
           position: 'absolute', inset: 0,
@@ -578,22 +880,40 @@ export default function DigitalTwinCampus({ onBuildingSelect }) {
       }}/>
 
       {/* Title block */}
-      <div style={{ position:'absolute', left:48, top:84, zIndex:15, maxWidth:360, pointerEvents:'none' }}>
+      <div style={{ position:'absolute', left:48, top:84, zIndex:15, maxWidth:380, pointerEvents:'none' }}>
         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
           <div style={{ width:7, height:7, borderRadius:'50%', background:'#00ff88', boxShadow:'0 0 8px #00ff88', animation:'dtStatusBlink 2s ease-in-out infinite' }}/>
-          <span style={{ color:'#00ff88', fontSize:11, fontWeight:700, letterSpacing:'0.18em', textTransform:'uppercase' }}>Campus Intelligence</span>
+          <span style={{ color:'#00ff88', fontSize:11, fontWeight:700, letterSpacing:'0.18em', textTransform:'uppercase' }}>
+            {isUploadMode ? `${uploadResult?.org_type || 'Organization'} Intelligence` : 'Campus Intelligence'}
+          </span>
         </div>
         <h2 style={{ color:'#fff', fontSize:52, fontWeight:900, lineHeight:1.05, margin:'0 0 12px', fontFamily:'Inter,sans-serif' }}>
           Digital <span style={{ color:'#00e5ff' }}>Twin</span>
         </h2>
-        <p style={{ color:'rgba(148,163,184,0.82)', fontSize:12.5, lineHeight:1.65, margin:0 }}>
-          AI-driven campus intelligence.<br/>
-          Every resource. Every system. One connected view.
+        <p style={{ color:'rgba(148,163,184,0.82)', fontSize:12.5, lineHeight:1.65, margin:'0 0 14px' }}>
+          {isUploadMode
+            ? `AI-driven resource intelligence for ${uploadResult?.org_name || 'your organization'}.`
+            : 'AI-driven campus intelligence. Every resource. Every system. One connected view.'}
         </p>
+        {isUploadMode && (() => {
+          const level = uploadResult?.analysis_metadata?.overall_level ?? 3
+          const levelColor = level === 1 ? '#f59e0b' : level === 2 ? '#00b4ff' : '#00ff88'
+          const levelLabel = level === 1 ? 'Level 1 — Basic Assessment' : level === 2 ? 'Level 2 — Operational Data' : 'Level 3 — Advanced Analysis'
+          const levelDesc  = level === 1 ? 'Resource Overview · No anomaly detection' : level === 2 ? 'Zone trends · No anomaly detection' : 'Full anomaly detection active'
+          return (
+            <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:`${levelColor}12`, border:`1px solid ${levelColor}40`, borderRadius:8, padding:'6px 12px' }}>
+              <div style={{ width:6, height:6, borderRadius:'50%', background:levelColor, boxShadow:`0 0 6px ${levelColor}`, flexShrink:0 }}/>
+              <div>
+                <div style={{ color:levelColor, fontSize:9.5, fontWeight:700, letterSpacing:'0.06em' }}>{levelLabel}</div>
+                <div style={{ color:'rgba(148,163,184,0.7)', fontSize:9 }}>{levelDesc}</div>
+              </div>
+            </div>
+          )
+        })()}
       </div>
 
       {/* Building hotspots */}
-      {BUILDINGS.map(b => (
+      {buildings.map(b => (
         <Hotspot key={b.id} b={b} isSelected={selected === b.id} onSelect={handleSelect} pulse={pulse}/>
       ))}
 
@@ -627,10 +947,10 @@ export default function DigitalTwinCampus({ onBuildingSelect }) {
           <div>
             <div style={{ color:'#00e5ff', fontSize:11, fontWeight:700, letterSpacing:'0.08em', marginBottom:1 }}>DRONE STATUS</div>
             <div style={{ color:'#00e5ff', fontSize:13, fontWeight:800, marginBottom:1 }}>
-              {scanStep < 3 ? SCAN_STEPS[scanStep] : 'Scanning Campus'}
+              {scanStep < 3 ? SCAN_STEPS[scanStep] : isUploadMode ? 'Scanning Facility' : 'Scanning Campus'}
             </div>
             <div style={{ color:'#334155', fontSize:9.5 }}>
-              {sel ? `Focused: ${sel.name}` : 'Multi-layer data collection active'}
+              {sel ? `Focused: ${sel.name}` : 'Multi-layer resource analysis active'}
             </div>
           </div>
         </div>

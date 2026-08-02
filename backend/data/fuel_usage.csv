@@ -1,0 +1,13 @@
+date,fuel_type,quantity_liters,location,purpose
+2024-01-15,diesel,45.0,Campus Generators,Backup power
+2024-01-15,diesel,12.0,Facilities Vehicle,Transport
+2024-01-16,diesel,38.0,Campus Generators,Backup power
+2024-01-16,petrol,8.5,Admin Vehicle,Transport
+2024-01-17,diesel,42.0,Campus Generators,Backup power
+2024-01-17,diesel,15.0,Facilities Vehicle,Transport
+2024-01-18,diesel,35.0,Campus Generators,Backup power
+2024-01-18,petrol,9.0,Admin Vehicle,Transport
+2024-01-19,diesel,48.0,Campus Generators,Backup power
+2024-01-19,diesel,11.0,Facilities Vehicle,Transport
+2024-01-20,diesel,30.0,Campus Generators,Weekend
+2024-01-21,diesel,28.0,Campus Generators,Weekend

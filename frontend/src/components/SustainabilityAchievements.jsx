@@ -1,4 +1,5 @@
-export default function SustainabilityAchievements({ dashData, waterData, energyData }) {
+export default function SustainabilityAchievements({ dashData, waterData, energyData, uploadResult }) {
+  const isUploadMode = !!uploadResult
   const regenAfter  = dashData?.regen_score?.after_score    || 0
   const regenBefore = dashData?.regen_score?.before_score   || 30
   const co2Saved    = dashData?.impact_summary?.total_co2_saved_kg || 0
@@ -172,7 +173,7 @@ export default function SustainabilityAchievements({ dashData, waterData, energy
       </div>
 
       <p className="text-xs text-slate-700 text-center mt-6">
-        Achievement progress derived from simulated sensor analysis · Not a regulatory certification
+        Achievement progress derived from {isUploadMode ? 'uploaded data analysis' : 'simulated sensor analysis'} · Not a regulatory certification
       </p>
     </section>
   )

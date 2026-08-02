@@ -1,6 +1,6 @@
 DISCLAIMER = (
     "RE:GEN AI is a prototype decision-support system. "
-    "All values are estimated from simulated data for capstone demonstration purposes. "
+    "All values are estimated from simulated or uploaded data for demonstration purposes. "
     "This is not professional regulatory, financial, or engineering advice. "
     "Always consult certified waste management, engineering, and environmental professionals before taking action."
 )

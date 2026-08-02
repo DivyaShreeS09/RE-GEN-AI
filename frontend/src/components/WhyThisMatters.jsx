@@ -88,7 +88,7 @@ export default function WhyThisMatters() {
           ))}
         </div>
         <p className="text-xs text-slate-600 text-center mt-5">
-          Figures extrapolated from simulated 7-day data. Actual impact depends on campus size,
+          Figures are benchmark estimates for a 5,000-student campus. Actual impact depends on campus size,
           infrastructure condition, and intervention quality.
         </p>
       </div>

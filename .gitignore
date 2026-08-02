@@ -32,3 +32,16 @@ package-lock.json
 *.sw?
 .DS_Store
 Thumbs.db
+
+# Claude Code
+.claude/
+
+# Playwright / testing artifacts (root-level only)
+/package.json
+/package-lock.json
+playwright-report/
+test-results/
+
+# Backend venv (explicit)
+backend/venv/
+backend/.env

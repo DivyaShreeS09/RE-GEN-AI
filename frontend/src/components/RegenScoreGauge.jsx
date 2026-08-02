@@ -1,4 +1,10 @@
-export default function RegenScoreGauge({ before, after, improvement, rating }) {
+const LEVEL_LABELS = {
+  level1: { label: 'Preliminary',  color: '#f59e0b' },
+  level2: { label: 'Operational',  color: '#00b4ff' },
+  level3: { label: 'Advanced AI',  color: '#00ff88' },
+}
+
+export default function RegenScoreGauge({ before, after, improvement, rating, analysisMeta }) {
   const radius = 70
   const circumference = 2 * Math.PI * radius
   const beforeOffset = circumference - (before / 100) * circumference
@@ -12,11 +18,42 @@ export default function RegenScoreGauge({ before, after, improvement, rating }) 
     return '#ef4444'
   }
 
+  const levelKey    = analysisMeta?.overall_code || null
+  const levelMeta   = levelKey ? LEVEL_LABELS[levelKey] : null
+  const confPct     = analysisMeta?.confidence_pct ?? null
+  const overallLabel = analysisMeta?.overall_label || null
+
   return (
     <div className="glass-card p-6 glow-green flex flex-col items-center">
-      <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-widest mb-4">
-        RE:GEN Score
-      </h3>
+      <div className="flex items-center gap-3 mb-4">
+        <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-widest">
+          RE:GEN Score
+        </h3>
+        {levelMeta && (
+          <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{
+            background: levelMeta.color + '18',
+            border: `1px solid ${levelMeta.color}44`,
+            color: levelMeta.color,
+          }}>
+            {levelMeta.label}
+          </span>
+        )}
+        {confPct != null && (
+          <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{
+            background: 'rgba(148,163,184,0.10)',
+            border: '1px solid rgba(148,163,184,0.25)',
+            color: '#94a3b8',
+          }}>
+            {confPct}% confidence
+          </span>
+        )}
+      </div>
+
+      {overallLabel && (
+        <p className="text-xs text-slate-500 mb-4 text-center">
+          Score computed at <span className="text-slate-300">{overallLabel}</span> — confidence reflects data resolution
+        </p>
+      )}
 
       <div className="relative flex items-center justify-center gap-8">
         {/* Before */}

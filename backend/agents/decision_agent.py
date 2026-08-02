@@ -1,5 +1,5 @@
 from core.guardrails import get_disclaimer
-from core.gemini_client import call_gemini
+from core.openai_client import call_openai
 
 # Estimated one-time install costs (simulated; clearly marked)
 _INSTALL_COST = {"W1": 8000, "E1": 5000, "W2": 2000}
@@ -44,10 +44,15 @@ def generate_decisions(water_result: dict, energy_result: dict, waste_result: di
     water_liters    = water_result.get("total_wasted_liters", 0)
     water_urgency   = urgency_map.get(water_severity, 1)
 
+    water_issue = (
+        f"Night-time water leakage detected ({water_liters} L wasted)"
+        if water_liters > 0 else
+        "Water consumption analysis — no anomalous flow detected at current data resolution"
+    )
     actions.append({
         "id": "W1",
         "domain": "Water",
-        "issue": f"Night-time water leakage detected ({water_liters} L wasted)",
+        "issue": water_issue,
         "urgency": water_urgency,
         "urgency_label": water_severity.upper(),
         "cost_saving_inr": water_cost,
@@ -65,10 +70,15 @@ def generate_decisions(water_result: dict, energy_result: dict, waste_result: di
     energy_kwh      = energy_result.get("total_wasted_kwh",   0)
     energy_urgency  = urgency_map.get(energy_severity, 1)
 
+    energy_issue = (
+        f"After-hours energy waste detected ({energy_kwh} kWh wasted)"
+        if energy_kwh > 0 else
+        "Energy consumption analysis — no after-hours anomalies detected at current data resolution"
+    )
     actions.append({
         "id": "E1",
         "domain": "Energy",
-        "issue": f"After-hours energy waste detected ({energy_kwh} kWh wasted)",
+        "issue": energy_issue,
         "urgency": energy_urgency,
         "urgency_label": energy_severity.upper(),
         "cost_saving_inr": energy_cost,
@@ -114,9 +124,9 @@ def generate_decisions(water_result: dict, energy_result: dict, waste_result: di
 
     total_potential_saving = sum(a["cost_saving_inr"] for a in actions)
 
-    # --- Gemini: explain top-priority action in plain language ---
+    # --- AI: explain top-priority action in plain language ---
     top_action_explanation = ""
-    gemini_used = False
+    ai_used = False
     if actions:
         top = actions[0]
         fallback_explanation = (
@@ -124,7 +134,7 @@ def generate_decisions(water_result: dict, energy_result: dict, waste_result: di
             f"urgency {top['urgency']}/10, estimated weekly saving Rs. {top['cost_saving_inr']:.0f}, "
             f"environmental impact {top['env_impact_score']:.1f}/10."
         )
-        prompt = f"""You are a campus sustainability decision analyst. In exactly 2 clear sentences, explain to a university sustainability officer WHY this action must be done FIRST.
+        prompt = f"""You are a sustainability decision analyst. In exactly 2 clear sentences, explain to a sustainability officer WHY this action must be done FIRST.
 
 Action: {top['recommended_action']}
 Domain: {top['domain']}
@@ -140,9 +150,9 @@ Rules:
 - Tell the officer exactly what to do within 24 hours
 - Do not use: revolutionary, powerful AI, real-time intelligence, next-generation"""
 
-        top_action_explanation, gemini_used = call_gemini(prompt, fallback_explanation)
+        top_action_explanation, ai_used = call_openai(prompt, fallback_explanation)
         top["ai_priority_explanation"] = top_action_explanation
-        top["gemini_powered"]          = gemini_used
+        top["ai_powered"]              = ai_used
 
     reasoning_trace = [
         f"Step 1 — Received results from {len(actions)} domain agents.",
@@ -151,7 +161,7 @@ Rules:
         f"Step 4 — Top priority: {actions[0]['issue'] if actions else 'None'}.",
         f"Step 5 — Total estimated savings potential: Rs. {round(total_potential_saving, 2)}.",
         f"Step 6 — ROI payback estimates appended to each action.",
-        f"Step 7 — AI reasoning layer: {'Gemini-enhanced explanation generated.' if gemini_used else 'Rule-based fallback used (Gemini unavailable).'}",
+        f"Step 7 — AI reasoning layer: {'AI-enhanced explanation generated.' if ai_used else 'Rule-based fallback used (AI unavailable).'}",
     ]
 
     return {
@@ -162,7 +172,7 @@ Rules:
         "total_potential_saving_inr":  round(total_potential_saving, 2),
         "top_priority_domain":         actions[0]["domain"] if actions else None,
         "top_action_explanation":      top_action_explanation,
-        "gemini_enhanced":             gemini_used,
+        "ai_enhanced":                 ai_used,
         "reasoning_trace":             reasoning_trace,
         "confidence":                  0.90,
         "disclaimer":                  get_disclaimer(),

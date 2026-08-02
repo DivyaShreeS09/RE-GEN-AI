@@ -1,9 +1,3 @@
-/**
- * HeroSection — Premium image-driven hero.
- * Apple / Vercel / Nothing aesthetic: one image, one headline, one panel.
- * No Three.js. No procedural geometry. No clutter.
- */
-
 import { useEffect, useRef, useState } from 'react'
 
 /* ─── Timing constants ───────────────────────────────── */
@@ -184,13 +178,21 @@ function SustainabilityPanel({ onExplore }) {
         padding: '28px 26px 24px',
         boxShadow: '0 24px 80px rgba(0,0,0,0.50), 0 0 0 0.5px rgba(255,255,255,0.04) inset',
       }}>
-        {/* Label */}
+        {/* Benchmark label */}
         <div style={{
-          fontSize: 9.5, color: 'rgba(255,255,255,0.30)',
-          letterSpacing: '0.20em', textTransform: 'uppercase',
-          marginBottom: 10,
+          display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10,
         }}>
-          Campus Sustainability Score
+          <div style={{
+            fontSize: 9, color: 'rgba(111,212,111,0.55)',
+            letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 700,
+          }}>
+            Benchmark Targets
+          </div>
+          <div style={{
+            fontSize: 8.5, color: 'rgba(111,212,111,0.38)', fontStyle: 'italic', lineHeight: 1.3,
+          }}>
+            — sustainable campus reference
+          </div>
         </div>
 
         {/* Big number */}
@@ -205,7 +207,7 @@ function SustainabilityPanel({ onExplore }) {
           <span style={{ fontSize: 26, fontWeight: 700, color: '#6fd46f', marginBottom: 4 }}>%</span>
         </div>
         <div style={{ fontSize: 11, color: '#6fd46f', marginBottom: 22, letterSpacing: '0.04em' }}>
-          ● Excellent
+          ● Target RE:GEN Score
         </div>
 
         <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', marginBottom: 20 }} />
@@ -218,6 +220,11 @@ function SustainabilityPanel({ onExplore }) {
         </div>
 
         <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginTop: 22, marginBottom: 16 }} />
+
+        {/* Disclaimer line */}
+        <div style={{ fontSize: 9, color: 'rgba(100,116,139,0.50)', marginBottom: 10, textAlign: 'center', lineHeight: 1.5 }}>
+          Run analysis to see your organization's actual scores
+        </div>
 
         {/* Explore button */}
         <button
@@ -243,7 +250,7 @@ function SustainabilityPanel({ onExplore }) {
             e.currentTarget.style.borderColor = 'rgba(111,212,111,0.18)'
           }}
         >
-          <span>Explore Full Story</span>
+          <span>Explore the Vision</span>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M2 7h10M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.5"
               strokeLinecap="round" strokeLinejoin="round" />
@@ -261,8 +268,130 @@ function SustainabilityPanel({ onExplore }) {
   )
 }
 
+/* ─── Post-analysis summary (replaces hero after scan) ── */
+const LEVEL_META = {
+  level1: { color: '#f59e0b', label: 'Level 1 — Basic Assessment', desc: 'Consumption benchmarking · No anomaly detection' },
+  level2: { color: '#00b4ff', label: 'Level 2 — Operational Analysis', desc: 'Daily trends · No hourly anomaly detection' },
+  level3: { color: '#00ff88', label: 'Level 3 — Advanced AI Analysis', desc: 'Full anomaly detection · Hourly resolution' },
+}
+
+function PostAnalysisHero({ uploadResult, dashData, processingTimeSec, onScan }) {
+  const meta      = uploadResult?.analysis_metadata
+  const orgName   = uploadResult?.org_name || 'Demo Analysis'
+  const orgType   = uploadResult?.org_type || 'University'
+  const levelCode = meta?.overall_code || 'level3'
+  const lm        = LEVEL_META[levelCode] || LEVEL_META.level3
+  const conf      = meta?.confidence_pct ?? 89
+  const coverage  = uploadResult?.coverage?.data_coverage_pct ?? 80
+  const now       = new Date()
+  const dateStr   = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+  const timeStr   = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+  const skipped   = meta?.skipped_modules || []
+  const isDemo    = !uploadResult
+
+  const scoreBefore = dashData?.regen_score?.before_score
+  const scoreAfter  = dashData?.regen_score?.after_score
+
+  const infoRows = [
+    { label: 'Organization',     value: orgName,                    color: '#e2e8f0' },
+    { label: 'Type',             value: orgType,                    color: '#94a3b8' },
+    { label: 'Analysis Level',   value: lm.label,                   color: lm.color  },
+    { label: 'Confidence',       value: `${conf}%`,                 color: conf >= 80 ? '#00ff88' : conf >= 60 ? '#eab308' : '#f59e0b' },
+    { label: 'Data Coverage',    value: `${coverage}%`,             color: '#00b4ff' },
+    { label: 'Analysis Date',    value: `${dateStr} · ${timeStr}`,  color: '#64748b' },
+    { label: 'Processing Time',  value: processingTimeSec ? `${processingTimeSec}s` : '—', color: '#64748b' },
+  ]
+
+  return (
+    <section style={{
+      position: 'relative', width: '100%', minHeight: '40vh',
+      background: 'linear-gradient(180deg, #060e08 0%, #030712 100%)',
+      display: 'flex', alignItems: 'center', paddingTop: 80, paddingBottom: 40,
+      borderBottom: '1px solid rgba(255,255,255,0.05)',
+    }}>
+      <div style={{
+        maxWidth: 1200, margin: '0 auto', padding: '0 40px',
+        width: '100%', display: 'grid',
+        gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center',
+      }}>
+        {/* Left: title + status */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 10px rgba(74,222,128,0.7)' }} />
+            <span style={{ fontSize: 11, color: '#4ade80', letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 700 }}>
+              Analysis Complete
+            </span>
+          </div>
+
+          <h1 style={{ margin: '0 0 12px', fontSize: 'clamp(28px, 3vw, 44px)', fontWeight: 800, color: '#fff', lineHeight: 1.1 }}>
+            {isDemo ? 'Demo Analysis' : orgName}
+          </h1>
+          <p style={{ margin: '0 0 24px', fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
+            {lm.desc}
+          </p>
+
+          {/* Level badge */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '8px 16px', borderRadius: 10,
+            background: `${lm.color}10`, border: `1px solid ${lm.color}35`,
+            marginBottom: 24,
+          }}>
+            <div style={{ width: 18, height: 18, borderRadius: '50%', background: lm.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: '#000' }}>
+              {levelCode.replace('level', '')}
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 700, color: lm.color }}>{lm.label}</span>
+          </div>
+
+          {skipped.length > 0 && (
+            <div style={{
+              padding: '10px 14px', borderRadius: 8,
+              background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.20)',
+              fontSize: 11.5, color: 'rgba(245,158,11,0.9)', lineHeight: 1.6,
+            }}>
+              <strong>Modules unavailable at this data resolution:</strong>{' '}
+              {skipped.map(m => m.module).join(', ')}.<br />
+              Provide hourly operational logs to unlock advanced analysis.
+            </div>
+          )}
+        </div>
+
+        {/* Right: info panel */}
+        <div style={{
+          background: 'rgba(4,14,8,0.55)',
+          backdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderTop: `1px solid ${lm.color}30`,
+          borderRadius: 20, padding: '24px 22px',
+        }}>
+          <p style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 18 }}>
+            Analysis Summary
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {infoRows.map(({ label, value, color }) => (
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: 10 }}>
+                <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>{label}</span>
+                <span style={{ fontSize: 12.5, color, fontWeight: 700, textAlign: 'right', maxWidth: 200 }}>{value}</span>
+              </div>
+            ))}
+            {scoreBefore != null && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
+                <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>RE:GEN Score</span>
+                <span style={{ fontSize: 12.5, color: '#00ff88', fontWeight: 800 }}>
+                  {scoreBefore} → {scoreAfter}
+                  <span style={{ fontSize: 10, color: 'rgba(0,255,136,0.55)', marginLeft: 6 }}>post-action</span>
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 /* ─── Main hero ──────────────────────────────────────── */
-export default function HeroSection({ onScan, loading }) {
+export default function HeroSection({ onScan, loading, scanDone, uploadResult, dashData, processingTimeSec }) {
   const [vis, setVis] = useState(false)
   const bgRef = useRef(null)
   const mouse = useRef({ x: 0, y: 0 })
@@ -309,6 +438,10 @@ export default function HeroSection({ onScan, loading }) {
 
   const scrollTo = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  if (scanDone) {
+    return <PostAnalysisHero uploadResult={uploadResult} dashData={dashData} processingTimeSec={processingTimeSec} onScan={onScan} />
   }
 
   return (
@@ -508,7 +641,7 @@ export default function HeroSection({ onScan, loading }) {
                         strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
-                  Begin Mission
+                  Start Analysis
                 </>
               )}
             </button>

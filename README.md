@@ -1,8 +1,6 @@
-# RE:GEN AI — Multi-Agent Sustainability Command Center
+# RE:GEN AI — Multi-Agent Sustainability Intelligence Platform
 
-> Autonomous AI agents that detect hidden campus resource loss and generate sustainability action plans.
-
-**Google Kaggle AI Agents: Intensive Vibe Coding Capstone Project 2026**
+> Autonomous AI agents that detect hidden resource loss, map waste to recovery value, and generate evidence-backed sustainability action plans for any organisation.
 
 **Live demo:** [https://frontend-two-rho-85.vercel.app](https://frontend-two-rho-85.vercel.app)  
 **Backend API:** [https://regen-ai-backend.onrender.com/health](https://regen-ai-backend.onrender.com/health)  
@@ -13,196 +11,185 @@
 
 ## The Problem
 
-University campuses silently lose significant water, energy, and waste value every week — not because of a lack of concern, but because the data lives in disconnected systems with no one synthesizing it into action. Night-time pipe leaks run undetected until a bill arrives. Lab equipment left on overnight drains electricity budgets. Recyclable materials accumulate in general waste because no one has mapped their recovery pathway.
+Campuses, hospitals, hotels, and industrial facilities silently lose significant water, energy, and waste value every week — not because of a lack of concern, but because the data lives in disconnected systems with no one synthesising it into action.
 
-RE:GEN AI is a decision-support prototype that addresses this gap.
+Night-time pipe leaks run undetected until a bill arrives. Lab equipment left on overnight drains electricity budgets. Recyclable materials accumulate in general waste because no one has mapped their recovery pathway. And when an analyst finally collects the data, it takes weeks of manual work to produce even a basic sustainability report.
 
----
-
-## What RE:GEN AI Does
-
-RE:GEN AI runs a coordinated network of specialized AI agents against simulated smart-campus resource logs. Each agent independently detects anomalies in its domain, calculates estimated sustainability impact, and contributes findings to a shared decision pipeline. The Decision Engine then ranks interventions by urgency, estimated cost savings, and environmental impact. Gemini 2.5 Flash Lite adds a narrative reasoning layer to explain priority decisions in plain language.
-
-**This is a prototype built for a capstone demonstration. All data is simulated.**
+RE:GEN AI closes this gap — for any organisation, not just campuses.
 
 ---
 
-## Key Features
+## Solution
 
-| Feature | Description |
+RE:GEN AI runs a coordinated network of seven specialised AI agents against your uploaded resource data (or bundled demo data). Each agent independently detects anomalies in its domain, calculates sustainability impact, and contributes findings to a shared decision pipeline. The Decision Engine ranks interventions by urgency, estimated cost savings, and environmental impact. OpenAI `gpt-4o-mini` adds a narrative reasoning layer — explaining priority decisions in plain language — while all numerical analysis stays fully deterministic.
+
+---
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                  Data Intelligence Layer                  │
+│     Upload CSV/Excel · Manual Entry · Schema Validation   │
+│     Coverage % · Confidence % · Analysis Level (1–3)     │
+└──────────────────────┬───────────────────────────────────┘
+                       │
+        ┌──────────────▼──────────────┐
+        │      Multi-Agent Core       │
+        │  (FastAPI · Python 3.11+)   │
+        └──┬───┬───┬───┬───┬───┬─────┘
+           │   │   │   │   │   │
+    ┌──────▼─┐ │ ┌─▼──┐│ ┌─▼──┐│ ┌────▼───┐
+    │ Water  │ │ │Enrg││ │Wste││ │ Impact │
+    │ Agent  │ │ │ Ag ││ │ Ag ││ │ Agent  │
+    └────────┘ │ └────┘│ └────┘│ └────────┘
+        ┌──────▼─┐   ┌──▼────┐   ┌────▼───┐
+        │Decision│   │RE:GEN │   │Report  │
+        │Engine  │   │Score  │   │Agent   │
+        └────────┘   └───────┘   └────────┘
+                       │
+        ┌──────────────▼──────────────┐
+        │       OpenAI gpt-4o-mini    │
+        │  Narrative · Explanations   │
+        │  (always deterministic KB   │
+        │   fallback if unavailable)  │
+        └──────────────┬──────────────┘
+                       │
+        ┌──────────────▼──────────────┐
+        │        React Frontend       │
+        │  Digital Twin · War Room    │
+        │  Waste-to-Wealth · Reports  │
+        │  Action Plan · PDF Export   │
+        └─────────────────────────────┘
+```
+
+---
+
+## Agent Flow
+
+| Agent | Input | Output |
+|---|---|---|
+| Water Leakage Agent | Hourly water usage logs | Anomaly events, wasted litres, severity, cost estimate |
+| Energy Optimization Agent | Hourly energy logs | After-hours waste events, kWh wasted, severity |
+| Waste-to-Wealth Agent | Waste type + quantity | Recovery pathway, estimated value, CO₂ savings, compliance notes |
+| Pollution & Impact Agent | Water + energy + fuel data | Total CO₂, SDG alignment, annual projections |
+| Decision Engine Agent | All agent outputs | Ranked interventions by urgency × impact × cost |
+| RE:GEN Score Agent | All agent outputs | Sustainability health index before/after intervention |
+| Report Agent | All agent outputs | Executive summary + action plan + PDF export |
+
+**All agents run in parallel. No agent blocks another. Missing data causes a graceful skip, not a failure.**
+
+---
+
+## OpenAI Integration
+
+RE:GEN AI integrates `gpt-4o-mini` at three points in the pipeline, all with deterministic fallbacks:
+
+1. **Waste-to-Wealth recommendations** — Given the material, quantity, recovery pathway, and estimated value range, GPT writes 2 actionable sentences for the sustainability officer. Fallback: constructed from KB fields.
+
+2. **AI reasoning in War Room** — Each agent's finding, reasoning, and recommendation is surfaced live. In upload mode, these are populated from actual backend data — never from hardcoded demo text.
+
+3. **Executive summary in Report Agent** — GPT writes a 3-paragraph summary calibrated to the analysis level (Level 1/2/3), explicitly disclosing if anomaly detection was unavailable. Fallback: deterministic template using actual numbers.
+
+**Rule**: Every financial figure is prefixed with "estimated". No exact profit is claimed. No data is invented. If OpenAI is unavailable, the system degrades gracefully to rule-based outputs identical in structure.
+
+---
+
+## Analysis Levels
+
+The system auto-detects data resolution and adjusts confidence accordingly:
+
+| Level | Data Required | Features | Confidence |
+|---|---|---|---|
+| Level 1 — Basic Assessment | Manual entry or monthly totals | Sustainability score, carbon estimation, cost benchmarking | ≤55% |
+| Level 2 — Operational Analysis | Daily/weekly meter exports | Trend analysis, building comparison, consumption hotspots | ≤72% |
+| Level 3 — Advanced AI Analysis | Hourly data, ≥3 days, ≥12 slots/day | Full anomaly detection, leak detection, predictive maintenance | 85–95% |
+
+When anomaly detection is unavailable, the system explicitly discloses this in the War Room, Digital Twin, and every generated report — never silently pretending to detect leaks from monthly aggregates.
+
+---
+
+## Waste-to-Wealth Knowledge Base
+
+The Waste-to-Wealth agent uses a production-quality knowledge base of **97 materials** across 15 categories. Every material entry includes:
+
+| Field | Description |
 |---|---|
-| Digital Twin Campus | Campus visualization from analyzed sensor logs with per-zone resource health indicators |
-| Agent War Room | Animated agent pipeline visualization — watch agents activate and report findings |
-| Waste-to-Wealth Analyzer | Maps 30 waste material types to recovery pathways and estimated value |
-| Water Leakage Agent | Detects night-flow anomalies from 7-day hourly water usage logs |
-| Energy Optimization Agent | Identifies after-hours energy waste across campus zones |
-| Pollution & Impact Agent | Calculates CO2 savings, SDG alignment, and annual projections |
-| Decision Engine | Ranks interventions by composite urgency/cost/environmental score |
-| RE:GEN Score | Campus sustainability health index: before and after agent intervention |
-| Gemini Narrative Layer | Enhanced recommendations and executive summary via Gemini 2.5 Flash Lite |
-| PDF Report Export | Downloadable executive brief with full agent findings |
-| Action Plan | Agent-prioritized intervention checklist with ROI estimates |
+| `category` | Material category (Organic, Plastic, Metal, etc.) |
+| `recommended_pathway` | Best recovery route (composting, recycling, certified handler, etc.) |
+| `estimated_value_range` | Min/max INR per kg (market reference, not a guarantee) |
+| `co2_savings_kg_per_tonne` | CO₂ avoidance vs landfill disposal (LCA-sourced) |
+| `compliance_notes` | Applicable Indian regulation (SWM Rules 2016, E-Waste Rules 2022, HWM Rules 2016, etc.) |
+| `required_handling` | PPE and segregation requirements |
+| `preparation_before_sale` | Step-by-step action before contacting buyer |
+| `collection_frequency` | Operational guidance for pickup scheduling |
+| `buyer_types` | Types of buyers (kabadiwala, paper mill, CPCB-authorised handler, etc.) |
+| `knowledge_source` | Regulatory citation or industry body |
+| `hazard_level` | none / low / medium / high / critical |
+
+**Alias normalization**: 100+ common variant spellings are normalized before lookup (e.g. "PET bottles" → `pet`, "corrugated cardboard" → `cardboard`, "biomedical waste" → `medical waste`). Unknown materials receive inferred category guidance and interim handling advice — never a silent failure.
+
+**Dropdown is dynamically generated** from the live knowledge base at `/analyze/waste/materials`. Future additions to the KB automatically appear without any frontend edits.
 
 ---
 
-## Agent Architecture
+## Digital Twin
 
-```
-                    ┌─────────────────────┐
-                    │   Simulated Campus   │
-                    │      Data Layer      │
-                    │  (CSV / JSON / KB)   │
-                    └──────────┬──────────┘
-                               │
-            ┌──────────────────┼──────────────────┐
-            ▼                  ▼                  ▼
-    ┌───────────────┐  ┌───────────────┐  ┌───────────────┐
-    │  Water Agent  │  │ Energy Agent  │  │  Waste Agent  │
-    │  Night-flow   │  │  After-hours  │  │ KB lookup +   │
-    │  anomaly det. │  │  waste detect │  │ hazard guard  │
-    └───────┬───────┘  └───────┬───────┘  └───────┬───────┘
-            └──────────────────┼──────────────────┘
-                               ▼
-                    ┌─────────────────────┐
-                    │   Impact Agent      │
-                    │  CO2 / SDG / trees  │
-                    └──────────┬──────────┘
-                               │
-                    ┌──────────▼──────────┐
-                    │   Decision Engine   │
-                    │  Composite scoring  │
-                    │  + Gemini explainer │
-                    └──────────┬──────────┘
-                               │
-              ┌────────────────┼────────────────┐
-              ▼                ▼                ▼
-    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-    │ RE:GEN Score │  │ Report Agent │  │ Action Plan  │
-    │  Health idx  │  │ Gemini narr. │  │  Checklist   │
-    └──────────────┘  └──────────────┘  └──────────────┘
-```
+The Digital Twin visualizes the facility at the correct analysis level:
 
-### Agent Details
+- **Level 1**: Five resource nodes (Water, Energy, Fuel, Waste, Carbon) — each showing actual uploaded totals with clear disclosure that zone-level detection is unavailable
+- **Level 2**: Org-type zone archetypes (University, Hospital, Hotel, Factory, etc.) with proportional consumption estimates — no fake anomaly colours
+- **Level 3**: Full anomaly-driven zone map — risk levels derived from actual detected events
 
-**Water Leakage Agent** (`backend/agents/water_agent.py`)
-Loads 7-day hourly water usage CSV. Establishes a night-hour baseline (0–5 AM) from non-anomalous readings. Identifies anomalous events by location and date. Computes wasted liters, estimated cost impact (₹0.05/L), CO2 equivalent, and severity tier (none → critical). Returns structured findings with a reasoning trace.
-
-**Energy Optimization Agent** (`backend/agents/energy_agent.py`)
-Analyzes after-hours energy usage (10 PM–6 AM). Computes wasted kWh against a normal after-hours baseline. Maps to severity tier. Calculates cost impact at ₹8/kWh and CO2 equivalent using India grid emission factor (0.82 kg CO2/kWh).
-
-**Waste-to-Wealth Agent** (`backend/agents/waste_agent.py`)
-Accepts a waste material type and quantity. Performs a knowledge base lookup across 30 material categories. Applies a hazard guardrail: hazardous materials suppress financial figures and show a warning. Non-hazardous materials receive an estimated recovery range and a Gemini-generated recommendation. Exact profit is never claimed.
-
-**Pollution & Impact Agent** (`backend/agents/impact_agent.py`)
-Aggregates water and energy savings into total CO2 reduction. Expresses impact in relatable terms: tree equivalents, vehicle km, household electricity days, flight offsets. Computes SDG alignment (SDG 6, 7, 12, 13) and a sustainability rating. Annual projections are clearly marked as simulated.
-
-**Decision Engine** (`backend/agents/decision_agent.py`)
-Scores each domain action by a weighted composite: urgency (35%), estimated cost saving (30%), environmental impact (25%), feasibility (10%). Ranks interventions. Calls Gemini to explain the top-priority action in plain, actionable language. Falls back to a rule-based explanation if Gemini is unavailable.
-
-**RE:GEN Score Agent** (`backend/agents/regen_score_agent.py`)
-Computes a campus sustainability health index (0–100) from aggregated sub-scores. Produces a before/after projection to show estimated score improvement if all agent recommendations are implemented. Assigns a letter grade (A+ to F) and per-building risk ranking.
-
-**Report Agent** (`backend/agents/report_agent.py`)
-Assembles full agent findings into an executive brief. Calls Gemini for a narrative summary and enhanced recommendations. Falls back to deterministic text if Gemini is unavailable. Used to generate the PDF export.
+Carbon is always automatically calculated: `CO₂ = (water_liters × 0.001) + (energy_kwh × 0.82) + (fuel_liters × emission_factor)`, using IPCC 2006 and BEE India emission factors. The formula breakdown is shown in the Carbon node tooltip.
 
 ---
 
-## How Gemini Is Used
+## War Room
 
-RE:GEN AI uses **Gemini 2.5 Flash Lite** (`gemini-2.5-flash-lite`) via the `google-genai` SDK for three specific tasks:
+Seven agents are visualised as an animated node network. In upload mode:
 
-1. **Waste recommendation** — 2-sentence actionable advice for the sustainability officer, generated only for non-hazardous materials. Hazardous materials are handled entirely by deterministic guardrails.
-
-2. **Decision explanation** — plain-language explanation of why the top-priority action must be addressed first, referencing specific numerical findings from the deterministic agents.
-
-3. **Executive report narrative** — full-length summary of agent findings, with embedded rules against forbidden phrases and exact profit claims.
-
-**Design principles:**
-- All numerical analysis (anomaly detection, severity scoring, cost estimates, CO2 calculations) is deterministic and does not involve Gemini.
-- Gemini adds only language and reasoning layers where human-readable explanation has value.
-- Every Gemini call includes a system-level guardrails block in the prompt.
-- If `GEMINI_API_KEY` is absent or the call fails, all agents fall back to rule-based text — the application remains fully functional.
+- Every agent card shows actual backend data (finding, reasoning, recommendation, confidence)
+- Skipped agents show the exact reason they were skipped and what data would activate them
+- The Waste-to-Wealth agent shows the top recovery opportunity and estimated value
+- The live reasoning feed is built from real agent outputs — no hardcoded demo text leaks in
 
 ---
 
-## Course Concepts Demonstrated
+## Data Flow
 
-| Concept | Implementation |
+Every displayed value originates from a single backend field. No frontend recomputation when the backend already computed it.
+
+| Display location | Backend source |
 |---|---|
-| Multi-agent systems | 7 specialized agents, each with a single domain responsibility |
-| Tool / data lookup | Waste agent performs structured KB lookup; water/energy agents query CSVs |
-| Agent orchestration | FastAPI `GET /agent-war-room` endpoint sequences all agents, passes outputs between them |
-| State and memory | Agent outputs are held in React state and shared across the UI pipeline |
-| Safety guardrails | `core/guardrails.py` — hazard blocking, disclaimer injection, simulated-data notice |
-| Evaluation and scoring | RE:GEN Score (0–100) with weighted sub-components and before/after projection |
-| Production-grade deployment | FastAPI backend (Render), React+Vite frontend (Vercel), env-variable separation |
-| Vibe coding workflow | Built with Claude Code; iterative agent-by-agent development with AI assistance |
+| Dashboard total_wasted_liters | `water_result.total_wasted_liters` |
+| Dashboard total_wasted_kwh | `energy_result.total_wasted_kwh` |
+| Dashboard total_co2_saved_kg | `impact_result.total_co2_saved_kg` |
+| Dashboard regen_score | `regen_score_result.before_score` |
+| Waste recovery estimate | `waste_result.total_recovery_max_inr` |
+| Carbon formula breakdown | `impact_result` + `water/energy/fuel` CO₂ sub-fields |
+| War Room recommendations | `war_room[].recommendation` from `/analyze/upload` |
+| Report executive summary | `report_result.executive_summary` |
+| PDF numbers | Same `report_result` object — no re-derivation |
 
 ---
 
-## System Flow
+## Deployment
 
-```mermaid
-graph TD
-    A[User opens RE:GEN AI] --> B[Hero Section]
-    B --> C[Digital Twin Campus]
-    C --> D[Agent War Room - trigger analysis]
-    D --> E[Water Agent]
-    D --> F[Energy Agent]
-    D --> G[Waste Agent - optional input]
-    E --> H[Impact Agent]
-    F --> H
-    G --> H
-    H --> I[Decision Engine]
-    I --> J[RE:GEN Score Agent]
-    I --> K[Report Agent + Gemini]
-    J --> L[Dashboard Summary]
-    K --> M[PDF Export]
-    L --> N[Action Plan Checklist]
+**Frontend** — Vercel (auto-deployed from `main` branch)  
+**Backend** — Render (FastAPI, Python 3.11, auto-deployed)
+
+```bash
+# Local development
+cd backend && pip install -r requirements.txt && uvicorn main:app --reload
+cd frontend && npm install && npm run dev
 ```
 
----
-
-## Agent Orchestration Flow
-
-```mermaid
-sequenceDiagram
-    participant FE as Frontend
-    participant API as FastAPI
-    participant WA as Water Agent
-    participant EA as Energy Agent
-    participant IA as Impact Agent
-    participant DA as Decision Engine
-    participant SA as Score Agent
-    participant GEM as Gemini 2.5
-
-    FE->>API: GET /agent-war-room
-    API->>WA: analyze_water()
-    API->>EA: analyze_energy()
-    WA-->>API: water_result
-    EA-->>API: energy_result
-    API->>IA: analyze_impact(water, energy, waste)
-    IA-->>API: impact_result
-    API->>DA: generate_decisions(water, energy, waste)
-    DA->>GEM: explain top action (optional)
-    GEM-->>DA: narrative or fallback
-    DA-->>API: decision_result
-    API->>SA: compute_regen_score(all results)
-    SA-->>API: score_result
-    API-->>FE: full pipeline response
+Environment variables:
 ```
-
----
-
-## Screenshots
-
-| View | Screenshot |
-|---|---|
-| Hero | ![Hero](docs/screenshots/hero.jpg) |
-| Digital Twin | ![Digital Twin](docs/screenshots/digital-twin.jpg) |
-| Agent War Room | ![War Room](docs/screenshots/war-room.jpg) |
-| Waste Analyzer | ![Waste Analyzer](docs/screenshots/waste-analyzer.jpg) |
-| Report | ![Report](docs/screenshots/report.jpg) |
+OPENAI_API_KEY=sk-...          # Optional — system degrades gracefully without it
+VITE_API_URL=http://localhost:8000  # Frontend .env for local dev
+```
 
 ---
 
@@ -210,136 +197,92 @@ sequenceDiagram
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 19, Vite 8, Framer Motion, Recharts, Lucide React, Tailwind CSS |
-| Backend | Python 3.12, FastAPI, Uvicorn, Pandas |
-| AI | Google Gemini 2.5 Flash Lite via `google-genai` SDK |
-| Deployment | Render (backend), Vercel (frontend) |
-| Data | Simulated CSV and JSON knowledge base |
+| Frontend | React 19, Vite 8, Framer Motion, Lucide React, Tailwind CSS 4 |
+| Backend | FastAPI, Python 3.11+, Pydantic v2, pandas, openpyxl |
+| AI Layer | OpenAI gpt-4o-mini (with deterministic fallback) |
+| Deployment | Vercel (frontend) + Render (backend) |
+| Data | JSON knowledge base (97 materials) + CSV demo datasets |
+| Export | Browser print API (`window.print()`) — formatted print stylesheet, no external library |
 
 ---
 
-## Setup
+## Hackathon Context — ChatGPT Codex Hackathon
 
-### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- A Gemini API key (free tier sufficient; fallback works without it)
+RE:GEN AI was developed and refined with AI-assisted engineering throughout the build cycle. Key highlights relevant to the judging criteria:
 
-### Backend
+### Technical Execution
+- Seven specialised agents with typed interfaces, deterministic calculations, and explicit confidence levels
+- Three-tier analysis level system that honestly discloses data resolution limitations
+- Production-quality knowledge base with 97 materials, 100+ alias normalizations, and regulatory citations
+- Zero data fabrication — every displayed number traces to a single backend field
+- Graceful degradation: missing OpenAI API key, missing datasets, and unknown materials are all handled without crashes
 
-```bash
-cd backend
-python -m venv venv
-# Windows:
-venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
+### Agentic Development
+- Each agent is independently callable with typed inputs and outputs
+- The Decision Engine consumes all agent outputs and produces a ranked intervention stack
+- The Report Agent synthesises findings across all agents into a professional executive summary
+- The War Room visualises live agent reasoning, skip reasons, and confidence levels
+- AI enhancement is layered on top of deterministic KB — never replacing it
 
-pip install -r requirements.txt
+### Impact
+- Quantifiable output: litres saved, kWh recovered, INR recovery estimated, CO₂ avoided
+- SDG alignment: SDG 6 (Clean Water), SDG 7 (Affordable Energy), SDG 12 (Responsible Consumption), SDG 13 (Climate Action)
+- Applicable to any organisation type (University, Hospital, Hotel, Factory, Airport, Mall, Office)
+- Waste-to-Wealth maps 97 material streams to recovery value and compliance guidance
 
-cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
+### Originality
+- Analysis level system honestly calibrates AI confidence to data resolution — rare in sustainability tools
+- Alias normalization before KB lookup prevents false "unknown" classifications for variant spellings
+- War Room never shows hardcoded demo text in upload mode — all reasoning is derived from real agent outputs
+- Carbon formula is transparent and shown inline: components, emission factors, and regulatory source
 
-uvicorn main:app --reload --port 8000
-```
-
-Backend available at `http://localhost:8000`.
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Frontend available at `http://localhost:5173`.
-
----
-
-## Environment Variables
-
-`.env.example`:
-
-```
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-The application works without a Gemini API key — all agents fall back to deterministic rule-based outputs.
-
-**Never commit your `.env` file.** It is in `.gitignore`.
+### Completeness
+- Two modes: Demo (instant) and Upload (CSV/Excel/manual for any combination of datasets)
+- End-to-end: Upload → Validation → Analysis → War Room → Digital Twin → Report → PDF export
+- Mobile responsive, keyboard navigable, and theme-aware (light/dark)
+- All advanced modules that require higher-resolution data are explicitly disclosed as skipped
 
 ---
 
-## Deployment
+## Formulae (Verified)
 
-### Deployed URLs
-
-| Service | URL |
-|---|---|
-| Frontend (Vercel) | [https://frontend-two-rho-85.vercel.app](https://frontend-two-rho-85.vercel.app) |
-| Backend (Render) | [https://regen-ai-backend.onrender.com](https://regen-ai-backend.onrender.com) |
-
-### Backend — Render
-
-1. Create a new **Web Service** on [render.com](https://render.com)
-2. Connect your GitHub repository
-3. Set **Root Directory** to `backend`
-4. Set **Build Command** to `pip install -r requirements.txt`
-5. Set **Start Command** to `uvicorn main:app --host 0.0.0.0 --port $PORT`
-6. Add environment variable: `GEMINI_API_KEY` = your key (optional — app works without it)
-
-### Frontend — Vercel
-
-1. Import your repository on [vercel.com](https://vercel.com)
-2. Set **Root Directory** to `frontend`, **Framework Preset** to Vite
-3. Add environment variable: `VITE_API_URL` = your Render backend URL (no trailing slash)
-4. Deploy
-
-### Cold Starts
-
-Render free tier spins down after inactivity. The first request after a cold start may take 30–60 seconds. This is expected.
+| Calculation | Formula | Source |
+|---|---|---|
+| Water CO₂ | `litres × 0.001 kg/L` | UK Water Industry Research |
+| Energy CO₂ | `kWh × 0.82 kg/kWh` | BEE India grid emission factor |
+| Diesel CO₂ | `litres × 2.68 kg/L` | IPCC 2006 |
+| Petrol CO₂ | `litres × 2.31 kg/L` | IPCC 2006 |
+| LPG CO₂ | `litres × 1.51 kg/L` | IPCC 2006 |
+| Total Carbon | `water_co2 + energy_co2 + fuel_co2` | Scope 1+2 |
+| RE:GEN Score | Weighted composite of water/energy/carbon/waste/coverage | Internal |
+| Recovery value | `quantity_kg × value_range_per_kg` | KB benchmark rates |
 
 ---
 
-## Kaggle Notebook
+## Known Limitations
 
-`regen_ai_capstone_demo.ipynb` — self-contained reproduction of all agent logic. Runs on Kaggle without a backend server. Gemini integration is optional and gracefully skips if no API key is found.
-
----
-
-## Limitations
-
-- **Simulated data.** All campus sensor readings are generated from synthetic CSV files. RE:GEN AI does not connect to live IoT hardware.
-- **Not professional advice.** This is a prototype decision-support system. Estimates are approximate and should not be used for regulatory, financial, or engineering decisions without professional review.
-- **Gemini enhances language only.** Core numerical analysis is fully deterministic and does not depend on Gemini.
-- **Hazardous waste.** Financial figures are suppressed for hazardous materials; Gemini is never called for these.
-- **No real market prices.** Waste recovery ranges are knowledge-base estimates.
+- **Demo mode**: Uses bundled simulated sensor logs (January 15–21, 2024). Not real data.
+- **Anomaly detection**: Requires hourly time-series data with ≥3 days and ≥12 slots/day. Monthly totals produce Level 1 only.
+- **Recovery value estimates**: Knowledge base benchmark rates. Actual market prices vary by location, grade, and season.
+- **Carbon scope**: Scope 1 and 2 only. Scope 3 (supply chain, business travel) not included.
+- **OpenAI dependency**: If the API key is absent or rate-limited, the system falls back to deterministic outputs. No analysis fails.
+- **PDF generation**: Client-side via browser print API. Uses the same `report_result` object — no re-derivation of numbers. Requires pop-ups to be allowed in the browser.
 
 ---
 
-## Future Scope
+## Contributing
 
-- Real IoT sensor integration (MQTT / REST)
-- Google Sheets as a live campus data source
-- Campus ERP integration for actual utility bills
-- Real-time recycler market price API
-- ADK / MCP agent framework expansion
-- Mobile dashboard for facilities management teams
-- Multi-campus comparative scoring
+Issues and PRs welcome. All pull requests must:
+- Preserve the single-source-of-truth data flow (no frontend recomputation of backend values)
+- Never invent data or silently fall back to demo values in upload mode
+- Maintain the deterministic KB as the ground truth for waste analysis
 
 ---
 
-## Demo Video
+## License
 
-[![RE:GEN AI — Full Walkthrough](https://img.youtube.com/vi/pLlweeJ1piU/maxresdefault.jpg)](https://youtu.be/pLlweeJ1piU)
-
-**[Watch on YouTube →](https://youtu.be/pLlweeJ1piU)**
-
-The walkthrough covers: hero launch → digital twin → agent war room → waste analyzer → executive report. A timestamped script is also in [docs/demo_video_script.md](docs/demo_video_script.md).
+MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-## Author
-
-**Divya Shree S** — Kaggle Capstone 2026
+*RE:GEN AI is a decision-support prototype. It is not professional regulatory, financial, or engineering advice. Designed for future integration with live IoT and building management systems.*

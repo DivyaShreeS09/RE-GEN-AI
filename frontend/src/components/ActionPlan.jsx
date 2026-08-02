@@ -12,10 +12,10 @@ const DOMAIN_OWNERS = {
   energy:        { owner: 'Electrical Maintenance',    icon: '⚡' },
   waste:         { owner: 'Sustainability Cell',        icon: '♻️' },
   impact:        { owner: 'Administration Office',     icon: '🏛️' },
-  infrastructure:{ owner: 'Campus Infrastructure',     icon: '🏗️' },
+  infrastructure:{ owner: 'Facilities Management',     icon: '🏗️' },
   compliance:    { owner: 'Legal & Compliance',        icon: '📋' },
   sustainability:{ owner: 'Sustainability Office',     icon: '🌿' },
-  general:       { owner: 'Campus Operations',         icon: '🏗️' },
+  general:       { owner: 'Operations',                icon: '🏗️' },
 }
 
 const EFFORT_CONFIG = {
@@ -151,7 +151,7 @@ function CampusHealthSection({ healthIndex }) {
       <div className="flex items-center gap-2 mb-5">
         <Award className="w-5 h-5 text-yellow-400" />
         <h3 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">
-          Campus Health Index
+          Sustainability Health Index
         </h3>
         <span className="ml-auto text-xs text-slate-600">Composite of 6 sustainability dimensions</span>
       </div>
@@ -165,7 +165,7 @@ function CampusHealthSection({ healthIndex }) {
             </div>
             <div>
               <p className="font-bold text-white text-lg">{cur.label}</p>
-              <p className="text-xs text-slate-500">Current campus grade</p>
+              <p className="text-xs text-slate-500">Current sustainability grade</p>
               {tgt && (
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-xs text-slate-500">Target:</span>
@@ -245,7 +245,7 @@ function SDGSection({ sdgItems }) {
                 </div>
                 <div>
                   <p className="text-xs font-bold" style={{ color }}>{sdg.title}</p>
-                  <p className="text-xs text-slate-500">SDG {sdg.goal}</p>
+                  <p className="text-xs text-slate-500">SDG {sdg.goal.replace(/^SDG\s*/i, '')}</p>
                 </div>
               </div>
               <p className="text-xs text-slate-400 mb-2 leading-relaxed">{sdg.relevance}</p>
@@ -327,7 +327,9 @@ export default function ActionPlan({ data, selectedBuilding }) {
   const campusHealth   = data?.report?.campus_health_index   || data?.campus_health_index
   const sdgAlignment   = data?.report?.sdg_alignment         || data?.sdg_alignment
   const buildingRanking = data?.report?.building_risk_ranking || data?.building_risk_ranking
-  const geminiUsed     = data?.report?.gemini_enhanced       ?? data?.gemini_enhanced
+  const aiUsed         = data?.report?.ai_enhanced ?? data?.ai_enhanced
+  const dataSource     = data?.report?.data_source || data?.data_source || 'Simulated sensor data'
+  const orgName        = data?.report?.org_name || data?.org_name || null
 
   if (!plan) return null
 
@@ -335,7 +337,9 @@ export default function ActionPlan({ data, selectedBuilding }) {
     const exportData = {
       generated:  new Date().toISOString(),
       system:     'RE:GEN AI — Sustainability Intelligence OS',
-      disclaimer: 'Prototype decision-support system. All data simulated. Not professional advice.',
+      disclaimer: orgName
+        ? `Prototype decision-support system. Analysis derived from uploaded ${orgName} data. Not professional advice.`
+        : 'Prototype decision-support system. All data simulated. Not professional advice.',
       action_plan:       plan,
       executive_summary: summary || '',
       campus_health_index:   campusHealth || null,
@@ -353,6 +357,9 @@ export default function ActionPlan({ data, selectedBuilding }) {
 
   const handleExportPDF = () => {
     const now = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })
+    const reportMeta     = data?.report?.analysis_metadata || data?.analysis_metadata || null
+    const anomalyOk      = reportMeta ? reportMeta.anomaly_detection_available !== false : true
+    const isUpload       = !!orgName
     const allActions = [
       ...(plan.immediate    || []).map(a => ({ ...a, _priority: 'CRITICAL',  _color: '#b91c1c', _timeline: 'Within 24 hours'  })),
       ...(plan.next_7_days  || []).map(a => ({ ...a, _priority: 'HIGH',      _color: '#c2410c', _timeline: 'Within 7 days'    })),
@@ -384,7 +391,7 @@ export default function ActionPlan({ data, selectedBuilding }) {
     const sdgCards = (sdgAlignment || []).map(sdg => {
       const color = { 6:'#26bde2',7:'#fcc30b',9:'#fd6925',11:'#fd9d24',12:'#bf8b2e',13:'#3f7e44' }[sdg.goal] || '#3b82f6'
       return `<div class="sdg-item">
-        <div class="sdg-badge" style="background:${color};">SDG ${sdg.goal}</div>
+        <div class="sdg-badge" style="background:${color};">SDG ${sdg.goal.replace(/^SDG\s*/i, '')}</div>
         <div class="sdg-title">${sdg.title || ''}</div>
         <div class="sdg-text">${sdg.relevance || ''}</div>
       </div>`}).join('')
@@ -478,20 +485,23 @@ export default function ActionPlan({ data, selectedBuilding }) {
 
 <!-- ─── Cover ─── -->
 <div class="cover">
-  <div class="cover-tag">Capstone Project 2026</div>
+  <div class="cover-tag">Enterprise Release 2026</div>
   <div class="cover-title">RE:GEN AI<br>Sustainability<br>Intelligence Report</div>
-  <div class="cover-sub">Agent-Prioritized Campus Resource Analysis<br>Multi-Domain Decision Support · 7 AI Agents</div>
+  <div class="cover-sub">${orgName ? orgName + ' — Sustainability Analysis' : 'Agent-Prioritized Resource Analysis'}<br>Multi-Domain Decision Support · 7 AI Agents</div>
   <div class="cover-chips">
-    <span class="cover-chip">💧 Water Leakage Detection</span>
-    <span class="cover-chip">⚡ Energy Anomaly Audit</span>
+    ${anomalyOk ? '<span class="cover-chip">💧 Water Leakage Detection</span>' : '<span class="cover-chip">💧 Water Consumption Analysis</span>'}
+    ${anomalyOk ? '<span class="cover-chip">⚡ Energy Anomaly Audit</span>' : '<span class="cover-chip">⚡ Energy Consumption Analysis</span>'}
     <span class="cover-chip">♻ Waste-to-Wealth Pathways</span>
     <span class="cover-chip">📊 Impact Analysis</span>
-    <span class="cover-chip">🤖 Gemini AI Reasoning</span>
+    <span class="cover-chip">🤖 AI Reasoning</span>
+    ${reportMeta ? `<span class="cover-chip">📈 ${reportMeta.overall_label || 'Analysis'} · ${reportMeta.confidence_pct || '—'}% confidence</span>` : ''}
   </div>
   <div class="cover-meta">
     Report generated: ${now}<br>
-    Google Kaggle AI Agents: Intensive Vibe Coding Capstone Project 2026<br>
-    All data is simulated for demonstration. RE:GEN AI is a decision-support prototype — not professional regulatory, financial, or engineering advice.
+    Multi-Agent Sustainability Intelligence Platform<br>
+    Data source: ${dataSource}.<br>
+    ${reportMeta ? `Analysis level: ${reportMeta.overall_label || 'N/A'} · Confidence: ${reportMeta.confidence_pct ?? '—'}%${reportMeta.anomaly_detection_available === false ? ' · Anomaly detection: unavailable at this data resolution' : ''}<br>` : ''}
+    RE:GEN AI is a decision-support prototype — not professional regulatory, financial, or engineering advice.
   </div>
 </div>
 
@@ -503,7 +513,7 @@ export default function ActionPlan({ data, selectedBuilding }) {
 
 ${campusHealth?.current ? `
 <div class="section">
-  <div class="section-title">Campus Health Index</div>
+  <div class="section-title">Sustainability Health Index</div>
   <div class="section-rule"></div>
   <div class="score-row">
     <div class="score-num">${curScore}</div>
@@ -516,11 +526,22 @@ ${campusHealth?.current ? `
   ${campusHealth.interpretation ? `<div class="summary-box">${campusHealth.interpretation}</div>` : ''}
 </div>` : ''}
 
+${reportMeta && (reportMeta.skipped_modules?.length > 0 || reportMeta.anomaly_detection_available === false) ? `
+<div class="section">
+  <div class="section-title">Analysis Limitations</div>
+  <div class="section-rule"></div>
+  <div style="background:#fffbeb;border:1pt solid #fde68a;border-radius:6pt;padding:10pt 12pt;font-size:8.5pt;color:#92400e;line-height:1.7;">
+    ${reportMeta.anomaly_detection_available === false ? `<strong>Anomaly detection unavailable</strong> — ${reportMeta.overall_label || 'Current'} data does not include hourly time-series. Leak detection, after-hours energy waste, and zone-level risk mapping require Level 3 (hourly) data.<br>` : ''}
+    ${reportMeta.skipped_modules?.length > 0 ? `<strong>Skipped modules:</strong> ${reportMeta.skipped_modules.map(m => m.module).join(', ')}.<br>` : ''}
+    <strong>Confidence:</strong> ${reportMeta.confidence_pct ?? '—'}% · <strong>Analysis level:</strong> ${reportMeta.overall_label || 'N/A'}
+  </div>
+</div>` : ''}
+
 ${summary ? `
 <div class="section">
   <div class="section-title">Executive Summary</div>
   <div class="section-rule"></div>
-  <div class="section-sub">${geminiUsed ? 'Generated by Gemini 2.5 Flash · Multi-agent synthesis' : 'Rule-based analysis summary'}</div>
+  <div class="section-sub">${aiUsed ? 'Generated by AI Core · Multi-agent synthesis' : 'Rule-based analysis summary'}</div>
   <div class="summary-box">${summary}</div>
 </div>` : ''}
 
@@ -552,7 +573,7 @@ ${buildingRanking?.length ? `
 <div class="section">
   <div class="section-title">Building Risk Ranking</div>
   <div class="section-rule"></div>
-  <div class="section-sub">Merged water + energy anomaly data across campus infrastructure.</div>
+  <div class="section-sub">Merged water + energy anomaly data across all monitored resource zones.</div>
   <table>
     <thead><tr><th>Rank</th><th>Building</th><th>Water Loss</th><th>Energy Loss</th><th>Risk Score</th><th>Water</th><th>Energy</th></tr></thead>
     <tbody>${buildingRows}</tbody>
@@ -587,24 +608,27 @@ ${sdgAlignment?.length ? `
   <table>
     <tbody>
       <tr><td style="font-weight:700;width:160pt;">System</td><td>RE:GEN AI — Sustainability Intelligence OS</td></tr>
-      <tr><td style="font-weight:700;">Version</td><td>Capstone 2026 · Google Kaggle AI Agents: Intensive Vibe Coding</td></tr>
-      <tr><td style="font-weight:700;">Agents</td><td>Water Leakage · Energy Optimizer · Waste-to-Wealth · Impact Analyzer · Campus Score · Decision Priority · Report Narrative</td></tr>
-      <tr><td style="font-weight:700;">AI Layer</td><td>Google Gemini 2.5 Flash (multi-agent coordination)</td></tr>
-      <tr><td style="font-weight:700;">Data Source</td><td>Simulated smart-campus resource logs (demonstration only)</td></tr>
+      <tr><td style="font-weight:700;">Version</td><td>Enterprise Release 2026 · Multi-Agent Sustainability Intelligence Platform</td></tr>
+      <tr><td style="font-weight:700;">Agents</td><td>Water Leakage · Energy Optimizer · Waste-to-Wealth · Impact Analyzer · Sustainability Score · Decision Priority · Report Narrative</td></tr>
+      <tr><td style="font-weight:700;">AI Layer</td><td>OpenAI gpt-4o-mini · Multi-agent coordination (graceful fallback to rule-based engine)</td></tr>
+      <tr><td style="font-weight:700;">Data Source</td><td>${dataSource}</td></tr>
       <tr><td style="font-weight:700;">Generated</td><td>${new Date().toISOString()}</td></tr>
     </tbody>
   </table>
 </div>
 <div class="disclaimer">
-  ⚠ Important Disclaimer: All data presented in this report is simulated for capstone demonstration purposes.
+  ⚠ Important Disclaimer: ${isUpload
+    ? `Analysis is derived from uploaded data for ${orgName}. Results are estimates based on rule-based agent analysis.`
+    : 'All data presented in this report is simulated for demonstration purposes.'
+  }
   RE:GEN AI is a prototype decision-support system and not professional regulatory, financial, or engineering advice.
   Financial saving estimates are illustrative only — actual results will vary based on real infrastructure conditions,
   usage patterns, and local regulations. Consult certified engineering, waste management, and environmental
   professionals before implementing any intervention. Hazardous waste determinations require licensed waste auditors.
 </div>
 <div class="page-footer">
-  RE:GEN AI · Sustainability Intelligence OS · Google Kaggle AI Agents: Intensive Vibe Coding Capstone Project 2026<br>
-  Decision-support prototype · Data simulated · Not professional advice
+  RE:GEN AI · Sustainability Intelligence OS · Multi-Agent Resource Intelligence Platform<br>
+  Decision-support prototype · ${isUpload ? 'Uploaded data analysis' : 'Data simulated'} · Not professional advice
 </div>
 </div>
 
@@ -630,13 +654,13 @@ ${sdgAlignment?.length ? `
             Sustainability <span className="text-gradient-green">Action Plan</span>
           </h2>
           <p className="text-slate-400 text-sm">
-            Agent-prioritized interventions ranked by urgency x cost-saving x environmental impact x feasibility.
+            Agent-prioritised interventions ranked by urgency, cost savings, environmental impact, and feasibility.
           </p>
-          {geminiUsed != null && (
+          {aiUsed != null && (
             <div className="flex items-center gap-2 mt-2">
-              <div className={`w-2 h-2 rounded-full ${geminiUsed ? 'bg-purple-400' : 'bg-slate-500'}`} />
+              <div className={`w-2 h-2 rounded-full ${aiUsed ? 'bg-purple-400' : 'bg-slate-500'}`} />
               <span className="text-xs text-slate-500">
-                {geminiUsed ? 'AI-enhanced executive summary (Gemini)' : 'Rule-based analysis (Gemini unavailable)'}
+                {aiUsed ? 'AI-enhanced executive summary' : 'Rule-based analysis (AI unavailable)'}
               </span>
             </div>
           )}
@@ -741,13 +765,13 @@ ${sdgAlignment?.length ? `
               title="Immediate Actions"  color="#ef4444" timeline="Within 24 hours"
               items={plan.immediate}    highlightDomains={highlightDomains} />
             <PlanSection sectionKey="next_7_days"  icon={<Calendar     className="w-5 h-5" />}
-              title="Next 7 Days"        color="#f97316" timeline="This week -- schedule now"
+              title="Next 7 Days"        color="#f97316" timeline="This week — schedule now"
               items={plan.next_7_days}  highlightDomains={highlightDomains} />
             <PlanSection sectionKey="next_30_days" icon={<CalendarDays className="w-5 h-5" />}
-              title="Next 30 Days"       color="#eab308" timeline="This month -- assign and track"
+              title="Next 30 Days"       color="#eab308" timeline="This month — assign and track"
               items={plan.next_30_days} highlightDomains={highlightDomains} />
             <PlanSection sectionKey="long_term"    icon={<TrendingUp   className="w-5 h-5" />}
-              title="Long-Term Strategy" color="#00ff88" timeline="12+ months -- campus transformation"
+              title="Long-Term Strategy" color="#00ff88" timeline="12+ months — sustainability transformation"
               items={plan.long_term}    highlightDomains={highlightDomains} />
           </div>
         )
@@ -770,7 +794,7 @@ ${sdgAlignment?.length ? `
               Executive Summary
             </h3>
             <span className="text-xs text-slate-600">
-              {geminiUsed ? 'Generated by Gemini 2.0 Flash' : 'Rule-based template'}
+              {aiUsed ? 'Generated by AI Core' : 'Rule-based template'}
             </span>
           </div>
           <pre className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed font-mono">{summary}</pre>
@@ -793,8 +817,10 @@ ${sdgAlignment?.length ? `
         background: 'rgba(234,179,8,0.04)', border: '1px solid rgba(234,179,8,0.12)',
       }}>
         <p className="text-xs text-yellow-700 leading-relaxed">
-          All recommendations are generated from simulated sensor data and rule-based agent analysis.
-          Consult certified engineering, waste management, and environmental professionals before
+          {orgName
+            ? `All recommendations are derived from uploaded ${orgName} data and rule-based agent analysis.`
+            : 'All recommendations are generated from simulated sensor data and rule-based agent analysis.'}
+          {' '}Consult certified engineering, waste management, and environmental professionals before
           implementing any intervention. RE:GEN AI is a prototype decision-support system and not
           professional regulatory, financial, or engineering advice.
         </p>
