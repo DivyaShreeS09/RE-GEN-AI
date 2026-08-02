@@ -283,18 +283,59 @@ VITE_API_URL=https://regen-ai-backend.onrender.com
 
 ## Screenshots
 
-| | |
-|---|---|
-| ![Landing Hero](docs/screenshots/01-landing-hero.png) | ![Analysis Mode Selector](docs/screenshots/02-analysis-mode-selector.png) |
-| **Landing Hero** — Entry point with live demo and upload mode options | **Analysis Mode Selector** — Choose instant demo or upload your own data |
-| ![Upload Center](docs/screenshots/03-upload-center.png) | ![Mission Summary](docs/screenshots/04-mission-summary.png) |
-| **Upload Center** — CSV, Excel, or manual entry for any dataset combination | **Mission Summary** — Coverage %, confidence %, and analysis level before scan |
-| ![Command Center Dashboard](docs/screenshots/05-dashboard.png) | ![Digital Twin](docs/screenshots/06-digital-twin.png) |
-| **Command Center Dashboard** — Key metrics: wasted litres, kWh, CO₂, RE:GEN Score | **Digital Twin** — Facility visualised at the correct analysis level |
-| ![Agent War Room](docs/screenshots/07-war-room.png) | ![Waste-to-Wealth](docs/screenshots/08-waste-to-wealth.png) |
-| **Agent War Room** — Live reasoning, findings, and confidence from all seven agents | **Waste-to-Wealth** — Recovery pathway, estimated value, and compliance guidance |
-| ![Action Plan](docs/screenshots/09-action-plan.png) | ![RE:GEN Score](docs/screenshots/10-regen-score.png) |
-| **Action Plan** — Ranked interventions with estimated savings and PDF export | **RE:GEN Score** — Sustainability health index before and after interventions |
+### Landing Hero
+
+![Landing Hero](docs/screenshots/01-landing.png)
+
+*Entry point — live demo and upload mode options, with mission status and RE:GEN Score overview.*
+
+---
+
+### Upload Center
+
+![Upload Center](docs/screenshots/03-upload-center.png)
+
+*Upload CSV, Excel, or manually enter water, energy, fuel, and waste data — every dataset is optional.*
+
+---
+
+### Command Center Dashboard
+
+![Command Center Dashboard](docs/screenshots/05-dashboard.png)
+
+*Real-time key metrics: total wasted litres, kWh lost, CO₂ avoided, and RE:GEN Score across all resource domains.*
+
+---
+
+### Digital Twin
+
+![Digital Twin](docs/screenshots/06-digital-twin.png)
+
+*Facility visualised at the correct analysis level — resource nodes (L1), zone archetypes (L2), or anomaly-driven map (L3).*
+
+---
+
+### Agent War Room
+
+![Agent War Room](docs/screenshots/07-war-room.png)
+
+*Seven autonomous agents — live reasoning, findings, confidence levels, and skip reasons all sourced from real backend data.*
+
+---
+
+### Waste-to-Wealth
+
+![Waste-to-Wealth](docs/screenshots/08-waste-to-wealth.png)
+
+*Recovery pathway analysis across 97 materials — estimated value range, CO₂ savings, and regulatory compliance guidance.*
+
+---
+
+### Sustainability Action Plan
+
+![Sustainability Action Plan](docs/screenshots/09-action-plan.png)
+
+*Ranked intervention stack with estimated savings, export to PDF via browser print API.*
 
 ---
 
