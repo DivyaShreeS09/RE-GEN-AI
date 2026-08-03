@@ -13,7 +13,6 @@ const MARKET_INTEL = [
 ]
 
 const FEASIBILITY_COLOR = { High: '#00ff88', Medium: '#eab308', Low: '#ef4444' }
-const RISK_COLOR        = { Low: '#00ff88',  Med: '#eab308',    High: '#ef4444' }
 
 function MarketIntelPanel() {
   return (
@@ -109,13 +108,12 @@ function ScoreBar({ score, label }) {
   )
 }
 
-function PathwayCard({ title, emoji, description, pros, cons, valueMultiplier, feasibility, envScore, isBest, result }) {
+function PathwayCard({ title, emoji, description, pros, cons: _cons, valueMultiplier, feasibility, envScore, isBest, result }) {
   const minVal = result?.estimated_recovery?.min_inr || 0
   const maxVal = result?.estimated_recovery?.max_inr || 0
   const adjMin = Math.round(minVal * valueMultiplier)
   const adjMax = Math.round(maxVal * valueMultiplier)
   const isHazard = result?.hazard_warning
-  const score = result?.hidden_value_score || 0
 
   return (
     <div className={`p-4 rounded-xl relative transition-all duration-300 ${isBest ? 'glow-green' : ''}`}
@@ -441,7 +439,7 @@ export default function WasteAnalyzer({ onResult, uploadResult }) {
         if (onResult) onResult(res.data)
       })
       .catch(() => {})
-  }, [isUploadMode])
+  }, [isUploadMode, onResult])
 
   // In upload mode, show the batch results panel (or empty state) instead of the demo tool
   if (isUploadMode) {
@@ -462,7 +460,6 @@ export default function WasteAnalyzer({ onResult, uploadResult }) {
     }
   }
 
-  const isHazard = result?.hazard_warning
   const isMedical = wasteType === 'medical waste'
   const score = result?.hidden_value_score || 0
   const pathway = result?.recommended_pathway || ''

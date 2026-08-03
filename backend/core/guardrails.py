@@ -42,3 +42,25 @@ def get_disclaimer() -> str:
 
 def get_simulated_notice() -> str:
     return SIMULATED_DATA_NOTICE
+
+
+def sanitize_prompt_input(value: str, max_length: int = 200) -> str:
+    """Strip characters and patterns commonly used in prompt-injection attempts.
+
+    Applied to all user-supplied strings before they are interpolated into
+    LLM prompts.  The goal is defence-in-depth: the model's system prompt and
+    low-temperature setting already constrain output, but we also strip the
+    most obvious attack vectors so they are never sent to the model at all.
+    """
+    if not isinstance(value, str):
+        return str(value)[:max_length]
+    # Truncate to a safe length first
+    value = value[:max_length]
+    # Remove common injection markers
+    import re
+    value = re.sub(r'(?i)(ignore\s+(all\s+)?(previous|prior|above|preceding)\s+instructions?)', '', value)
+    value = re.sub(r'(?i)(system\s*prompt|you\s+are\s+now|act\s+as\s+)', '', value)
+    value = re.sub(r'(?i)(###\s*(system|user|assistant)\s*###)', '', value)
+    # Remove null bytes and ASCII control characters (except newline/tab)
+    value = re.sub(r'[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f]', '', value)
+    return value.strip()

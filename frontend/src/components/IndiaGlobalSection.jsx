@@ -1,4 +1,4 @@
-import { Globe, Building2, FlaskConical, UtensilsCrossed, Cpu } from 'lucide-react'
+import { Globe, Cpu } from 'lucide-react'
 
 const INDIA_STATS = [
   { stat: '1,000+', label: 'University Campuses',  sub: 'potential deployment sites',    color: '#ff9900' },

@@ -1,5 +1,5 @@
 from core.simulation import load_waste_kb
-from core.guardrails import apply_hazard_guardrail, validate_quantity, get_disclaimer
+from core.guardrails import apply_hazard_guardrail, validate_quantity, get_disclaimer, sanitize_prompt_input
 from core.openai_client import call_openai
 
 _kb = None
@@ -450,9 +450,10 @@ def analyze_waste(waste_type: str, quantity_kg: float) -> dict:
             f"{material['possible_products'][0] if material['possible_products'] else 'a value-added product'} "
             "for the highest return."
         )
+        safe_waste_type = sanitize_prompt_input(waste_type)
         prompt = f"""You are a waste management specialist. Write 2 actionable sentences for a sustainability officer.
 
-Material: {waste_type}
+Material: {safe_waste_type}
 Category: {material['category']}
 Recommended pathway: {material['recommended_pathway']}
 Possible products: {', '.join(material['possible_products'][:3])}

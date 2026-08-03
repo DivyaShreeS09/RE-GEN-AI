@@ -470,25 +470,6 @@ function AgentNode({ meta, isActive, isHovered, isAnyFocused, onClick, onMouseEn
   )
 }
 
-/* ── Typing text effect ─────────────────────────────── */
-function TypedText({ text, delayMs = 250, speed = 16 }) {
-  const [shown, setShown] = useState('')
-  useEffect(() => {
-    setShown('')
-    let i = 0
-    const t = setTimeout(() => {
-      const iv = setInterval(() => {
-        i++
-        setShown(text.slice(0, i))
-        if (i >= text.length) clearInterval(iv)
-      }, speed)
-      return () => clearInterval(iv)
-    }, delayMs)
-    return () => clearTimeout(t)
-  }, [text, delayMs, speed])
-  return <>{shown}{shown.length < text.length && <span style={{ opacity: 0.6, animation: 'terminalBlink 0.85s step-start infinite' }}>|</span>}</>
-}
-
 /* ── Live reasoning feed ────────────────────────────── */
 function buildUploadStream(agents) {
   if (!agents?.length) return REASONING_STREAM
@@ -528,7 +509,10 @@ function buildUploadStream(agents) {
 }
 
 function LiveReasoningFeed({ filterAgent, isUploadMode, agents }) {
-  const stream = isUploadMode ? buildUploadStream(agents) : REASONING_STREAM
+  const stream = useMemo(
+    () => isUploadMode ? buildUploadStream(agents) : REASONING_STREAM,
+    [isUploadMode, agents]
+  )
   const [lines, setLines] = useState(stream.length ? [stream[0]] : [])
   const ref = useRef(null)
   const idx = useRef(1)
@@ -536,7 +520,7 @@ function LiveReasoningFeed({ filterAgent, isUploadMode, agents }) {
   useEffect(() => {
     setLines(stream.length ? [stream[0]] : [])
     idx.current = 1
-  }, [isUploadMode])
+  }, [isUploadMode, stream])
 
   useEffect(() => {
     if (!stream.length) return
@@ -845,7 +829,7 @@ function AgentDetailPanel({ agentId, agents, wasteResult, isUploadMode }) {
 }
 
 /* ── Right column ───────────────────────────────────── */
-function RightColumn({ focusedAgent, agents, wasteResult, isUploadMode, uploadResult }) {
+function RightColumn({ focusedAgent, agents, wasteResult, isUploadMode, uploadResult: _uploadResult }) {
   return (
     <div style={{
       height: '100%', display: 'flex', flexDirection: 'column',
@@ -1212,7 +1196,7 @@ export default function AgentWarRoom({ initialData, wasteResult, uploadResult })
       try {
         const res = await getWarRoom()
         setAgents(res.data.war_room)
-      } catch (_) { /* war room reload failed silently */ }
+      } catch { /* war room reload failed silently */ }
     }
     setLoading(false)
   }, [loading, uploadResult])

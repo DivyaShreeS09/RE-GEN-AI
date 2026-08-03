@@ -162,7 +162,7 @@ export default function InterventionSimulator({ waterData, energyData, dashData,
     }
 
     return list
-  }, [isUploadMode, anomalyAvailable, wastedLiters, wastedKwh, totalConsumptionKwh, waterEvidence, energyEvidence, analysisMeta, waterAnomalies.length, energyAnomalies.length, waterSeverity, energySeverity])
+  }, [isUploadMode, anomalyAvailable, wastedLiters, wastedKwh, totalConsumptionKwh, waterEvidence, energyEvidence, analysisMeta])
 
   const initialToggles = useMemo(() =>
     Object.fromEntries(INTERVENTIONS.map(i => [i.key, false])),

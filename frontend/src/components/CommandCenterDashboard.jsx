@@ -1,23 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Droplets, Zap, Leaf, AlertTriangle, TrendingUp, DollarSign, TrendingDown, CheckCircle, Activity, Car, Home, Plane } from 'lucide-react'
 import RegenScoreGauge from './RegenScoreGauge'
-
-/* ── Animated counter hook ─── */
-function useCountUp(target, duration = 1400) {
-  const [val, setVal] = useState(0)
-  useEffect(() => {
-    if (!target) return
-    let current = 0
-    const step = target / (duration / 16)
-    const timer = setInterval(() => {
-      current += step
-      if (current >= target) { setVal(target); clearInterval(timer) }
-      else setVal(Math.floor(current))
-    }, 16)
-    return () => clearInterval(timer)
-  }, [target, duration])
-  return val
-}
+import useCountUp from '../hooks/useCountUp'
 
 function ScanTimeline({ anomalyAvailable }) {
   const SCAN_STAGES = [
@@ -32,7 +16,7 @@ function ScanTimeline({ anomalyAvailable }) {
     if (active >= SCAN_STAGES.length - 1) return
     const t = setTimeout(() => setActive(i => i + 1), 500)
     return () => clearTimeout(t)
-  }, [active])
+  }, [active, SCAN_STAGES.length])
   return (
     <div className="glass-card p-5 mb-8">
       <p className="text-xs font-bold text-cyan-400 uppercase tracking-widest mb-4">Analysis Pipeline</p>
@@ -103,7 +87,6 @@ function SilentLossCard({ losses, isUploadMode, orgType, anomalyAvailable, water
   const waterCost  = losses?.water_cost_inr       || 0
   const energyCost = losses?.energy_cost_inr      || 0
   const totalCost  = waterCost + energyCost
-  const showAnomalyData = !isUploadMode || anomalyAvailable
 
   if (isUploadMode && !anomalyAvailable) {
     return (
@@ -478,37 +461,41 @@ function AnalysisLevelBadge({ metadata }) {
 }
 
 export default function CommandCenterDashboard({ data, planData, uploadResult }) {
-  if (!data) return null
-  const { regen_score, silent_losses, water_summary, energy_summary, impact_summary } = data
-
+  // Derive values before any early return — hooks must be called unconditionally
   const isUploadMode  = !!uploadResult
-  const orgName       = uploadResult?.org_name || 'Organization'
-  const orgType       = uploadResult?.org_type || ''
   const analysisMeta  = uploadResult?.analysis_metadata || null
-  const fuelCo2Kg     = data.fuel_co2_kg  || uploadResult?.fuel_co2_kg  || 0
-  const fuelSummary   = data.fuel_summary || uploadResult?.fuel_summary  || null
-
-  // Anomaly detection is always available in demo mode; gated in upload mode
   const anomalyAvailable = !isUploadMode || (analysisMeta?.anomaly_detection_available !== false)
 
-  const impact       = planData?.impact || impact_summary || {}
-  const annualProj   = impact?.annual_projections
+  const silent_losses  = data?.silent_losses
+  const water_summary  = data?.water_summary
+  const energy_summary = data?.energy_summary
+  const impact_summary = data?.impact_summary
 
-  const totalSavings  = anomalyAvailable
+  const totalSavings     = anomalyAvailable
     ? ((silent_losses?.water_cost_inr || 0) + (silent_losses?.energy_cost_inr || 0))
     : 0
-  const anomalyTotal  = (water_summary?.anomaly_events || 0) + (energy_summary?.anomaly_events || 0)
-  const waterCost     = silent_losses?.water_cost_inr  || 0
-  const energyCost    = silent_losses?.energy_cost_inr || 0
-  const waterLiters   = water_summary?.total_wasted_liters || 0
-  const energyKwh     = energy_summary?.total_wasted_kwh  || 0
+  const waterLiters      = water_summary?.total_wasted_liters || 0
+  const energyKwh        = energy_summary?.total_wasted_kwh || 0
   const waterConsumption = water_summary?.total_consumption_liters || 0
   const energyConsumption = energy_summary?.total_consumption_kwh || 0
 
   const animWater   = useCountUp(Math.round(anomalyAvailable ? waterLiters : waterConsumption))
   const animEnergy  = useCountUp(Math.round(anomalyAvailable ? energyKwh : energyConsumption))
-  const animCO2     = useCountUp(Math.round(impact?.total_co2_saved_kg || impact_summary?.total_co2_saved_kg || 0))
+  const animCO2     = useCountUp(Math.round((planData?.impact || data?.impact_summary)?.total_co2_saved_kg || 0))
   const animSavings = useCountUp(Math.round(totalSavings))
+
+  if (!data) return null
+
+  const { regen_score } = data
+  const orgName     = uploadResult?.org_name || 'Organization'
+  const orgType     = uploadResult?.org_type || ''
+  const fuelCo2Kg   = data.fuel_co2_kg || uploadResult?.fuel_co2_kg || 0
+  const fuelSummary = data.fuel_summary || uploadResult?.fuel_summary || null
+  const impact      = planData?.impact || impact_summary || {}
+  const annualProj  = impact?.annual_projections
+  const anomalyTotal    = (water_summary?.anomaly_events || 0) + (energy_summary?.anomaly_events || 0)
+  const waterCost       = silent_losses?.water_cost_inr || 0
+  const energyCost      = silent_losses?.energy_cost_inr || 0
 
   return (
     <section className="px-6 py-16 max-w-7xl mx-auto fade-in" id="dashboard">

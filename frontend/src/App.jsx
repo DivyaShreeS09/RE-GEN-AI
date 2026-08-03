@@ -281,7 +281,7 @@ export default function App() {
           document.getElementById('dashboard')?.scrollIntoView({ behavior: 'smooth' })
         }, 300)
       }, 2000)
-    } catch (err) {
+    } catch {
       stepTimers.forEach(clearTimeout)
       setShowMission(false)
       setError(

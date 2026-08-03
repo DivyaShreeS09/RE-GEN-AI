@@ -15,9 +15,7 @@ function CustomTooltip({ active, payload, label }) {
 
 function ConsumptionSummary({ data }) {
   const total = data?.total_consumption_liters || 0
-  const period = data?.analysis_level_label || data?.analysis_level || 'period'
   const costEst = data?.estimated_cost_inr || 0
-  const recs = data?.recommendations || []
 
   return (
     <div className="glass-card p-6" style={{ border: '1px solid rgba(245,158,11,0.18)' }}>

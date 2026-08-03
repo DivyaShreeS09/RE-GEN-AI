@@ -30,12 +30,3 @@ def severity_label(score: float) -> str:
     return "Critical"
 
 
-def urgency_from_severity(severity: str) -> str:
-    mapping = {
-        "critical": "Immediate",
-        "high": "Within 24 hours",
-        "medium": "Within 7 days",
-        "low": "Within 30 days",
-        "none": "Routine monitoring",
-    }
-    return mapping.get(severity.lower(), "Within 7 days")

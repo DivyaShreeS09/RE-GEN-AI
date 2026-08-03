@@ -540,7 +540,7 @@ function DroneSystem({ hotX, hotY, scanPhase }) {
 }
 
 /* ─── Building hotspot label ─────────────────────────────────────────────── */
-function Hotspot({ b, isSelected, onSelect, pulse }) {
+function Hotspot({ b, isSelected, onSelect, pulse: _pulse }) {
   const color  = b.isResourceNode ? b.nodeColor : RC[b.risk]
   const label  = b.isResourceNode ? 'RESOURCE'  : RLS[b.risk]
   const isCrit = !b.isResourceNode && (b.risk === 'critical' || b.risk === 'high')

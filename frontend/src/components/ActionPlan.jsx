@@ -111,6 +111,17 @@ function PlanSection({ sectionKey, icon, title, color, items, timeline, highligh
                       ~{item.roi.payback_months}mo payback (est.)
                     </span>
                   )}
+                  {item.source === 'General Best Practice Recommendation' ? (
+                    <span className="text-xs px-1.5 py-0.5 rounded"
+                      style={{ background: 'rgba(148,163,184,0.08)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.18)' }}>
+                      General Best Practice
+                    </span>
+                  ) : (
+                    <span className="text-xs px-1.5 py-0.5 rounded"
+                      style={{ background: 'rgba(34,197,94,0.06)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.18)' }}>
+                      Evidence-backed
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-3 mt-2">
                   <div className="flex items-center gap-1.5">
@@ -485,7 +496,7 @@ export default function ActionPlan({ data, selectedBuilding }) {
 
 <!-- ─── Cover ─── -->
 <div class="cover">
-  <div class="cover-tag">Enterprise Release 2026</div>
+  <div class="cover-tag">${aiUsed ? 'AI-Enhanced Analysis' : 'Rule-Based Analysis'} · ${new Date().getFullYear()}</div>
   <div class="cover-title">RE:GEN AI<br>Sustainability<br>Intelligence Report</div>
   <div class="cover-sub">${orgName ? orgName + ' — Sustainability Analysis' : 'Agent-Prioritized Resource Analysis'}<br>Multi-Domain Decision Support · 7 AI Agents</div>
   <div class="cover-chips">
@@ -608,9 +619,9 @@ ${sdgAlignment?.length ? `
   <table>
     <tbody>
       <tr><td style="font-weight:700;width:160pt;">System</td><td>RE:GEN AI — Sustainability Intelligence OS</td></tr>
-      <tr><td style="font-weight:700;">Version</td><td>Enterprise Release 2026 · Multi-Agent Sustainability Intelligence Platform</td></tr>
+      <tr><td style="font-weight:700;">Version</td><td>RE:GEN AI v2.0 · Multi-Agent Sustainability Intelligence Platform</td></tr>
       <tr><td style="font-weight:700;">Agents</td><td>Water Leakage · Energy Optimizer · Waste-to-Wealth · Impact Analyzer · Sustainability Score · Decision Priority · Report Narrative</td></tr>
-      <tr><td style="font-weight:700;">AI Layer</td><td>OpenAI gpt-4o-mini · Multi-agent coordination (graceful fallback to rule-based engine)</td></tr>
+      <tr><td style="font-weight:700;">AI Layer</td><td>${aiUsed ? 'OpenAI gpt-4o-mini · Multi-agent coordination (graceful fallback to rule-based engine)' : 'Rule-based Analysis · Deterministic multi-agent pipeline (OpenAI unavailable during this session)'}</td></tr>
       <tr><td style="font-weight:700;">Data Source</td><td>${dataSource}</td></tr>
       <tr><td style="font-weight:700;">Generated</td><td>${new Date().toISOString()}</td></tr>
     </tbody>

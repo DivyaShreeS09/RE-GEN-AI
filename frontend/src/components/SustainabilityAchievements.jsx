@@ -1,7 +1,6 @@
 export default function SustainabilityAchievements({ dashData, waterData, energyData, uploadResult }) {
   const isUploadMode = !!uploadResult
   const regenAfter  = dashData?.regen_score?.after_score    || 0
-  const regenBefore = dashData?.regen_score?.before_score   || 30
   const co2Saved    = dashData?.impact_summary?.total_co2_saved_kg || 0
   const waterSev    = dashData?.water_summary?.severity     || 'none'
   const energySev   = dashData?.energy_summary?.severity    || 'none'

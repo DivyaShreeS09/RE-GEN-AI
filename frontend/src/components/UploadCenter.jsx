@@ -1,8 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { validateUpload } from '../api'
-
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/^﻿/, '').trim()
+import { validateUpload, BASE_URL } from '../api'
 
 const CARD_STYLE = {
   background: 'rgba(3,9,20,0.72)',
@@ -242,7 +239,7 @@ const COMING_SOON = [
 ]
 
 // ── Drag-drop zone ──────────────────────────────────────────────────────────
-function DropZone({ datasetId, color, onFile, validating, validationInfo, error }) {
+function DropZone({ datasetId: _datasetId, color, onFile, validating, validationInfo, error }) {
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef(null)
 

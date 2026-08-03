@@ -18,7 +18,7 @@ from agents.impact_agent import analyze_impact
 from agents.decision_agent import generate_decisions
 from agents.regen_score_agent import compute_regen_score
 from agents.report_agent import generate_report
-from core.guardrails import get_disclaimer, get_simulated_notice
+from core.guardrails import get_disclaimer, get_simulated_notice, sanitize_prompt_input
 from core.openai_client import call_openai, openai_status
 from core.data_processor import (
     validate_water_df, validate_energy_df, validate_fuel_df,
@@ -31,8 +31,25 @@ from core.data_processor import (
 
 app = FastAPI(
     title="RE:GEN AI — Sustainability Intelligence Platform",
-    description="Multi-agent sustainability intelligence system for campuses, offices, hospitals, and industry.",
+    description=(
+        "Multi-agent sustainability intelligence system for campuses, offices, hospitals, and industry.\n\n"
+        "**Endpoints are grouped by tag:**\n"
+        "- **System** — health check\n"
+        "- **Waste** — Waste-to-Wealth analysis and material lookup\n"
+        "- **Demo** — pre-loaded simulated data analysis (water, energy, dashboard, war room, action plan)\n"
+        "- **Upload** — file validation and full multi-agent upload analysis\n"
+        "- **Interpret** — dataset pre-analysis intelligence\n"
+        "- **Data** — demo CSV downloads"
+    ),
     version="2.0.0",
+    openapi_tags=[
+        {"name": "System",    "description": "Health and status checks."},
+        {"name": "Waste",     "description": "Waste-to-Wealth pathway analysis."},
+        {"name": "Demo",      "description": "Analysis on built-in simulated campus data."},
+        {"name": "Upload",    "description": "Upload your own CSV/Excel data for analysis."},
+        {"name": "Interpret", "description": "Pre-analysis data quality interpretation."},
+        {"name": "Data",      "description": "Download demo CSV files for testing."},
+    ],
 )
 
 app.add_middleware(
@@ -49,8 +66,8 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 # ── Pydantic models ─────────────────────────────────────────────────────────
 
 class WasteRequest(BaseModel):
-    waste_type: str = Field(..., example="coconut shell")
-    quantity_kg: float = Field(..., gt=0, example=50.0)
+    waste_type: str = Field(..., json_schema_extra={"example": "coconut shell"})
+    quantity_kg: float = Field(..., gt=0, json_schema_extra={"example": 50.0})
 
 
 class ActionPlanRequest(BaseModel):
@@ -82,8 +99,9 @@ class DataInterpretRequest(BaseModel):
 
 # ── Existing demo endpoints (unchanged) ─────────────────────────────────────
 
-@app.get("/health")
+@app.get("/health", tags=["System"], summary="Health check")
 def health_check():
+    """Return system status, version, and disclaimer notices."""
     return {
         "status": "online",
         "system": "RE:GEN AI Sustainability Intelligence Platform",
@@ -94,7 +112,7 @@ def health_check():
     }
 
 
-@app.get("/analyze/waste/materials")
+@app.get("/analyze/waste/materials", tags=["Waste"], summary="List waste materials")
 def get_waste_materials():
     """
     Return the full list of materials in the Waste-to-Wealth knowledge base.
@@ -106,25 +124,28 @@ def get_waste_materials():
     }
 
 
-@app.post("/analyze/waste")
+@app.post("/analyze/waste", tags=["Waste"], summary="Analyze a waste material")
 def analyze_waste_endpoint(request: WasteRequest):
+    """Analyze a single waste material and return recovery pathways, estimated revenue, and guardrail notices."""
     result = analyze_waste(request.waste_type, request.quantity_kg)
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
     return result
 
 
-@app.get("/analyze/water")
+@app.get("/analyze/water", tags=["Demo"], summary="Water leakage analysis (demo data)")
 def analyze_water_endpoint():
+    """Run the Water Leakage Agent on the built-in simulated campus water dataset."""
     return analyze_water()
 
 
-@app.get("/analyze/energy")
+@app.get("/analyze/energy", tags=["Demo"], summary="Energy waste analysis (demo data)")
 def analyze_energy_endpoint():
+    """Run the Energy Optimization Agent on the built-in simulated campus energy dataset."""
     return analyze_energy()
 
 
-@app.get("/dashboard/summary")
+@app.get("/dashboard/summary", tags=["Demo"], summary="Full dashboard summary (demo data)")
 def dashboard_summary():
     water  = analyze_water()
     energy = analyze_energy()
@@ -161,7 +182,7 @@ def dashboard_summary():
     }
 
 
-@app.get("/agent-war-room")
+@app.get("/agent-war-room", tags=["Demo"], summary="Agent War Room status (demo data)")
 def agent_war_room():
     water  = analyze_water()
     energy = analyze_energy()
@@ -252,8 +273,9 @@ def agent_war_room():
     }
 
 
-@app.post("/generate/action-plan")
+@app.post("/generate/action-plan", tags=["Demo"], summary="Generate action plan (demo data)")
 def generate_action_plan(request: ActionPlanRequest):
+    """Run all agents on demo data and return the full sustainability action plan and report."""
     water  = analyze_water()
     energy = analyze_energy()
 
@@ -279,7 +301,7 @@ def generate_action_plan(request: ActionPlanRequest):
 
 # ── Upload: validate a single file ─────────────────────────────────────────
 
-@app.post("/upload/validate")
+@app.post("/upload/validate", tags=["Upload"], summary="Validate an uploaded file")
 async def validate_upload(
     file: UploadFile = File(...),
     dataset_type: str = Form(...),   # "water" | "energy" | "fuel"
@@ -325,7 +347,7 @@ async def validate_upload(
 
 # ── Data intelligence interpreter ──────────────────────────────────────────
 
-@app.post("/interpret/datasets")
+@app.post("/interpret/datasets", tags=["Interpret"], summary="Interpret uploaded dataset metadata")
 def interpret_datasets(request: DataInterpretRequest):
     """
     Produce an intelligent pre-analysis summary of the uploaded datasets.
@@ -384,9 +406,11 @@ def interpret_datasets(request: DataInterpretRequest):
     )
 
     # AI quality note
+    safe_org_name = sanitize_prompt_input(request.org_name)
+    safe_org_type = sanitize_prompt_input(request.org_type)
     facts_str = "\n".join(f"- {f}" for f in facts)
     prompt = f"""You are a data quality analyst reviewing uploaded sustainability data.
-Organisation: {request.org_name} ({request.org_type})
+Organisation: {safe_org_name} ({safe_org_type})
 Datasets available: {', '.join(request.available_datasets) or 'none'}
 Data facts:
 {facts_str}
@@ -415,7 +439,7 @@ Rules:
 
 # ── Upload: run full analysis on uploaded files ─────────────────────────────
 
-@app.post("/analyze/upload")
+@app.post("/analyze/upload", tags=["Upload"], summary="Run full analysis on uploaded files")
 async def analyze_upload(
     org_name:           str  = Form("My Organization"),
     org_type:           str  = Form("University"),
@@ -448,6 +472,8 @@ async def analyze_upload(
 
     if water_file and water_file.filename:
         content = await water_file.read()
+        if len(content) > 20 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Water file exceeds 20 MB limit.")
         try:
             raw_df = _parse_bytes(content, water_file.filename)
             water_df, winfo = validate_water_df(raw_df)
@@ -475,6 +501,8 @@ async def analyze_upload(
 
     if energy_file and energy_file.filename:
         content = await energy_file.read()
+        if len(content) > 20 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Energy file exceeds 20 MB limit.")
         try:
             raw_df = _parse_bytes(content, energy_file.filename)
             energy_df, einfo = validate_energy_df(raw_df)
@@ -501,6 +529,8 @@ async def analyze_upload(
     fuel_summary = None
     if fuel_file and fuel_file.filename:
         content = await fuel_file.read()
+        if len(content) > 20 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Fuel file exceeds 20 MB limit.")
         try:
             raw_df = _parse_bytes(content, fuel_file.filename)
             fuel_summary_raw, finfo = validate_fuel_df(raw_df)
@@ -863,7 +893,7 @@ async def analyze_upload(
 
 # ── Demo data download ──────────────────────────────────────────────────────
 
-@app.get("/demo-data/{dataset_type}")
+@app.get("/demo-data/{dataset_type}", tags=["Data"], summary="Download a demo dataset CSV")
 def download_demo_data(dataset_type: str):
     """
     Download the bundled demo CSV for a given dataset type.

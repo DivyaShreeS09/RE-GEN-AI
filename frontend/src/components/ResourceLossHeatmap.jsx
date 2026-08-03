@@ -122,7 +122,6 @@ function RiskCell({ level, note }) {
 /* ── Coverage map for Level 1/2 (no anomaly detection) ──────────── */
 function CoverageMap({ waterData, energyData, uploadResult }) {
   const meta = uploadResult?.analysis_metadata || {}
-  const skipped = meta.skipped_modules || []
   const levelLabel = meta.overall_label || 'Basic Assessment'
   const conf = meta.confidence_pct || 0
 

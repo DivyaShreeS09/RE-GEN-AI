@@ -275,7 +275,7 @@ const LEVEL_META = {
   level3: { color: '#00ff88', label: 'Level 3 — Advanced AI Analysis', desc: 'Full anomaly detection · Hourly resolution' },
 }
 
-function PostAnalysisHero({ uploadResult, dashData, processingTimeSec, onScan }) {
+function PostAnalysisHero({ uploadResult, dashData, processingTimeSec, onScan: _onScan }) {
   const meta      = uploadResult?.analysis_metadata
   const orgName   = uploadResult?.org_name || 'Demo Analysis'
   const orgType   = uploadResult?.org_type || 'University'

@@ -67,7 +67,7 @@ function MetricGauge({ value, label, color, description, onClick, expanded }) {
 function DataIntelligencePanel({ uploadState, available }) {
   const [result, setResult]   = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState(false)
+  const [, setError]          = useState(false)
 
   useEffect(() => {
     const { water, energy, fuel, waste, orgName, orgType } = uploadState || {}
@@ -100,6 +100,7 @@ function DataIntelligencePanel({ uploadState, available }) {
     interpretDatasets(payload)
       .then(res => { setResult(res.data); setLoading(false) })
       .catch(() => { setError(true); setLoading(false) })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Fallback deterministic display when API fails

@@ -354,4 +354,24 @@ VITE_API_URL=https://regen-ai-backend.onrender.com
 
 ---
 
+## Built with OpenAI Codex
+
+OpenAI Codex served as the primary engineering assistant throughout the development lifecycle of RE:GEN AI.
+
+**How Codex was used:**
+
+- **Architecture planning** — Codex helped reason through the multi-agent pipeline structure: how seven independent agents would own separate resource domains, share a typed decision interface, and degrade gracefully when datasets are absent or incomplete.
+- **Implementation planning** — Before writing each module, Codex was used to plan the implementation approach: data flow, edge cases, API contract design, and confidence calibration across three analysis levels.
+- **Engineering guidance** — Codex provided guidance on FastAPI patterns, Pydantic v2 schema design, Vite proxy configuration, React hook correctness (including rules-of-hooks compliance), and vitest setup for a component test suite.
+- **Code review** — Each agent, endpoint, and frontend component was reviewed through Codex to identify logic errors, unsafe patterns, and missed edge cases before committing.
+- **Debugging** — Codex was used to trace and resolve issues including conditional hook order violations, `useMemo` stabilisation for stream references, prompt injection sanitisation gaps, and Pydantic deprecation warnings.
+- **Iterative improvements** — The backend OpenAPI documentation (tags, summaries, docstrings), action plan transparency badges, and dynamic PDF metadata were all implemented through Codex-guided iterative refinement.
+- **Quality assurance** — A 10-step independent QA audit was conducted with Codex acting as QA engineer: inspecting every endpoint, verifying stress-test responses, confirming security properties, and scoring the submission across architecture, code quality, security, and production readiness dimensions.
+- **Repository review** — Codex reviewed the full repository for tracked secrets, temporary files, encoding artifacts, dead code, and release-blocking issues prior to submission.
+- **Release readiness verification** — Final build verification, lint checks, full test suite execution (51 backend + 16 frontend tests), and deployment validation were performed under Codex guidance.
+
+Throughout development, Codex acted as an engineering assistant and reviewer. All architectural decisions, domain logic, knowledge base design, and final implementation choices remained under developer control. Codex accelerated the engineering process — it did not automate it.
+
+---
+
 *RE:GEN AI is a decision-support prototype. Not professional regulatory, financial, or engineering advice.*

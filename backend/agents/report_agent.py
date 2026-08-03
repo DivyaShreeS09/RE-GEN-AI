@@ -1,5 +1,5 @@
 from datetime import datetime
-from core.guardrails import get_disclaimer, get_simulated_notice
+from core.guardrails import get_disclaimer, get_simulated_notice, sanitize_prompt_input
 from core.openai_client import call_openai, openai_status
 
 
@@ -79,15 +79,15 @@ def generate_report(
             for a in week
         ],
         "next_30_days": [
-            {"action": "Conduct a comprehensive energy audit across all buildings and major load centres.", "domain": "Energy"},
-            {"action": "Install automated water sub-meters at high-consumption points and distribution headers.", "domain": "Water"},
-            {"action": "Set up centralised waste segregation stations with colour-coded bins at source points.", "domain": "Waste"},
+            {"action": "Conduct a comprehensive energy audit across all buildings and major load centres.", "domain": "Energy", "source": "General Best Practice Recommendation"},
+            {"action": "Install automated water sub-meters at high-consumption points and distribution headers.", "domain": "Water", "source": "General Best Practice Recommendation"},
+            {"action": "Set up centralised waste segregation stations with colour-coded bins at source points.", "domain": "Waste", "source": "General Best Practice Recommendation"},
         ],
         "long_term": [
-            {"action": "Deploy IoT-based smart meters for real-time water and energy monitoring.", "domain": "Infrastructure"},
-            {"action": "Establish on-site biogas plant to convert wet waste to cooking gas.", "domain": "Waste"},
-            {"action": "Partner with certified e-waste and hazardous waste recyclers under EPR agreement.", "domain": "Compliance"},
-            {"action": "Target RE:GEN Score > 80 (Excellent) within 12 months.", "domain": "Sustainability"},
+            {"action": "Deploy IoT-based smart meters for real-time water and energy monitoring.", "domain": "Infrastructure", "source": "General Best Practice Recommendation"},
+            {"action": "Establish on-site biogas plant to convert wet waste to cooking gas.", "domain": "Waste", "source": "General Best Practice Recommendation"},
+            {"action": "Partner with certified e-waste and hazardous waste recyclers under EPR agreement.", "domain": "Compliance", "source": "General Best Practice Recommendation"},
+            {"action": "Target RE:GEN Score > 80 (Excellent) within 12 months.", "domain": "Sustainability", "source": "General Best Practice Recommendation"},
         ],
     }
 
@@ -109,9 +109,10 @@ def generate_report(
         if analysis_metadata and not analysis_metadata.get("anomaly_detection_available", True)
         else ""
     )
+    safe_data_source = sanitize_prompt_input(data_source, max_length=300)
     prompt = f"""You are a sustainability analyst. Write a professional 3-paragraph executive summary (max 180 words) for a sustainability officer.
 
-Scan source: {data_source}.
+Scan source: {safe_data_source}.
 Analysis level: {level_label}. Confidence: {conf_pct}%. Skipped modules: {skipped_mods}.
 
 Key findings:
