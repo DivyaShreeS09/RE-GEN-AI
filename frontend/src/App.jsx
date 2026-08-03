@@ -16,29 +16,29 @@ import IndiaGlobalSection from './components/IndiaGlobalSection'
 import AnalysisModeSelector from './components/AnalysisModeSelector'
 import UploadCenter from './components/UploadCenter'
 import MissionSummary from './components/MissionSummary'
-import { getDashboardSummary, analyzeWater, analyzeEnergy, getWarRoom, generateActionPlan, analyzeUpload } from './api'
+import { getWarRoom, generateActionPlan, analyzeUpload } from './api'
 import { CheckCircle } from 'lucide-react'
 
 /* ── Mission sequence ─────────────────────────────── */
 const MISSION_STEPS = [
-  { phase: 'INIT',    text: 'Initializing RE:GEN intelligence layer' },
-  { phase: 'AGENTS',  text: 'Connecting 7 specialized agents' },
-  { phase: 'TWIN',    text: 'Loading digital twin visualization' },
-  { phase: 'SCAN',    text: 'Scanning resource infrastructure' },
-  { phase: 'WATER',   text: 'Detecting hidden water loss' },
-  { phase: 'ENERGY',  text: 'Auditing energy anomalies' },
-  { phase: 'CARBON',  text: 'Computing carbon footprint' },
-  { phase: 'AI',      text: 'AI reasoning over findings' },
-  { phase: 'REPORT',  text: 'Generating executive report' },
+  { phase: 'INIT',    text: 'Validating input...' },
+  { phase: 'AGENTS',  text: 'Connecting 7 specialized agents...' },
+  { phase: 'WATER',   text: 'Processing water analysis...' },
+  { phase: 'ENERGY',  text: 'Processing energy analysis...' },
+  { phase: 'WASTE',   text: 'Processing waste analysis...' },
+  { phase: 'SCORE',   text: 'Computing sustainability score...' },
+  { phase: 'AI',      text: 'Generating recommendations...' },
+  { phase: 'DASH',    text: 'Preparing dashboard...' },
+  { phase: 'REPORT',  text: 'Finalizing report...' },
   { phase: 'DONE',    text: 'Mission complete' },
 ]
 
 const RING_R    = 108
 const RING_CIRC = 2 * Math.PI * RING_R
 
-function MissionControlOverlay({ step, isComplete, label }) {
+function MissionControlOverlay({ step, progress, isComplete, label }) {
   const total   = MISSION_STEPS.length - 1
-  const pct     = Math.round((Math.min(step, total) / total) * 100)
+  const pct     = isComplete ? 100 : Math.round(Math.min(progress, 99))
   const dashOff = RING_CIRC * (1 - pct / 100)
   const current = MISSION_STEPS[Math.min(step, total)]
 
@@ -215,6 +215,7 @@ export default function App() {
   const [missionComplete, setMissionComplete] = useState(false)
   const [missionLabel, setMissionLabel]       = useState('Campus Scan')
   const [processingTimeSec, setProcessingTimeSec] = useState(null)
+  const [missionProgress, setMissionProgress] = useState(0)
   const analysisStartRef = useRef(null)
 
   /* ── Mode flow ──────────────────────────────────── */
@@ -236,40 +237,86 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  /* ── Demo scan (existing pipeline, unchanged) ───── */
+  /* ── Demo scan ──────────────────────────────────── */
   const runScan = useCallback(async () => {
     setShowModeSelector(false)
     setLoading(true)
     setError(null)
     setShowMission(true)
     setMissionStep(0)
+    setMissionProgress(0)
     setMissionComplete(false)
     setMissionLabel('Demo Analysis')
     analysisStartRef.current = Date.now()
 
-    const STEP_TIMES = [0, 700, 1300, 1900, 2500, 3100, 3700, 5500]
-    const stepTimers = STEP_TIMES.map((t, i) =>
-      setTimeout(() => setMissionStep(i), t)
+    // Advance steps quickly for first ~3s to show immediate responsiveness
+    const stepSeq = [[300,1,11],[700,2,22],[1200,3,33],[1800,4,44],[2600,5,55]]
+    const stepTimers = stepSeq.map(([t, s, p]) =>
+      setTimeout(() => { setMissionStep(s); setMissionProgress(p) }, t)
     )
 
+    // Continuous crawl after initial steps — ring never freezes
+    const crawlRef = { id: null, startTimer: null, pct: 55 }
+    crawlRef.startTimer = setTimeout(() => {
+      crawlRef.id = setInterval(() => {
+        crawlRef.pct = Math.min(crawlRef.pct + 1, 92)
+        setMissionProgress(crawlRef.pct)
+      }, 2000)
+    }, 3000)
+
+    // Cold-start label if API takes > 8s (Render free tier spin-up)
+    const coldTimer = setTimeout(() => setMissionLabel('Server warming up...'), 8000)
+
+    const cleanup = () => {
+      stepTimers.forEach(clearTimeout)
+      clearTimeout(crawlRef.startTimer)
+      clearInterval(crawlRef.id)
+      clearTimeout(coldTimer)
+    }
+
     try {
-      const [dash, water, energy, warRoom, plan] = await Promise.all([
-        getDashboardSummary(),
-        analyzeWater(),
-        analyzeEnergy(),
-        getWarRoom(),
+      // 2 parallel calls instead of 5 — plan response includes all agent outputs
+      const [plan, warRoom] = await Promise.all([
         generateActionPlan({ include_waste: false }),
+        getWarRoom(),
       ])
 
-      stepTimers.forEach(clearTimeout)
+      cleanup()
       setMissionStep(MISSION_STEPS.length - 1)
+      setMissionProgress(100)
       setMissionComplete(true)
+      setMissionLabel('Demo Analysis')
 
-      setDashData(dash.data)
-      setWaterData(water.data)
-      setEnergyData(energy.data)
-      setWarRoomData(warRoom.data.war_room)
+      // Derive waterData and energyData from plan — same objects the dedicated endpoints return
+      setWaterData(plan.data.water)
+      setEnergyData(plan.data.energy)
       setActionPlanData(plan.data)
+      setWarRoomData(warRoom.data.war_room)
+      setDashData({
+        regen_score:   plan.data.regen_score,
+        silent_losses: plan.data.report?.silent_losses || {},
+        water_summary: {
+          total_wasted_liters: plan.data.water?.total_wasted_liters || 0,
+          severity:            plan.data.water?.severity || 'none',
+          estimated_cost_inr:  plan.data.water?.estimated_cost_inr || 0,
+          anomaly_events:      plan.data.water?.anomaly_events?.length || 0,
+        },
+        energy_summary: {
+          total_wasted_kwh:   plan.data.energy?.total_wasted_kwh || 0,
+          severity:           plan.data.energy?.severity || 'none',
+          estimated_cost_inr: plan.data.energy?.estimated_cost_inr || 0,
+          anomaly_events:     plan.data.energy?.anomaly_events?.length || 0,
+        },
+        impact_summary: {
+          total_co2_saved_kg:   plan.data.impact?.total_co2_saved_kg || 0,
+          trees_equivalent:     plan.data.impact?.trees_equivalent || 0,
+          sustainability_score: plan.data.impact?.sustainability_score || 0,
+          sustainability_rating: plan.data.impact?.sustainability_rating || '',
+        },
+        top_actions: plan.data.decision?.ranked_actions?.slice(0, 3) || [],
+        disclaimer:  plan.data.report?.disclaimer || '',
+        data_notice: plan.data.report?.data_notice || '',
+      })
       setUploadResult(null)
       setProcessingTimeSec(((Date.now() - (analysisStartRef.current || Date.now())) / 1000).toFixed(1))
 
@@ -282,7 +329,7 @@ export default function App() {
         }, 300)
       }, 2000)
     } catch {
-      stepTimers.forEach(clearTimeout)
+      cleanup()
       setShowMission(false)
       setError(
         'Unable to reach the RE:GEN AI backend. The server may be warming up — please wait 30–60 seconds and try again.'
@@ -292,22 +339,43 @@ export default function App() {
     }
   }, [])
 
-  /* ── Upload scan (new pipeline) ─────────────────── */
+  /* ── Upload scan ────────────────────────────────── */
   const runUploadScan = useCallback(async () => {
     if (!uploadState) return
     setLaunching(true)
     setShowMissionSummary(false)
     setShowMission(true)
     setMissionStep(0)
+    setMissionProgress(0)
     setMissionComplete(false)
     setMissionLabel('Organization Analysis')
     setError(null)
     analysisStartRef.current = Date.now()
 
-    const STEP_TIMES = [0, 800, 1500, 2100, 2700, 3300, 3900, 9000, 20000]
-    const stepTimers = STEP_TIMES.map((t, i) =>
-      setTimeout(() => setMissionStep(i), t)
+    // Advance through meaningful stages while the upload request is in-flight
+    const stepSeq = [[400,1,11],[1000,2,22],[1800,3,33],[2700,4,44],[3700,5,55],[5000,6,66],[7000,7,77]]
+    const stepTimers = stepSeq.map(([t, s, p]) =>
+      setTimeout(() => { setMissionStep(s); setMissionProgress(p) }, t)
     )
+
+    // Continuous crawl after initial steps — prevents frozen bar during long upload analysis
+    const crawlRef = { id: null, startTimer: null, pct: 77 }
+    crawlRef.startTimer = setTimeout(() => {
+      crawlRef.id = setInterval(() => {
+        crawlRef.pct = Math.min(crawlRef.pct + 1, 92)
+        setMissionProgress(crawlRef.pct)
+      }, 2000)
+    }, 7500)
+
+    // Cold-start label after 8s
+    const coldTimer = setTimeout(() => setMissionLabel('Server warming up...'), 8000)
+
+    const cleanup = () => {
+      stepTimers.forEach(clearTimeout)
+      clearTimeout(crawlRef.startTimer)
+      clearInterval(crawlRef.id)
+      clearTimeout(coldTimer)
+    }
 
     try {
       const fd = new FormData()
@@ -348,9 +416,11 @@ export default function App() {
       const res = await analyzeUpload(fd)
       const result = res.data
 
-      stepTimers.forEach(clearTimeout)
+      cleanup()
       setMissionStep(MISSION_STEPS.length - 1)
+      setMissionProgress(100)
       setMissionComplete(true)
+      setMissionLabel('Organization Analysis')
       setUploadResult(result)
       setProcessingTimeSec(((Date.now() - (analysisStartRef.current || Date.now())) / 1000).toFixed(1))
 
@@ -404,7 +474,7 @@ export default function App() {
         }, 300)
       }, 2000)
     } catch (err) {
-      stepTimers.forEach(clearTimeout)
+      cleanup()
       setShowMission(false)
       const isTimeout = err?.code === 'ECONNABORTED' || err?.message?.includes('timeout')
       setError(
@@ -454,7 +524,7 @@ export default function App() {
 
       {/* Mission overlay */}
       {showMission && (
-        <MissionControlOverlay step={missionStep} isComplete={missionComplete} label={missionLabel} />
+        <MissionControlOverlay step={missionStep} progress={missionProgress} isComplete={missionComplete} label={missionLabel} />
       )}
 
       {/* Mode selector modal */}
