@@ -13,6 +13,36 @@
 
 ---
 
+## 🏆 ChatGPT Codex India Hackathon 2026 Submission
+
+**Official Submission Theme:** **Theme 8 — AI for Societal Good**
+
+**Project Domain:** Sustainability Intelligence & Environmental Resource Optimization
+
+RE:GEN AI is officially submitted under **Theme 8 — AI for Societal Good** because the platform addresses real-world environmental and sustainability challenges through AI-powered decision support, helping organizations improve resource efficiency, reduce environmental impact, and make more sustainable operational decisions.
+
+The project demonstrates how collaborative AI systems can support hospitals, educational institutions, industries, commercial buildings, campuses, smart cities, governments, and other organizations by transforming fragmented sustainability data into transparent, explainable, and actionable recommendations.
+
+While the official submission theme is **AI for Societal Good**, the engineering architecture also closely aligns with **Theme 4 — Domain Agents**. The platform is implemented as a collaborative multi-agent system where seven specialized AI agents work together across waste analysis, water intelligence, energy optimization, environmental impact assessment, decision intelligence, sustainability scoring, and executive reporting.
+
+This combination demonstrates both meaningful societal impact and a practical domain-specific AI workflow while showcasing genuine agentic software engineering with OpenAI Codex.
+
+Throughout development, OpenAI Codex was used as an engineering assistant for:
+
+- System architecture planning
+- Multi-agent workflow design
+- Implementation planning
+- Engineering review
+- Code quality improvements
+- Debugging and iterative refinement
+- Repository auditing
+- Quality assurance
+- Release readiness verification
+
+The final software architecture, sustainability methodology, engineering decisions, implementation, testing, deployment, documentation, and integration were completed by the developer.
+
+---
+
 ## The Problem
 
 Campuses, hospitals, hotels, and industrial facilities silently lose significant water, energy, and waste value every week — not from a lack of concern, but because the data lives in disconnected systems with no one synthesising it into action.
