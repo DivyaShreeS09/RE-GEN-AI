@@ -63,7 +63,8 @@ def _rank_buildings(water_events: list, energy_events: list) -> list:
 
 
 def compute_regen_score(water_result: dict, energy_result: dict,
-                         impact_result: dict, decision_result: dict) -> dict:
+                         impact_result: dict, decision_result: dict,
+                         waste_result: dict = None) -> dict:
     water_severity_score  = water_result.get("severity_score", 50)
     energy_severity_score = energy_result.get("severity_score", 50)
     sustainability_score  = impact_result.get("sustainability_score", 50)
@@ -74,8 +75,25 @@ def compute_regen_score(water_result: dict, energy_result: dict,
     water_saving_potential  = min(100, 100 - (wasted_liters / 10))
     energy_saving_potential = min(100, 100 - (wasted_kwh    / 5))
 
-    waste_recovery   = 60
-    feasibility_avg  = 82
+    # Derive waste_recovery from real waste data when available.
+    # circularity_score (batch) or hidden_value_score (single-item) are both 0-100 recovery
+    # potential scores computed by waste_agent. 60 is the neutral baseline when no waste
+    # data is submitted (mid-point, representing "unknown" rather than good or bad).
+    if waste_result and waste_result.get("status") == "analyzed":
+        waste_recovery = float(
+            waste_result.get("circularity_score")
+            or waste_result.get("hidden_value_score")
+            or 60
+        )
+    else:
+        waste_recovery = 60  # ponytail: neutral when no waste submitted
+
+    # Average feasibility from actual ranked actions (each action stores feasibility as int 0-10).
+    actions = decision_result.get("ranked_actions", [])
+    feasibility_avg = (
+        sum(a.get("feasibility", 0) for a in actions) / len(actions)
+        if actions else 80  # neutral fallback when no actions present
+    )
     urgency_reduction = 100 - (
         sum(a.get("urgency", 5) * 10 for a in decision_result.get("ranked_actions", []))
         / max(len(decision_result.get("ranked_actions", [])), 1)

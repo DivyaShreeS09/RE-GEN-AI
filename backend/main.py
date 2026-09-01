@@ -289,7 +289,7 @@ def generate_action_plan(request: ActionPlanRequest):
 
     impact   = analyze_impact(water["total_wasted_liters"], energy["total_wasted_kwh"], waste_value)
     decision = generate_decisions(water, energy, waste)
-    regen    = compute_regen_score(water, energy, impact, decision)
+    regen    = compute_regen_score(water, energy, impact, decision, waste)
     report   = generate_report(water, energy, impact, decision, regen, waste)
 
     return {
@@ -613,7 +613,7 @@ async def analyze_upload(
     # ── Run downstream agents ──────────────────────────
     impact   = analyze_impact(water_liters, energy_kwh, waste_value, fuel_co2_kg=fuel_co2_kg)
     decision = generate_decisions(effective_water, effective_energy, waste_result)
-    regen    = compute_regen_score(effective_water, effective_energy, impact, decision)
+    regen    = compute_regen_score(effective_water, effective_energy, impact, decision, waste_result)
 
     coverage = compute_coverage(available_datasets)
 
