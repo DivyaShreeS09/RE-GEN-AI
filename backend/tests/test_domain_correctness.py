@@ -213,7 +213,7 @@ class TestImpactAgent:
             assert r["total_co2_saved_kg"] >= prev
             prev = r["total_co2_saved_kg"]
 
-    def test_regen_score_responds_to_severity(self):
+    def test_regen_score_responds_to_severity(self):  # noqa: E301
         """Confirm (from test_regen_score_agent) that regen score changes across severities."""
         from agents.regen_score_agent import compute_regen_score
         def _decision():
@@ -229,3 +229,57 @@ class TestImpactAgent:
         assert r_high["before_score"] < r_low["before_score"], (
             "Critical water severity must produce lower before_score than none"
         )
+
+
+# ─── Decision Engine install-cost correctness ─────────────────────────────────
+
+class TestDecisionAgentInstallCosts:
+    def _water(self, liters):
+        return {"total_wasted_liters": 100, "total_consumption_liters": liters,
+                "severity": "low", "estimated_cost_inr": 500,
+                "anomaly_events": [], "recommendations": ["Inspect"]}
+
+    def _energy(self, kwh):
+        return {"total_wasted_kwh": 20, "total_consumption_kwh": kwh,
+                "severity": "low", "estimated_cost_inr": 200,
+                "anomaly_events": [], "recommendations": ["Timer"]}
+
+    def test_larger_facility_has_higher_w1_cost(self):
+        from agents.decision_agent import generate_decisions
+        small = generate_decisions(self._water(500),  self._energy(50))
+        large = generate_decisions(self._water(5000), self._energy(50))
+        small_cost = small["ranked_actions"][0]["roi"]["install_cost_inr"]
+        large_cost = large["ranked_actions"][0]["roi"]["install_cost_inr"]
+        # W1 is always present; for water-dominant: larger consumption → higher cost
+        w1_small = next(a for a in small["ranked_actions"] if a["id"] == "W1")
+        w1_large = next(a for a in large["ranked_actions"] if a["id"] == "W1")
+        assert w1_large["roi"]["install_cost_inr"] >= w1_small["roi"]["install_cost_inr"]
+
+    def test_w1_cost_basis_is_scaled(self):
+        from agents.decision_agent import generate_decisions
+        result = generate_decisions(self._water(2000), self._energy(100))
+        w1 = next(a for a in result["ranked_actions"] if a["id"] == "W1")
+        assert w1["roi"]["cost_basis"] == "scaled_from_water_consumption"
+
+    def test_e1_cost_basis_is_scaled(self):
+        from agents.decision_agent import generate_decisions
+        result = generate_decisions(self._water(500), self._energy(500))
+        e1 = next(a for a in result["ranked_actions"] if a["id"] == "E1")
+        assert e1["roi"]["cost_basis"] == "scaled_from_energy_consumption"
+
+    def test_w2_cost_basis_is_reference(self):
+        from agents.decision_agent import generate_decisions
+        waste = {"status": "analyzed", "waste_type": "pet", "quantity_kg": 10,
+                 "hidden_value_score": 60, "hazard_warning": False,
+                 "estimated_recovery": {"max_inr": 500},
+                 "recommended_pathway": "recycle"}
+        result = generate_decisions(self._water(500), self._energy(50), waste)
+        w2 = next(a for a in result["ranked_actions"] if a["id"] == "W2")
+        assert w2["roi"]["cost_basis"] == "industry_reference_estimate"
+
+    def test_cost_clamped_within_range(self):
+        from agents.decision_agent import _scale_install_cost
+        cost, basis = _scale_install_cost("W1", 0, 0)
+        assert 3000 <= cost <= 50000
+        cost2, _ = _scale_install_cost("W1", 1_000_000, 0)
+        assert cost2 <= 50000  # upper clamp

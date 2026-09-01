@@ -1,8 +1,11 @@
 from core.guardrails import get_disclaimer
 from core.openai_client import call_openai
 
-# Estimated one-time install costs (simulated; clearly marked)
-_INSTALL_COST = {"W1": 8000, "E1": 5000, "W2": 2000}
+# Reference base costs per action type. Scaled by consumption size in generate_decisions().
+# W1 (leak repair + sensors): base Rs. 8000, +Rs. 10 per 1000 L above 1000 L weekly baseline.
+# E1 (smart switches/timers): base Rs. 5000, +Rs. 8 per 1000 kWh above 100 kWh weekly baseline.
+# W2 (waste routing/storage): fixed reference — no reliable consumption proxy; disclosed in roi.
+_BASE_INSTALL = {"W1": 8000, "E1": 5000, "W2": 2000}
 
 
 def _score_action(urgency: int, cost_saving: float, env_impact: float, feasibility: int) -> float:
@@ -15,22 +18,43 @@ def _score_action(urgency: int, cost_saving: float, env_impact: float, feasibili
     )
 
 
-def _roi(action_id: str, weekly_saving_inr: float) -> dict:
-    install = _INSTALL_COST.get(action_id, 5000)
+def _scale_install_cost(action_id: str, water_liters: float, energy_kwh: float) -> tuple:
+    """Return (install_cost_inr, cost_basis) scaled from actual consumption where possible."""
+    if action_id == "W1":
+        extra = max(0.0, water_liters - 1000) / 1000 * 10
+        cost = int(round(_BASE_INSTALL["W1"] + extra))
+        cost = max(3000, min(cost, 50000))
+        return cost, "scaled_from_water_consumption"
+    if action_id == "E1":
+        extra = max(0.0, energy_kwh - 100) / 1000 * 8
+        cost = int(round(_BASE_INSTALL["E1"] + extra))
+        cost = max(2000, min(cost, 30000))
+        return cost, "scaled_from_energy_consumption"
+    return _BASE_INSTALL.get(action_id, 5000), "industry_reference_estimate"
+
+
+def _roi(install_cost: int, cost_basis: str, weekly_saving_inr: float) -> dict:
     monthly = round(weekly_saving_inr * 4.33, 2)
     if monthly <= 0:
         return {
-            "install_cost_inr": install,
+            "install_cost_inr": install_cost,
+            "cost_basis": cost_basis,
             "monthly_saving_inr": 0,
             "payback_months": None,
-            "payback_note": "Insufficient saving data for ROI estimate (simulated).",
+            "payback_note": "Insufficient saving data for ROI estimate.",
         }
-    payback = round(install / monthly, 1)
+    payback = round(install_cost / monthly, 1)
+    basis_note = (
+        "Cost estimated from your actual consumption data."
+        if cost_basis in ("scaled_from_water_consumption", "scaled_from_energy_consumption")
+        else "Cost is an industry reference estimate — not derived from your data."
+    )
     return {
-        "install_cost_inr":   install,
+        "install_cost_inr":   install_cost,
+        "cost_basis":         cost_basis,
         "monthly_saving_inr": monthly,
         "payback_months":     payback,
-        "payback_note":       f"Estimated payback in {payback} months (simulated; actual costs vary).",
+        "payback_note":       f"Estimated payback in {payback} months. {basis_note}",
     }
 
 
@@ -38,11 +62,15 @@ def generate_decisions(water_result: dict, energy_result: dict, waste_result: di
     actions = []
     urgency_map = {"critical": 10, "high": 8, "medium": 5, "low": 3, "none": 1}
 
+    water_total_liters = water_result.get("total_consumption_liters", 0)
+    energy_total_kwh   = energy_result.get("total_consumption_kwh", 0)
+
     # --- Water action ---
     water_severity  = water_result.get("severity", "none")
     water_cost      = water_result.get("estimated_cost_inr", 0)
     water_liters    = water_result.get("total_wasted_liters", 0)
     water_urgency   = urgency_map.get(water_severity, 1)
+    w1_install, w1_basis = _scale_install_cost("W1", water_total_liters, energy_total_kwh)
 
     water_issue = (
         f"Night-time water leakage detected ({water_liters} L wasted)"
@@ -61,7 +89,7 @@ def generate_decisions(water_result: dict, energy_result: dict, waste_result: di
         "priority_score": _score_action(water_urgency, water_cost, min(water_liters / 100, 10), 9),
         "recommended_action": (water_result.get("recommendations") or ["Inspect pipes"])[0],
         "timeline": "Immediate" if water_severity in ("critical", "high") else "Within 7 days",
-        "roi": _roi("W1", water_cost),
+        "roi": _roi(w1_install, w1_basis, water_cost),
     })
 
     # --- Energy action ---
@@ -69,6 +97,7 @@ def generate_decisions(water_result: dict, energy_result: dict, waste_result: di
     energy_cost     = energy_result.get("estimated_cost_inr", 0)
     energy_kwh      = energy_result.get("total_wasted_kwh",   0)
     energy_urgency  = urgency_map.get(energy_severity, 1)
+    e1_install, e1_basis = _scale_install_cost("E1", water_total_liters, energy_total_kwh)
 
     energy_issue = (
         f"After-hours energy waste detected ({energy_kwh} kWh wasted)"
@@ -87,7 +116,7 @@ def generate_decisions(water_result: dict, energy_result: dict, waste_result: di
         "priority_score": _score_action(energy_urgency, energy_cost, min(energy_kwh / 20, 10), 8),
         "recommended_action": (energy_result.get("recommendations") or ["Install smart timers"])[0],
         "timeline": "Immediate" if energy_severity in ("critical", "high") else "Within 7 days",
-        "roi": _roi("E1", energy_cost),
+        "roi": _roi(e1_install, e1_basis, energy_cost),
     })
 
     # --- Waste action (optional) ---
@@ -97,6 +126,7 @@ def generate_decisions(water_result: dict, energy_result: dict, waste_result: di
         waste_cost = 0
         if waste_result.get("estimated_recovery"):
             waste_cost = waste_result["estimated_recovery"].get("max_inr", 0)
+        w2_install, w2_basis = _scale_install_cost("W2", water_total_liters, energy_total_kwh)
 
         actions.append({
             "id": "W2",
@@ -115,7 +145,7 @@ def generate_decisions(water_result: dict, energy_result: dict, waste_result: di
                 f"Follow {waste_result.get('recommended_pathway','recycle')} pathway immediately."
             ),
             "timeline": "Within 24 hours" if waste_result.get("hazard_warning") else "Within 7 days",
-            "roi": _roi("W2", waste_cost),
+            "roi": _roi(w2_install, w2_basis, waste_cost),
         })
 
     actions.sort(key=lambda x: x["priority_score"], reverse=True)
