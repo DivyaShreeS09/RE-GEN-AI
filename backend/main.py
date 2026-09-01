@@ -1,15 +1,21 @@
-import sys
+﻿import sys
 import os
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from typing import Optional
 import io
 import json
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+_rate_limit_enabled = os.environ.get("RATELIMIT_ENABLED", "true").lower() != "false"
+limiter = Limiter(key_func=get_remote_address, enabled=_rate_limit_enabled)
 
 from agents.waste_agent import analyze_waste, analyze_waste_batch, get_kb_materials_list
 from agents.water_agent import analyze_water
@@ -30,16 +36,16 @@ from core.data_processor import (
 )
 
 app = FastAPI(
-    title="RE:GEN AI — Sustainability Intelligence Platform",
+    title="RE:GEN AI â€” Sustainability Intelligence Platform",
     description=(
         "Multi-agent sustainability intelligence system for campuses, offices, hospitals, and industry.\n\n"
         "**Endpoints are grouped by tag:**\n"
-        "- **System** — health check\n"
-        "- **Waste** — Waste-to-Wealth analysis and material lookup\n"
-        "- **Demo** — pre-loaded simulated data analysis (water, energy, dashboard, war room, action plan)\n"
-        "- **Upload** — file validation and full multi-agent upload analysis\n"
-        "- **Interpret** — dataset pre-analysis intelligence\n"
-        "- **Data** — demo CSV downloads"
+        "- **System** â€” health check\n"
+        "- **Waste** â€” Waste-to-Wealth analysis and material lookup\n"
+        "- **Demo** â€” pre-loaded simulated data analysis (water, energy, dashboard, war room, action plan)\n"
+        "- **Upload** â€” file validation and full multi-agent upload analysis\n"
+        "- **Interpret** â€” dataset pre-analysis intelligence\n"
+        "- **Data** â€” demo CSV downloads"
     ),
     version="2.0.0",
     openapi_tags=[
@@ -52,9 +58,27 @@ app = FastAPI(
     ],
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# CORS: restrict to known origins unless ALLOW_ALL_ORIGINS=true (local/demo override).
+_DEFAULT_ORIGINS = [
+    "https://frontend-two-rho-85.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
+if os.environ.get("ALLOW_ALL_ORIGINS", "").lower() == "true":
+    _ALLOWED_ORIGINS = ["*"]
+else:
+    _env_origins = os.environ.get("ALLOWED_ORIGINS", "")
+    _ALLOWED_ORIGINS = (
+        [o.strip() for o in _env_origins.split(",") if o.strip()]
+        if _env_origins else _DEFAULT_ORIGINS
+    )
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -63,7 +87,7 @@ app.add_middleware(
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 
-# ── Pydantic models ─────────────────────────────────────────────────────────
+# â”€â”€ Pydantic models â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class WasteRequest(BaseModel):
     waste_type: str = Field(..., json_schema_extra={"example": "coconut shell"})
@@ -97,7 +121,7 @@ class DataInterpretRequest(BaseModel):
     available_datasets: list = []
 
 
-# ── Existing demo endpoints (unchanged) ─────────────────────────────────────
+# â”€â”€ Existing demo endpoints (unchanged) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/health", tags=["System"], summary="Health check")
 def health_check():
@@ -173,9 +197,10 @@ def get_waste_materials():
 
 
 @app.post("/analyze/waste", tags=["Waste"], summary="Analyze a waste material")
-def analyze_waste_endpoint(request: WasteRequest):
+@limiter.limit("10/minute")
+def analyze_waste_endpoint(request: Request, body: WasteRequest):
     """Analyze a single waste material and return recovery pathways, estimated revenue, and guardrail notices."""
-    result = analyze_waste(request.waste_type, request.quantity_kg)
+    result = analyze_waste(body.waste_type, body.quantity_kg)
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
     return result
@@ -231,7 +256,8 @@ def dashboard_summary():
 
 
 @app.get("/agent-war-room", tags=["Demo"], summary="Agent War Room status (demo data)")
-def agent_war_room():
+@limiter.limit("10/minute")
+def agent_war_room(request: Request):
     water  = analyze_water()
     energy = analyze_energy()
     impact   = analyze_impact(water["total_wasted_liters"], energy["total_wasted_kwh"], 0)
@@ -243,7 +269,7 @@ def agent_war_room():
         "war_room": [
             {
                 "agent":          "Waste-to-Wealth Agent",
-                "icon":           "♻️",
+                "icon":           "â™»ï¸",
                 "status":         "standby",
                 "finding":        "Submit a waste type using the Waste Analyzer panel to activate this agent.",
                 "confidence":     None,
@@ -252,7 +278,7 @@ def agent_war_room():
             },
             {
                 "agent":          "Water Leakage Agent",
-                "icon":           "💧",
+                "icon":           "ðŸ’§",
                 "status":         "active",
                 "finding":        f"Detected {len(water['anomaly_events'])} leakage event(s). "
                                   f"{water['total_wasted_liters']}L wasted. Severity: {water['severity'].upper()}.",
@@ -263,7 +289,7 @@ def agent_war_room():
             },
             {
                 "agent":          "Energy Optimization Agent",
-                "icon":           "⚡",
+                "icon":           "âš¡",
                 "status":         "active",
                 "finding":        f"Detected {len(energy['anomaly_events'])} after-hours waste event(s). "
                                   f"{energy['total_wasted_kwh']} kWh wasted. Severity: {energy['severity'].upper()}.",
@@ -274,7 +300,7 @@ def agent_war_room():
             },
             {
                 "agent":          "Pollution & Impact Agent",
-                "icon":           "🌿",
+                "icon":           "ðŸŒ¿",
                 "status":         "active",
                 "finding":        f"Total CO2 savings potential: {impact['total_co2_saved_kg']} kg. "
                                   f"Equivalent to {impact['trees_equivalent']} trees saved.",
@@ -285,29 +311,29 @@ def agent_war_room():
             },
             {
                 "agent":          "Decision Engine Agent",
-                "icon":           "🧠",
+                "icon":           "ðŸ§ ",
                 "status":         "active",
                 "finding":        f"Ranked {decision['total_actions']} priority actions. "
                                   f"Top priority: {decision['ranked_actions'][0]['domain'] if decision['ranked_actions'] else 'N/A'}.",
                 "confidence":     decision["confidence"],
                 "recommendation": decision["ranked_actions"][0]["recommended_action"] if decision["ranked_actions"] else "No actions ranked.",
                 "severity":       "medium",
-                "key_metric":     f"₹{decision['total_potential_saving_inr']} savings potential",
+                "key_metric":     f"â‚¹{decision['total_potential_saving_inr']} savings potential",
             },
             {
                 "agent":          "RE:GEN Score Agent",
-                "icon":           "🏆",
+                "icon":           "ðŸ†",
                 "status":         "active",
                 "finding":        f"Current score: {regen['before_score']}/100 ({regen['current_rating']}). "
                                   f"Post-action target: {regen['after_score']}/100 ({regen['target_rating']}).",
                 "confidence":     regen["confidence"],
                 "recommendation": f"Implementing all actions will improve score by +{regen['improvement']} points.",
                 "severity":       "high" if regen["before_score"] < 40 else "medium",
-                "key_metric":     f"{regen['before_score']} → {regen['after_score']}",
+                "key_metric":     f"{regen['before_score']} â†’ {regen['after_score']}",
             },
             {
                 "agent":          "Report Agent",
-                "icon":           "📋",
+                "icon":           "ðŸ“‹",
                 "status":         "active",
                 "finding":        f"Executive report generated. {len(report['action_plan']['immediate'])} immediate actions, "
                                   f"{len(report['action_plan']['next_7_days'])} 7-day actions.",
@@ -322,14 +348,15 @@ def agent_war_room():
 
 
 @app.post("/generate/action-plan", tags=["Demo"], summary="Generate action plan (demo data)")
-def generate_action_plan(request: ActionPlanRequest):
+@limiter.limit("10/minute")
+def generate_action_plan(request: Request, body: ActionPlanRequest):
     """Run all agents on demo data and return the full sustainability action plan and report."""
     water  = analyze_water()
     energy = analyze_energy()
 
     waste = None
-    if request.include_waste and request.waste_type and request.waste_quantity_kg:
-        waste = analyze_waste(request.waste_type, request.waste_quantity_kg)
+    if body.include_waste and body.waste_type and body.waste_quantity_kg:
+        waste = analyze_waste(body.waste_type, body.waste_quantity_kg)
 
     waste_value = 0
     if waste and waste.get("estimated_recovery"):
@@ -347,10 +374,12 @@ def generate_action_plan(request: ActionPlanRequest):
     }
 
 
-# ── Upload: validate a single file ─────────────────────────────────────────
+# â”€â”€ Upload: validate a single file â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.post("/upload/validate", tags=["Upload"], summary="Validate an uploaded file")
+@limiter.limit("10/minute")
 async def validate_upload(
+    request: Request,
     file: UploadFile = File(...),
     dataset_type: str = Form(...),   # "water" | "energy" | "fuel"
 ):
@@ -383,7 +412,7 @@ async def validate_upload(
             "valid": True,
             "record_count": len(raw_df),
             "columns_detected": list(raw_df.columns),
-            "warnings": ["Generic validation only — no schema enforced for this dataset type."],
+            "warnings": ["Generic validation only â€” no schema enforced for this dataset type."],
             "errors": [],
         }
 
@@ -393,10 +422,11 @@ async def validate_upload(
     return info
 
 
-# ── Data intelligence interpreter ──────────────────────────────────────────
+# â”€â”€ Data intelligence interpreter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.post("/interpret/datasets", tags=["Interpret"], summary="Interpret uploaded dataset metadata")
-def interpret_datasets(request: DataInterpretRequest):
+@limiter.limit("10/minute")
+def interpret_datasets(request: Request, body: DataInterpretRequest):
     """
     Produce an intelligent pre-analysis summary of the uploaded datasets.
     Deterministic facts are always returned. OpenAI adds a quality note when available.
@@ -404,62 +434,62 @@ def interpret_datasets(request: DataInterpretRequest):
     facts = []
     all_warnings = []
 
-    if request.water_records > 0:
-        facts.append(f"{request.water_records:,} Water Records")
-        if request.water_buildings:
-            b = len(request.water_buildings)
+    if body.water_records > 0:
+        facts.append(f"{body.water_records:,} Water Records")
+        if body.water_buildings:
+            b = len(body.water_buildings)
             facts.append(f"{b} Water Location{'s' if b > 1 else ''} Detected")
-        if request.water_date_range:
-            facts.append(f"Water Span: {request.water_date_range}")
-        all_warnings.extend(request.water_warnings)
-    elif request.manual_water_liters > 0:
-        period = request.manual_water_period or "weekly"
-        facts.append(f"Water: Manual Entry ({request.manual_water_liters:,.0f} L/{period})")
+        if body.water_date_range:
+            facts.append(f"Water Span: {body.water_date_range}")
+        all_warnings.extend(body.water_warnings)
+    elif body.manual_water_liters > 0:
+        period = body.manual_water_period or "weekly"
+        facts.append(f"Water: Manual Entry ({body.manual_water_liters:,.0f} L/{period})")
         facts.append("Synthetic Diurnal Profile Generated")
 
-    if request.energy_records > 0:
-        facts.append(f"{request.energy_records:,} Energy Records")
-        if request.energy_zones:
-            z = len(request.energy_zones)
+    if body.energy_records > 0:
+        facts.append(f"{body.energy_records:,} Energy Records")
+        if body.energy_zones:
+            z = len(body.energy_zones)
             facts.append(f"{z} Energy Zone{'s' if z > 1 else ''} Detected")
-        if request.energy_date_range:
-            facts.append(f"Energy Span: {request.energy_date_range}")
-        all_warnings.extend(request.energy_warnings)
-    elif request.manual_energy_kwh > 0:
-        period = request.manual_energy_period or "weekly"
-        facts.append(f"Energy: Manual Entry ({request.manual_energy_kwh:,.0f} kWh/{period})")
+        if body.energy_date_range:
+            facts.append(f"Energy Span: {body.energy_date_range}")
+        all_warnings.extend(body.energy_warnings)
+    elif body.manual_energy_kwh > 0:
+        period = body.manual_energy_period or "weekly"
+        facts.append(f"Energy: Manual Entry ({body.manual_energy_kwh:,.0f} kWh/{period})")
         facts.append("Synthetic Load Profile Generated")
 
-    if request.fuel_records > 0:
-        facts.append(f"{request.fuel_records:,} Fuel Records")
+    if body.fuel_records > 0:
+        facts.append(f"{body.fuel_records:,} Fuel Records")
 
-    if request.waste_type:
-        facts.append(f"Waste: {request.waste_type} ({request.waste_qty_kg} kg)")
+    if body.waste_type:
+        facts.append(f"Waste: {body.waste_type} ({body.waste_qty_kg} kg)")
 
     if all_warnings:
         facts.append(f"{len(all_warnings)} Column Warning{'s' if len(all_warnings) > 1 else ''} Handled")
 
     if not facts:
-        facts.append("No datasets detected — manual entries will be used")
+        facts.append("No datasets detected â€” manual entries will be used")
 
-    n = len(request.available_datasets)
+    n = len(body.available_datasets)
     facts.append(f"Carbon: Automatic (derived from {n} dataset{'s' if n != 1 else ''})")
 
     # Fallback quality note (deterministic)
-    ds_list = ", ".join(request.available_datasets) if request.available_datasets else "no primary datasets"
+    ds_list = ", ".join(body.available_datasets) if body.available_datasets else "no primary datasets"
     fallback = (
-        f"{n} dataset{'s' if n != 1 else ''} validated for {request.org_name}. "
+        f"{n} dataset{'s' if n != 1 else ''} validated for {body.org_name}. "
         f"Analysis will run on: {ds_list}. "
         "All data quality issues have been handled automatically."
     )
 
     # AI quality note
-    safe_org_name = sanitize_prompt_input(request.org_name)
-    safe_org_type = sanitize_prompt_input(request.org_type)
+    safe_org_name = sanitize_prompt_input(body.org_name)
+    safe_org_type = sanitize_prompt_input(body.org_type)
     facts_str = "\n".join(f"- {f}" for f in facts)
     prompt = f"""You are a data quality analyst reviewing uploaded sustainability data.
 Organisation: {safe_org_name} ({safe_org_type})
-Datasets available: {', '.join(request.available_datasets) or 'none'}
+Datasets available: {', '.join(body.available_datasets) or 'none'}
 Data facts:
 {facts_str}
 Column warnings: {'; '.join(all_warnings) if all_warnings else 'None'}
@@ -472,7 +502,7 @@ Rules:
 - Be specific about the organisation type
 - Do not invent numbers not listed above
 - Do not use: revolutionary, powerful AI, next-generation
-- No bullet points — prose only"""
+- No bullet points â€” prose only"""
 
     quality_note, ai_used = call_openai(prompt, fallback)
 
@@ -485,10 +515,12 @@ Rules:
     }
 
 
-# ── Upload: run full analysis on uploaded files ─────────────────────────────
+# â”€â”€ Upload: run full analysis on uploaded files â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.post("/analyze/upload", tags=["Upload"], summary="Run full analysis on uploaded files")
+@limiter.limit("10/minute")
 async def analyze_upload(
+    request: Request,
     org_name:           str  = Form("My Organization"),
     org_type:           str  = Form("University"),
     water_file:         Optional[UploadFile] = File(None),
@@ -501,7 +533,7 @@ async def analyze_upload(
     manual_energy_period: Optional[str]   = Form("weekly"),
     manual_fuel_type:     Optional[str]   = Form(None),
     manual_fuel_liters:   Optional[float] = Form(None),
-    # Waste — multi-stream JSON array {"type":...,"quantity_kg":...,"unit":...}
+    # Waste â€” multi-stream JSON array {"type":...,"quantity_kg":...,"unit":...}
     waste_items:          Optional[str]   = Form(None),
     # Legacy single-item fallback (backward compat)
     waste_type:           Optional[str]   = Form(None),
@@ -509,12 +541,12 @@ async def analyze_upload(
 ):
     """
     Run multi-agent analysis on uploaded organizational data.
-    Any combination of datasets is accepted — missing datasets are skipped.
+    Any combination of datasets is accepted â€” missing datasets are skipped.
     Carbon is always derived automatically from available resource data.
     """
     available_datasets = []
 
-    # ── Water ──────────────────────────────────────────
+    # â”€â”€ Water â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     water_result       = None
     water_level_info   = None
 
@@ -538,12 +570,12 @@ async def analyze_upload(
     elif manual_water_liters and manual_water_liters > 0:
         water_level_info = detect_analysis_level(None, is_manual=True)
         water_df = build_water_df_from_manual(manual_water_liters, period=manual_water_period or "weekly")
-        # Do NOT run auto_detect_anomalies — manual entry has no real temporal signal
+        # Do NOT run auto_detect_anomalies â€” manual entry has no real temporal signal
         water_result = analyze_water(df=water_df, is_uploaded=True, analysis_level_info=water_level_info)
         water_result["data_source"] = f"Manual entry ({manual_water_period or 'weekly'})"
         available_datasets.append("water")
 
-    # ── Energy ─────────────────────────────────────────
+    # â”€â”€ Energy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     energy_result      = None
     energy_level_info  = None
 
@@ -567,12 +599,12 @@ async def analyze_upload(
     elif manual_energy_kwh and manual_energy_kwh > 0:
         energy_level_info = detect_analysis_level(None, is_manual=True)
         energy_df = build_energy_df_from_manual(manual_energy_kwh, period=manual_energy_period or "weekly")
-        # Do NOT run auto_detect_anomalies — manual entry has no real temporal signal
+        # Do NOT run auto_detect_anomalies â€” manual entry has no real temporal signal
         energy_result = analyze_energy(df=energy_df, is_uploaded=True, analysis_level_info=energy_level_info)
         energy_result["data_source"] = f"Manual entry ({manual_energy_period or 'weekly'})"
         available_datasets.append("energy")
 
-    # ── Fuel (carbon + full summary) ────────────────────
+    # â”€â”€ Fuel (carbon + full summary) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     fuel_co2_kg  = 0.0
     fuel_summary = None
     if fuel_file and fuel_file.filename:
@@ -587,7 +619,7 @@ async def analyze_upload(
                 fuel_summary = fuel_summary_raw
                 available_datasets.append("fuel")
         except Exception:
-            pass  # non-critical — continue without fuel
+            pass  # non-critical â€” continue without fuel
 
     elif manual_fuel_liters and manual_fuel_type:
         from core.data_processor import FUEL_EMISSION_FACTORS
@@ -603,7 +635,7 @@ async def analyze_upload(
         }
         available_datasets.append("fuel")
 
-    # ── Waste — multi-stream batch or legacy single-item ─
+    # â”€â”€ Waste â€” multi-stream batch or legacy single-item â”€
     waste_result = None
     # Try batch path first (new frontend sends waste_items JSON)
     if waste_items:
@@ -614,7 +646,7 @@ async def analyze_upload(
                 if waste_result.get("status") == "analyzed":
                     available_datasets.append("waste")
         except Exception:
-            pass  # malformed JSON — fall through to legacy path
+            pass  # malformed JSON â€” fall through to legacy path
     # Legacy single-item fallback
     if waste_result is None and waste_type and waste_quantity_kg and waste_quantity_kg > 0:
         single = analyze_waste(waste_type, waste_quantity_kg)
@@ -641,11 +673,11 @@ async def analyze_upload(
             }
             available_datasets.append("waste")
 
-    # ── Build skipped stubs ─────────────────────────────
+    # â”€â”€ Build skipped stubs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     effective_water  = water_result  or skipped_water_result()
     effective_energy = energy_result or skipped_energy_result()
 
-    # ── Carbon is always automatic ──────────────────────
+    # â”€â”€ Carbon is always automatic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     water_liters = effective_water.get("total_wasted_liters", 0)
     energy_kwh   = effective_energy.get("total_wasted_kwh", 0)
     waste_value  = 0
@@ -658,16 +690,16 @@ async def analyze_upload(
                 "min_inr": waste_result["total_recovery_min_inr"],
             }
 
-    # ── Run downstream agents ──────────────────────────
+    # â”€â”€ Run downstream agents â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     impact   = analyze_impact(water_liters, energy_kwh, waste_value, fuel_co2_kg=fuel_co2_kg)
     decision = generate_decisions(effective_water, effective_energy, waste_result)
     regen    = compute_regen_score(effective_water, effective_energy, impact, decision, waste_result)
 
     coverage = compute_coverage(available_datasets)
 
-    data_source = f"Uploaded data — {org_name} ({org_type})"
+    data_source = f"Uploaded data â€” {org_name} ({org_type})"
 
-    # ── Analysis metadata ───────────────────────────────
+    # â”€â”€ Analysis metadata â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     all_levels = [
         lv for lv in [water_level_info, energy_level_info]
         if lv is not None
@@ -681,12 +713,12 @@ async def analyze_upload(
     if not anomaly_available:
         skipped_modules.append({
             "module": "Anomaly Detection",
-            "reason": "Hourly time-series data required (≥ 3 days, ≥ 12 hour slots per day). "
+            "reason": "Hourly time-series data required (â‰¥ 3 days, â‰¥ 12 hour slots per day). "
                       "Provide smart-meter exports or IoT logs to enable this module.",
         })
         skipped_modules.append({
             "module": "Leak Detection",
-            "reason": "Derived from anomaly detection — unavailable at current data resolution.",
+            "reason": "Derived from anomaly detection â€” unavailable at current data resolution.",
         })
         skipped_modules.append({
             "module": "Predictive Maintenance",
@@ -707,7 +739,7 @@ async def analyze_upload(
             f"Overall analysis level: {overall_label}. "
             f"{len(available_datasets)} dataset(s) provided: {', '.join(available_datasets) or 'none'}. "
             + (
-                "Anomaly detection is active — full AI analysis available."
+                "Anomaly detection is active â€” full AI analysis available."
                 if anomaly_available else
                 "Anomaly detection is unavailable at the current data resolution. "
                 "Confidence is limited to consumption estimates and benchmarks. "
@@ -720,7 +752,7 @@ async def analyze_upload(
             f"Analysis confidence: {confidence_pct}%. "
             + (
                 f"Advanced AI modules ({', '.join(m['module'] for m in skipped_modules)}) "
-                "were not executed — see skipped_modules for required data."
+                "were not executed â€” see skipped_modules for required data."
                 if skipped_modules else
                 "All primary analysis modules executed successfully."
             )
@@ -737,7 +769,7 @@ async def analyze_upload(
         analysis_metadata=analysis_metadata,
     )
 
-    # ── Build war-room agent list (upload-aware) ─────────
+    # â”€â”€ Build war-room agent list (upload-aware) â”€â”€â”€â”€â”€â”€â”€â”€â”€
     def _agent_status(result: dict) -> str:
         return "skipped" if result.get("status") == "skipped" else "active"
 
@@ -748,7 +780,7 @@ async def analyze_upload(
             return (
                 f"Consumption estimated: {r.get('total_consumption_liters', 0):,.0f} L. "
                 f"Analysis level: {r.get('analysis_level_label', 'Basic')}. "
-                "Leak detection unavailable — provide hourly logs to enable it."
+                "Leak detection unavailable â€” provide hourly logs to enable it."
             )
         return (
             f"{r.get('total_wasted_liters', 0)} L hidden loss detected. "
@@ -763,7 +795,7 @@ async def analyze_upload(
             return (
                 f"Consumption estimated: {r.get('total_consumption_kwh', 0):,.1f} kWh. "
                 f"Analysis level: {r.get('analysis_level_label', 'Basic')}. "
-                "After-hours waste analysis unavailable — provide hourly logs to enable it."
+                "After-hours waste analysis unavailable â€” provide hourly logs to enable it."
             )
         return (
             f"{r.get('total_wasted_kwh', 0)} kWh after-hours waste detected. "
@@ -774,7 +806,7 @@ async def analyze_upload(
     war_room_agents = [
         {
             "agent":          "Water Leakage Agent",
-            "icon":           "💧",
+            "icon":           "ðŸ’§",
             "status":         _agent_status(effective_water),
             "skip_reason":    effective_water.get("skip_reason"),
             "finding":        _water_finding(effective_water),
@@ -794,7 +826,7 @@ async def analyze_upload(
         },
         {
             "agent":          "Energy Optimization Agent",
-            "icon":           "⚡",
+            "icon":           "âš¡",
             "status":         _agent_status(effective_energy),
             "skip_reason":    effective_energy.get("skip_reason"),
             "finding":        _energy_finding(effective_energy),
@@ -814,7 +846,7 @@ async def analyze_upload(
         },
         {
             "agent":       "Waste-to-Wealth Agent",
-            "icon":        "♻️",
+            "icon":        "â™»ï¸",
             "status":      "active" if waste_result and waste_result.get("status") == "analyzed" else "standby",
             "finding":     (
                 f"{waste_result.get('analyzed_items', waste_result.get('total_items', 1))} waste stream(s) analysed. "
@@ -828,7 +860,7 @@ async def analyze_upload(
                 f"Top recovery pathway: {waste_result.get('top_opportunity_pathway', 'N/A')} "
                 f"for {waste_result.get('top_opportunity', 'N/A')}."
                 if waste_result and waste_result.get("status") == "analyzed"
-                else "No waste material submitted — agent in standby."
+                else "No waste material submitted â€” agent in standby."
             ),
             "impact":      (
                 f"Estimated recovery value: Rs. {waste_result.get('total_recovery_max_inr', 0):,.0f}. "
@@ -846,20 +878,20 @@ async def analyze_upload(
                     (
                         f"Segregate {waste_result.get('top_opportunity', 'waste streams')} and route via "
                         f"{(waste_result.get('top_opportunity_pathway') or 'authorized_recycler').replace('_', ' ')} "
-                        f"for an estimated recovery of up to ₹{waste_result.get('top_opportunity_value_max_inr', 0):,.0f}. "
+                        f"for an estimated recovery of up to â‚¹{waste_result.get('top_opportunity_value_max_inr', 0):,.0f}. "
                         + (f"Route {waste_result.get('hazardous_count', 0)} hazardous stream(s) to CPCB-authorised handlers immediately."
                            if waste_result.get("hazardous_count", 0) > 0 else
                            f"Engage a local kabadiwala or certified recycler this week.")
                     )
                 )
                 if waste_result and waste_result.get("status") == "analyzed"
-                else "No waste inventory submitted — add waste streams in the Upload Center to activate recovery analysis."
+                else "No waste inventory submitted â€” add waste streams in the Upload Center to activate recovery analysis."
             ),
             "severity":    "high" if (waste_result and waste_result.get("hazardous_count", 0) > 0) else "medium" if waste_result and waste_result.get("status") == "analyzed" else "info",
         },
         {
             "agent":      "Pollution & Impact Agent",
-            "icon":       "🌿",
+            "icon":       "ðŸŒ¿",
             "status":     "active",
             "finding":    f"CO2 reduction potential: {impact['total_co2_saved_kg']} kg. Sustainability rating: {impact['sustainability_rating']}.",
             "reasoning":  (
@@ -875,11 +907,11 @@ async def analyze_upload(
         },
         {
             "agent":      "Decision Engine Agent",
-            "icon":       "🧠",
+            "icon":       "ðŸ§ ",
             "status":     "active",
             "finding":    f"Ranked {decision['total_actions']} priority actions. Total savings potential: Rs. {decision['total_potential_saving_inr']:,}.",
             "reasoning":  (
-                f"Actions ranked by urgency × estimated impact × implementation cost. "
+                f"Actions ranked by urgency Ã— estimated impact Ã— implementation cost. "
                 f"Top domain: {decision['ranked_actions'][0]['domain'] if decision['ranked_actions'] else 'N/A'}."
             ),
             "impact":     f"Implementing all actions: Rs. {decision['total_potential_saving_inr']:,} potential savings.",
@@ -889,9 +921,9 @@ async def analyze_upload(
         },
         {
             "agent":      "RE:GEN Score Agent",
-            "icon":       "🏆",
+            "icon":       "ðŸ†",
             "status":     "active",
-            "finding":    f"Score: {regen['before_score']}/100 ({regen['current_rating']}) → {regen['after_score']}/100 post-action.",
+            "finding":    f"Score: {regen['before_score']}/100 ({regen['current_rating']}) â†’ {regen['after_score']}/100 post-action.",
             "reasoning":  (
                 f"Score computed across water, energy, carbon, and waste dimensions. "
                 f"Data coverage: {coverage['data_coverage_pct']}%. "
@@ -904,7 +936,7 @@ async def analyze_upload(
         },
         {
             "agent":      "Report Agent",
-            "icon":       "📋",
+            "icon":       "ðŸ“‹",
             "status":     "active",
             "finding":    f"Report generated for {org_name}. Coverage: {coverage['data_coverage_pct']}%. Analysis level: {overall_label}.",
             "reasoning":  (
@@ -939,7 +971,7 @@ async def analyze_upload(
     }
 
 
-# ── Demo data download ──────────────────────────────────────────────────────
+# â”€â”€ Demo data download â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/demo-data/{dataset_type}", tags=["Data"], summary="Download a demo dataset CSV")
 def download_demo_data(dataset_type: str):
