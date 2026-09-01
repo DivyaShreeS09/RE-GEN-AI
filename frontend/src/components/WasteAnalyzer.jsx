@@ -660,6 +660,11 @@ export default function WasteAnalyzer({ onResult, uploadResult }) {
                 </div>
                 <p className="text-xs text-slate-600 mt-3">
                   Value estimates are calculated from knowledge base benchmark ranges. Actual recovery depends on local market conditions.
+                  {result?.kb_last_verified && (
+                    <span className="ml-1 text-slate-500">
+                      Market prices last verified: {result.kb_last_verified}. Not a live feed.
+                    </span>
+                  )}
                 </p>
               </div>
             )}

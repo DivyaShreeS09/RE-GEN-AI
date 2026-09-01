@@ -1,12 +1,31 @@
 {
+  "_meta": {
+    "kb_last_verified": "2026-08-02",
+    "kb_version": "1.0",
+    "source_note": "Market reference ranges compiled manually from Indian scrap/recycling market data. Not a live price feed. Verify current rates with local vendors before quoting."
+  },
   "waste_materials": {
     "coconut shell": {
       "category": "Agricultural Waste",
       "composition": "Lignocellulosic biomass – lignin 30%, cellulose 36%, hemicellulose 25%",
       "hazard_level": "none",
-      "possible_products": ["activated carbon", "charcoal briquettes", "handicrafts", "shell flour", "bio-char"],
-      "estimated_value_range": { "min": 2, "max": 8, "unit": "INR/kg" },
-      "buyer_types": ["activated carbon manufacturers", "handicraft exporters", "organic fertilizer companies"],
+      "possible_products": [
+        "activated carbon",
+        "charcoal briquettes",
+        "handicrafts",
+        "shell flour",
+        "bio-char"
+      ],
+      "estimated_value_range": {
+        "min": 2,
+        "max": 8,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "activated carbon manufacturers",
+        "handicraft exporters",
+        "organic fertilizer companies"
+      ],
       "sustainability_notes": "High calorific value; excellent for activated carbon production used in water purification.",
       "risks": "Minimal – ensure dry storage to prevent mold.",
       "recommended_pathway": "sell_or_process",
@@ -16,9 +35,23 @@
       "category": "Agricultural Waste",
       "composition": "Silica 20%, cellulose 35%, lignin 22%, moisture ~10%",
       "hazard_level": "none",
-      "possible_products": ["rice husk ash", "silica fume", "biofuel pellets", "insulation boards", "animal feed"],
-      "estimated_value_range": { "min": 1, "max": 5, "unit": "INR/kg" },
-      "buyer_types": ["cement companies", "steel plants", "biofuel producers"],
+      "possible_products": [
+        "rice husk ash",
+        "silica fume",
+        "biofuel pellets",
+        "insulation boards",
+        "animal feed"
+      ],
+      "estimated_value_range": {
+        "min": 1,
+        "max": 5,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "cement companies",
+        "steel plants",
+        "biofuel producers"
+      ],
       "sustainability_notes": "Rice husk ash is a pozzolanic material used in green cement to reduce CO2 emissions.",
       "risks": "Dust inhalation risk during handling – use masks.",
       "recommended_pathway": "sell_or_process",
@@ -28,9 +61,23 @@
       "category": "Organic Waste",
       "composition": "Moisture 60-65%, starch 2-3%, potassium, pectin",
       "hazard_level": "none",
-      "possible_products": ["banana peel flour", "natural fertilizer", "biogas", "animal feed", "pectin extract"],
-      "estimated_value_range": { "min": 1, "max": 4, "unit": "INR/kg" },
-      "buyer_types": ["biogas plants", "animal farms", "organic fertilizer makers"],
+      "possible_products": [
+        "banana peel flour",
+        "natural fertilizer",
+        "biogas",
+        "animal feed",
+        "pectin extract"
+      ],
+      "estimated_value_range": {
+        "min": 1,
+        "max": 4,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "biogas plants",
+        "animal farms",
+        "organic fertilizer makers"
+      ],
       "sustainability_notes": "High potassium content makes banana peel ideal compost additive.",
       "risks": "Rapid decomposition – process within 48 hours.",
       "recommended_pathway": "compost_or_biogas",
@@ -40,9 +87,22 @@
       "category": "Organic Waste",
       "composition": "Moisture 70-80%, organics, fats, proteins, carbohydrates",
       "hazard_level": "low",
-      "possible_products": ["biogas", "compost", "animal feed", "insect protein feed"],
-      "estimated_value_range": { "min": 0.5, "max": 3, "unit": "INR/kg" },
-      "buyer_types": ["biogas plants", "composting facilities", "animal husbandry units"],
+      "possible_products": [
+        "biogas",
+        "compost",
+        "animal feed",
+        "insect protein feed"
+      ],
+      "estimated_value_range": {
+        "min": 0.5,
+        "max": 3,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "biogas plants",
+        "composting facilities",
+        "animal husbandry units"
+      ],
       "sustainability_notes": "Converting food waste to biogas reduces methane emissions from landfill.",
       "risks": "Pathogen risk if not processed promptly. Store separately.",
       "recommended_pathway": "biogas_or_compost",
@@ -58,9 +118,23 @@
       "category": "Industrial Waste",
       "composition": "Cotton, polyester, nylon, blended fibers",
       "hazard_level": "low",
-      "possible_products": ["industrial wipers", "insulation fiber", "recycled yarn", "stuffing material", "upcycled fashion"],
-      "estimated_value_range": { "min": 5, "max": 25, "unit": "INR/kg" },
-      "buyer_types": ["recycled yarn mills", "auto parts makers", "furniture stuffing units"],
+      "possible_products": [
+        "industrial wipers",
+        "insulation fiber",
+        "recycled yarn",
+        "stuffing material",
+        "upcycled fashion"
+      ],
+      "estimated_value_range": {
+        "min": 5,
+        "max": 25,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "recycled yarn mills",
+        "auto parts makers",
+        "furniture stuffing units"
+      ],
       "sustainability_notes": "Textile recycling saves 1.7 kg CO2 per kg of fiber recovered.",
       "risks": "Chemical dyes may require pre-treatment before recycling.",
       "recommended_pathway": "recycle_or_upcycle",
@@ -70,9 +144,22 @@
       "category": "Plastic Waste",
       "composition": "PET (Polyethylene terephthalate), HDPE – food-grade plastics",
       "hazard_level": "low",
-      "possible_products": ["rPET fiber", "plastic lumber", "packaging material", "clothing fiber"],
-      "estimated_value_range": { "min": 8, "max": 20, "unit": "INR/kg" },
-      "buyer_types": ["PET recyclers", "fiber manufacturers", "plastic lumber companies"],
+      "possible_products": [
+        "rPET fiber",
+        "plastic lumber",
+        "packaging material",
+        "clothing fiber"
+      ],
+      "estimated_value_range": {
+        "min": 8,
+        "max": 20,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "PET recyclers",
+        "fiber manufacturers",
+        "plastic lumber companies"
+      ],
       "sustainability_notes": "Recycling 1 tonne of PET saves 1.5 tonnes of CO2 vs virgin plastic.",
       "risks": "Contamination from residual liquids. Rinse before collection.",
       "recommended_pathway": "recycle",
@@ -82,9 +169,22 @@
       "category": "Glass Waste",
       "composition": "Silica 70%, soda ash, lime – recyclable indefinitely",
       "hazard_level": "low",
-      "possible_products": ["cullet (recycled glass)", "glass tiles", "fiberglass", "art glass"],
-      "estimated_value_range": { "min": 3, "max": 10, "unit": "INR/kg" },
-      "buyer_types": ["glass manufacturers", "tile makers", "construction material suppliers"],
+      "possible_products": [
+        "cullet (recycled glass)",
+        "glass tiles",
+        "fiberglass",
+        "art glass"
+      ],
+      "estimated_value_range": {
+        "min": 3,
+        "max": 10,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "glass manufacturers",
+        "tile makers",
+        "construction material suppliers"
+      ],
       "sustainability_notes": "Glass is 100% recyclable with no quality degradation.",
       "risks": "Handle with care – sharp edges. Use gloves.",
       "recommended_pathway": "recycle",
@@ -94,9 +194,22 @@
       "category": "Paper Waste",
       "composition": "Corrugated cellulose fiber, paper pulp",
       "hazard_level": "none",
-      "possible_products": ["recycled paperboard", "packaging material", "mulch", "compost"],
-      "estimated_value_range": { "min": 4, "max": 12, "unit": "INR/kg" },
-      "buyer_types": ["paper mills", "packaging manufacturers", "composting facilities"],
+      "possible_products": [
+        "recycled paperboard",
+        "packaging material",
+        "mulch",
+        "compost"
+      ],
+      "estimated_value_range": {
+        "min": 4,
+        "max": 12,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "paper mills",
+        "packaging manufacturers",
+        "composting facilities"
+      ],
       "sustainability_notes": "Each tonne of recycled cardboard saves 17 trees and 7000 liters of water.",
       "risks": "Wet cardboard loses value – store dry.",
       "recommended_pathway": "recycle",
@@ -112,9 +225,22 @@
       "category": "Paper Waste",
       "composition": "Cellulose fiber, wood pulp, bleaching agents",
       "hazard_level": "none",
-      "possible_products": ["recycled paper", "tissue paper", "packaging", "newspaper"],
-      "estimated_value_range": { "min": 5, "max": 15, "unit": "INR/kg" },
-      "buyer_types": ["paper recyclers", "tissue manufacturers", "stationary companies"],
+      "possible_products": [
+        "recycled paper",
+        "tissue paper",
+        "packaging",
+        "newspaper"
+      ],
+      "estimated_value_range": {
+        "min": 5,
+        "max": 15,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "paper recyclers",
+        "tissue manufacturers",
+        "stationary companies"
+      ],
       "sustainability_notes": "Recycling 1 tonne of paper saves 1.5 tonnes of CO2 emissions.",
       "risks": "Confidential documents must be shredded before recycling.",
       "recommended_pathway": "recycle",
@@ -124,9 +250,20 @@
       "category": "Hazardous Waste",
       "composition": "Gold, silver, copper, palladium, lead, mercury, cadmium, brominated flame retardants",
       "hazard_level": "critical",
-      "possible_products": ["precious metal recovery", "copper wire", "refurbished components"],
-      "estimated_value_range": { "min": 50, "max": 500, "unit": "INR/kg" },
-      "buyer_types": ["certified e-waste recyclers only", "CPCB authorized processors"],
+      "possible_products": [
+        "precious metal recovery",
+        "copper wire",
+        "refurbished components"
+      ],
+      "estimated_value_range": {
+        "min": 50,
+        "max": 500,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "certified e-waste recyclers only",
+        "CPCB authorized processors"
+      ],
       "sustainability_notes": "E-waste contains 40-50x more gold than gold ore. Proper recycling is critical.",
       "risks": "CRITICAL: Contains lead, mercury, cadmium – highly toxic. NEVER dispose in regular bins. Causes soil and groundwater contamination. Legal liability under E-Waste Management Rules 2022.",
       "recommended_pathway": "certified_recycler_only",
@@ -142,9 +279,21 @@
       "category": "Metal Waste",
       "composition": "Aluminium alloy – 98% recyclable",
       "hazard_level": "none",
-      "possible_products": ["recycled aluminium ingots", "new cans", "automotive parts"],
-      "estimated_value_range": { "min": 40, "max": 80, "unit": "INR/kg" },
-      "buyer_types": ["aluminium smelters", "beverage companies", "auto parts manufacturers"],
+      "possible_products": [
+        "recycled aluminium ingots",
+        "new cans",
+        "automotive parts"
+      ],
+      "estimated_value_range": {
+        "min": 40,
+        "max": 80,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "aluminium smelters",
+        "beverage companies",
+        "auto parts manufacturers"
+      ],
       "sustainability_notes": "Recycling aluminium uses 95% less energy than virgin production.",
       "risks": "Clean and separate from other metals for maximum value.",
       "recommended_pathway": "sell_to_scrap_dealer",
@@ -160,9 +309,21 @@
       "category": "Metal Waste",
       "composition": "Iron, carbon, manganese – fully recyclable",
       "hazard_level": "low",
-      "possible_products": ["recycled steel bars", "construction material", "auto parts"],
-      "estimated_value_range": { "min": 25, "max": 45, "unit": "INR/kg" },
-      "buyer_types": ["steel mills", "foundries", "construction companies"],
+      "possible_products": [
+        "recycled steel bars",
+        "construction material",
+        "auto parts"
+      ],
+      "estimated_value_range": {
+        "min": 25,
+        "max": 45,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "steel mills",
+        "foundries",
+        "construction companies"
+      ],
       "sustainability_notes": "Recycled steel uses 60% less energy than primary steel production.",
       "risks": "Sharp edges. Rust may reduce value.",
       "recommended_pathway": "sell_to_scrap_dealer",
@@ -172,9 +333,23 @@
       "category": "Biomass Waste",
       "composition": "Cellulose, lignin, hemicellulose – natural biomass",
       "hazard_level": "none",
-      "possible_products": ["wood pellets", "particleboard", "biochar", "firewood", "mulch"],
-      "estimated_value_range": { "min": 2, "max": 15, "unit": "INR/kg" },
-      "buyer_types": ["biomass energy plants", "furniture makers", "particle board manufacturers"],
+      "possible_products": [
+        "wood pellets",
+        "particleboard",
+        "biochar",
+        "firewood",
+        "mulch"
+      ],
+      "estimated_value_range": {
+        "min": 2,
+        "max": 15,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "biomass energy plants",
+        "furniture makers",
+        "particle board manufacturers"
+      ],
       "sustainability_notes": "Wood waste bioenergy can offset fossil fuel use significantly.",
       "risks": "Treated or painted wood may contain VOCs – separate before processing.",
       "recommended_pathway": "sell_or_process",
@@ -184,9 +359,22 @@
       "category": "Biomass Waste",
       "composition": "Fine wood particles, cellulose, moisture 8-12%",
       "hazard_level": "none",
-      "possible_products": ["wood pellets", "particleboard", "mushroom substrate", "absorbent material"],
-      "estimated_value_range": { "min": 1, "max": 8, "unit": "INR/kg" },
-      "buyer_types": ["pellet manufacturers", "mushroom farms", "construction board makers"],
+      "possible_products": [
+        "wood pellets",
+        "particleboard",
+        "mushroom substrate",
+        "absorbent material"
+      ],
+      "estimated_value_range": {
+        "min": 1,
+        "max": 8,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "pellet manufacturers",
+        "mushroom farms",
+        "construction board makers"
+      ],
       "sustainability_notes": "Sawdust is excellent substrate for oyster mushroom cultivation.",
       "risks": "Fine dust – inhalation hazard during handling.",
       "recommended_pathway": "sell_or_process",
@@ -196,9 +384,22 @@
       "category": "Construction Waste",
       "composition": "Concrete rubble, bricks, tiles, sand, metal rebar",
       "hazard_level": "low",
-      "possible_products": ["recycled aggregate", "road base material", "fill material", "reclaimed bricks"],
-      "estimated_value_range": { "min": 0.5, "max": 5, "unit": "INR/kg" },
-      "buyer_types": ["road construction companies", "aggregate suppliers", "landscapers"],
+      "possible_products": [
+        "recycled aggregate",
+        "road base material",
+        "fill material",
+        "reclaimed bricks"
+      ],
+      "estimated_value_range": {
+        "min": 0.5,
+        "max": 5,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "road construction companies",
+        "aggregate suppliers",
+        "landscapers"
+      ],
       "sustainability_notes": "Recycled concrete aggregate reduces quarrying and carbon footprint.",
       "risks": "May contain asbestos in old buildings – require testing before disposal.",
       "recommended_pathway": "recycle_or_reuse",
@@ -208,9 +409,22 @@
       "category": "Liquid Waste",
       "composition": "Triglycerides, free fatty acids, glycerol – post-frying degraded oil",
       "hazard_level": "low",
-      "possible_products": ["biodiesel", "soap", "lubricant", "animal feed additive"],
-      "estimated_value_range": { "min": 15, "max": 35, "unit": "INR/liter" },
-      "buyer_types": ["biodiesel producers", "soap manufacturers", "FSSAI approved processors"],
+      "possible_products": [
+        "biodiesel",
+        "soap",
+        "lubricant",
+        "animal feed additive"
+      ],
+      "estimated_value_range": {
+        "min": 15,
+        "max": 35,
+        "unit": "INR/liter"
+      },
+      "buyer_types": [
+        "biodiesel producers",
+        "soap manufacturers",
+        "FSSAI approved processors"
+      ],
       "sustainability_notes": "1 liter of used cooking oil produces ~0.85 liters of biodiesel.",
       "risks": "NEVER pour down drain – clogs pipes and contaminates waterways. Legal violations under EPR rules.",
       "recommended_pathway": "sell_to_biodiesel_unit",
@@ -220,9 +434,22 @@
       "category": "Industrial Waste",
       "composition": "Natural rubber 30%, synthetic rubber, carbon black, steel wire",
       "hazard_level": "medium",
-      "possible_products": ["crumb rubber", "playground surfaces", "road asphalt modifier", "fuel"],
-      "estimated_value_range": { "min": 3, "max": 20, "unit": "INR/kg" },
-      "buyer_types": ["tyre recyclers", "road construction agencies", "sports surface companies"],
+      "possible_products": [
+        "crumb rubber",
+        "playground surfaces",
+        "road asphalt modifier",
+        "fuel"
+      ],
+      "estimated_value_range": {
+        "min": 3,
+        "max": 20,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "tyre recyclers",
+        "road construction agencies",
+        "sports surface companies"
+      ],
       "sustainability_notes": "Rubberized asphalt roads last 20% longer than conventional asphalt.",
       "risks": "Open burning of tyres is illegal and causes toxic emissions. Use only authorized recyclers.",
       "recommended_pathway": "certified_recycler",
@@ -232,9 +459,22 @@
       "category": "Organic Waste",
       "composition": "Organic compounds, caffeine residue, nitrogen, phosphorus",
       "hazard_level": "none",
-      "possible_products": ["compost", "mushroom substrate", "natural fertilizer", "body scrub"],
-      "estimated_value_range": { "min": 2, "max": 30, "unit": "INR/kg" },
-      "buyer_types": ["organic farms", "cosmetic companies", "mushroom cultivators"],
+      "possible_products": [
+        "compost",
+        "mushroom substrate",
+        "natural fertilizer",
+        "body scrub"
+      ],
+      "estimated_value_range": {
+        "min": 2,
+        "max": 30,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "organic farms",
+        "cosmetic companies",
+        "mushroom cultivators"
+      ],
       "sustainability_notes": "Coffee grounds improve soil nitrogen and repel garden pests naturally.",
       "risks": "Avoid large quantities in compost as acidity may harm plants.",
       "recommended_pathway": "compost_or_sell",
@@ -244,9 +484,22 @@
       "category": "Agricultural Waste",
       "composition": "Cellulose 40%, hemicellulose 27%, lignin 20%, moisture 50%",
       "hazard_level": "none",
-      "possible_products": ["bagasse boards", "biofuel", "paper", "compostable packaging"],
-      "estimated_value_range": { "min": 1, "max": 10, "unit": "INR/kg" },
-      "buyer_types": ["paper mills", "packaging companies", "bioethanol plants"],
+      "possible_products": [
+        "bagasse boards",
+        "biofuel",
+        "paper",
+        "compostable packaging"
+      ],
+      "estimated_value_range": {
+        "min": 1,
+        "max": 10,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "paper mills",
+        "packaging companies",
+        "bioethanol plants"
+      ],
       "sustainability_notes": "Bagasse-based paper uses 60% less water than wood-pulp paper.",
       "risks": "Self-heating possible in large wet piles – ensure proper ventilation.",
       "recommended_pathway": "sell_or_process",
@@ -256,9 +509,22 @@
       "category": "Agricultural Waste",
       "composition": "Cellulose, hemicellulose, lignin – fibrous biomass",
       "hazard_level": "none",
-      "possible_products": ["bioethanol", "handicrafts", "animal feed", "compost"],
-      "estimated_value_range": { "min": 1, "max": 6, "unit": "INR/kg" },
-      "buyer_types": ["bioethanol plants", "handicraft exporters", "animal farms"],
+      "possible_products": [
+        "bioethanol",
+        "handicrafts",
+        "animal feed",
+        "compost"
+      ],
+      "estimated_value_range": {
+        "min": 1,
+        "max": 6,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "bioethanol plants",
+        "handicraft exporters",
+        "animal farms"
+      ],
       "sustainability_notes": "Corn husk ethanol has 52% lower lifecycle GHG than gasoline.",
       "risks": "Store dry to prevent mold formation.",
       "recommended_pathway": "sell_or_compost",
@@ -268,9 +534,22 @@
       "category": "Organic Waste",
       "composition": "Calcium carbonate 94%, protein membrane, magnesium",
       "hazard_level": "none",
-      "possible_products": ["calcium supplement", "soil conditioner", "natural fertilizer", "pet food additive"],
-      "estimated_value_range": { "min": 2, "max": 20, "unit": "INR/kg" },
-      "buyer_types": ["organic farms", "pet food companies", "soil amendment suppliers"],
+      "possible_products": [
+        "calcium supplement",
+        "soil conditioner",
+        "natural fertilizer",
+        "pet food additive"
+      ],
+      "estimated_value_range": {
+        "min": 2,
+        "max": 20,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "organic farms",
+        "pet food companies",
+        "soil amendment suppliers"
+      ],
       "sustainability_notes": "Crushed eggshells raise soil pH and provide slow-release calcium.",
       "risks": "Dried eggshells only – fresh shells may attract pests.",
       "recommended_pathway": "compost_or_sell",
@@ -280,9 +559,22 @@
       "category": "Organic Waste",
       "composition": "Fish bones, scales, offal – high nitrogen and omega content",
       "hazard_level": "medium",
-      "possible_products": ["fish meal", "fish oil", "organic fertilizer", "biogas"],
-      "estimated_value_range": { "min": 5, "max": 25, "unit": "INR/kg" },
-      "buyer_types": ["aquaculture feed companies", "organic fertilizer makers", "biogas plants"],
+      "possible_products": [
+        "fish meal",
+        "fish oil",
+        "organic fertilizer",
+        "biogas"
+      ],
+      "estimated_value_range": {
+        "min": 5,
+        "max": 25,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "aquaculture feed companies",
+        "organic fertilizer makers",
+        "biogas plants"
+      ],
       "sustainability_notes": "Fish meal is the highest-protein animal feed ingredient available.",
       "risks": "Odor management critical – rapid decomposition. Biocontainment required.",
       "recommended_pathway": "process_immediately",
@@ -292,9 +584,21 @@
       "category": "Industrial Waste",
       "composition": "Collagen protein, chromium tanning agents (hazardous), dyes",
       "hazard_level": "high",
-      "possible_products": ["leather reconstituted boards", "fertilizer (chrome-free only)", "art crafts"],
-      "estimated_value_range": { "min": 10, "max": 40, "unit": "INR/kg" },
-      "buyer_types": ["recycled leather board makers", "art studios", "waste processors"],
+      "possible_products": [
+        "leather reconstituted boards",
+        "fertilizer (chrome-free only)",
+        "art crafts"
+      ],
+      "estimated_value_range": {
+        "min": 10,
+        "max": 40,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "recycled leather board makers",
+        "art studios",
+        "waste processors"
+      ],
       "sustainability_notes": "Chrome-tanned leather scraps require special handling to prevent heavy metal leaching.",
       "risks": "HIGH RISK: Chrome VI in tanning waste is carcinogenic. Requires certified treatment facility. Do not compost.",
       "recommended_pathway": "certified_industrial_processor",
@@ -304,9 +608,22 @@
       "category": "Textile Waste",
       "composition": "Natural cellulose fiber – biodegradable",
       "hazard_level": "none",
-      "possible_products": ["industrial wipers", "cotton yarn", "medical cotton", "insulation"],
-      "estimated_value_range": { "min": 8, "max": 30, "unit": "INR/kg" },
-      "buyer_types": ["recycled yarn mills", "medical supply companies", "insulation manufacturers"],
+      "possible_products": [
+        "industrial wipers",
+        "cotton yarn",
+        "medical cotton",
+        "insulation"
+      ],
+      "estimated_value_range": {
+        "min": 8,
+        "max": 30,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "recycled yarn mills",
+        "medical supply companies",
+        "insulation manufacturers"
+      ],
       "sustainability_notes": "Recycled cotton reduces water usage by 99% vs virgin cotton production.",
       "risks": "Chemical-dyed cotton may require pre-washing.",
       "recommended_pathway": "recycle_or_sell",
@@ -316,9 +633,23 @@
       "category": "Agricultural Waste",
       "composition": "Lignin 45%, cellulose 43%, moisture variable",
       "hazard_level": "none",
-      "possible_products": ["coir mat", "growing media", "rope", "erosion control mat", "geotextile"],
-      "estimated_value_range": { "min": 3, "max": 18, "unit": "INR/kg" },
-      "buyer_types": ["horticulture exporters", "erosion control companies", "carpet manufacturers"],
+      "possible_products": [
+        "coir mat",
+        "growing media",
+        "rope",
+        "erosion control mat",
+        "geotextile"
+      ],
+      "estimated_value_range": {
+        "min": 3,
+        "max": 18,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "horticulture exporters",
+        "erosion control companies",
+        "carpet manufacturers"
+      ],
       "sustainability_notes": "Coir peat is a sustainable alternative to peat moss for horticulture.",
       "risks": "Salt content in brown coir may inhibit plant growth – wash before use.",
       "recommended_pathway": "sell_or_process",
@@ -328,9 +659,22 @@
       "category": "Mixed Organic Waste",
       "composition": "Kitchen scraps, vegetable peels, fruit waste, cooked food",
       "hazard_level": "low",
-      "possible_products": ["biogas", "compost", "vermicompost", "liquid fertilizer"],
-      "estimated_value_range": { "min": 0.5, "max": 3, "unit": "INR/kg" },
-      "buyer_types": ["biogas plants", "municipal composting facilities", "organic farms"],
+      "possible_products": [
+        "biogas",
+        "compost",
+        "vermicompost",
+        "liquid fertilizer"
+      ],
+      "estimated_value_range": {
+        "min": 0.5,
+        "max": 3,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "biogas plants",
+        "municipal composting facilities",
+        "organic farms"
+      ],
       "sustainability_notes": "Wet waste to biogas can supply 20-30% of campus kitchen energy.",
       "risks": "Must be segregated at source. Delays cause leachate and methane emissions.",
       "recommended_pathway": "biogas_or_compost",
@@ -340,9 +684,22 @@
       "category": "Garden Waste",
       "composition": "Cellulose, lignin, trace minerals – organic carbon source",
       "hazard_level": "none",
-      "possible_products": ["mulch", "leaf mold compost", "biochar", "garden substrate"],
-      "estimated_value_range": { "min": 0, "max": 2, "unit": "INR/kg" },
-      "buyer_types": ["organic farms", "nurseries", "municipal composting"],
+      "possible_products": [
+        "mulch",
+        "leaf mold compost",
+        "biochar",
+        "garden substrate"
+      ],
+      "estimated_value_range": {
+        "min": 0,
+        "max": 2,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "organic farms",
+        "nurseries",
+        "municipal composting"
+      ],
       "sustainability_notes": "Leaf mulch retains soil moisture and suppresses weeds naturally.",
       "risks": "Avoid burning – contributes to air pollution and is restricted in urban areas.",
       "recommended_pathway": "compost_on_site",
@@ -352,9 +709,22 @@
       "category": "Garden Waste",
       "composition": "Mixed green/brown plant matter, prunings, grass clippings",
       "hazard_level": "none",
-      "possible_products": ["green compost", "biogas feedstock", "mulch", "wood chip"],
-      "estimated_value_range": { "min": 0, "max": 3, "unit": "INR/kg" },
-      "buyer_types": ["composting facilities", "biogas plants", "landscape companies"],
+      "possible_products": [
+        "green compost",
+        "biogas feedstock",
+        "mulch",
+        "wood chip"
+      ],
+      "estimated_value_range": {
+        "min": 0,
+        "max": 3,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "composting facilities",
+        "biogas plants",
+        "landscape companies"
+      ],
       "sustainability_notes": "On-site composting of garden waste creates premium horticultural compost.",
       "risks": "Diseased plant material should not be composted – dispose separately.",
       "recommended_pathway": "compost_on_site",
@@ -364,9 +734,19 @@
       "category": "Hazardous Waste",
       "composition": "Lead acid (lead, sulfuric acid), Li-ion (lithium, cobalt, nickel), alkaline (zinc, manganese)",
       "hazard_level": "critical",
-      "possible_products": ["lead recovery", "lithium recovery", "cobalt recovery"],
-      "estimated_value_range": { "min": 20, "max": 150, "unit": "INR/kg" },
-      "buyer_types": ["CPCB authorized battery recyclers only"],
+      "possible_products": [
+        "lead recovery",
+        "lithium recovery",
+        "cobalt recovery"
+      ],
+      "estimated_value_range": {
+        "min": 20,
+        "max": 150,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "CPCB authorized battery recyclers only"
+      ],
       "sustainability_notes": "Li-ion batteries contain cobalt worth ₹2000-4000/kg – high recovery value.",
       "risks": "CRITICAL: Lead acid batteries contain corrosive sulfuric acid. Li-ion batteries can self-ignite. Lithium causes chemical burns. NEVER dispose in general waste. Covered under Batteries Management Rules 2022.",
       "recommended_pathway": "certified_battery_recycler_only",
@@ -382,9 +762,17 @@
       "category": "Biomedical Waste",
       "composition": "Sharps, bandages, expired medicines, bodily fluids, pathological waste",
       "hazard_level": "critical",
-      "possible_products": ["none – must be safely destroyed"],
-      "estimated_value_range": { "min": 0, "max": 0, "unit": "INR/kg" },
-      "buyer_types": ["CPCB authorized biomedical waste treatment facilities only"],
+      "possible_products": [
+        "none – must be safely destroyed"
+      ],
+      "estimated_value_range": {
+        "min": 0,
+        "max": 0,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "CPCB authorized biomedical waste treatment facilities only"
+      ],
       "sustainability_notes": "Proper disposal prevents spread of infectious diseases and environmental contamination.",
       "risks": "CRITICAL BIOHAZARD: Contains pathogens, sharps, toxic chemicals. Governed by Biomedical Waste Management Rules 2016. Mandatory color-coded segregation. Unauthorized disposal is a criminal offence under Environment Protection Act.",
       "recommended_pathway": "authorized_biomedical_treatment_only",
@@ -394,9 +782,23 @@
       "category": "Metal Waste",
       "composition": "Copper (Cu) — high conductivity, 99%+ recyclable",
       "hazard_level": "none",
-      "possible_products": ["recycled copper wire", "copper pipe", "copper alloy ingots", "electrical components"],
-      "estimated_value_range": { "min": 350, "max": 550, "unit": "INR/kg" },
-      "buyer_types": ["copper smelters", "cable manufacturers", "scrap dealers", "electronics companies"],
+      "possible_products": [
+        "recycled copper wire",
+        "copper pipe",
+        "copper alloy ingots",
+        "electrical components"
+      ],
+      "estimated_value_range": {
+        "min": 350,
+        "max": 550,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "copper smelters",
+        "cable manufacturers",
+        "scrap dealers",
+        "electronics companies"
+      ],
       "sustainability_notes": "Recycled copper uses 85% less energy than primary smelting and fully retains properties.",
       "risks": "Verify copper purity — mixed alloys reduce value. Store separately from iron to prevent galvanic corrosion.",
       "recommended_pathway": "sell_to_scrap_dealer",
@@ -412,9 +814,22 @@
       "category": "Plastic Waste",
       "composition": "High-Density Polyethylene — rigid thermoplastic, milk jugs, pipes, containers",
       "hazard_level": "none",
-      "possible_products": ["recycled HDPE pellets", "plastic lumber", "recycled containers", "drainage pipes"],
-      "estimated_value_range": { "min": 10, "max": 25, "unit": "INR/kg" },
-      "buyer_types": ["HDPE recyclers", "plastic lumber producers", "packaging companies"],
+      "possible_products": [
+        "recycled HDPE pellets",
+        "plastic lumber",
+        "recycled containers",
+        "drainage pipes"
+      ],
+      "estimated_value_range": {
+        "min": 10,
+        "max": 25,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "HDPE recyclers",
+        "plastic lumber producers",
+        "packaging companies"
+      ],
       "sustainability_notes": "HDPE is one of the most recycled plastics — 100% recyclable with minimal quality loss.",
       "risks": "Contamination from chemicals or food residue reduces recyclability. Clean before collection.",
       "recommended_pathway": "recycle",
@@ -424,9 +839,22 @@
       "category": "Plastic Waste",
       "composition": "Low-Density Polyethylene — flexible plastic, bags, films, wraps",
       "hazard_level": "none",
-      "possible_products": ["recycled plastic bags", "trash liners", "film wrap", "plastic lumber"],
-      "estimated_value_range": { "min": 6, "max": 18, "unit": "INR/kg" },
-      "buyer_types": ["film recyclers", "plastic bag manufacturers", "retail packaging companies"],
+      "possible_products": [
+        "recycled plastic bags",
+        "trash liners",
+        "film wrap",
+        "plastic lumber"
+      ],
+      "estimated_value_range": {
+        "min": 6,
+        "max": 18,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "film recyclers",
+        "plastic bag manufacturers",
+        "retail packaging companies"
+      ],
       "sustainability_notes": "LDPE film recycling prevents single-use bag pollution and conserves petroleum resources.",
       "risks": "Contamination from food or liquids makes recycling difficult. Must be clean and dry.",
       "recommended_pathway": "recycle",
@@ -436,9 +864,22 @@
       "category": "Construction Waste",
       "composition": "Cement matrix, aggregate (gravel, sand), steel rebar — demolition rubble",
       "hazard_level": "low",
-      "possible_products": ["recycled concrete aggregate", "road sub-base", "fill material", "embankment"],
-      "estimated_value_range": { "min": 0.3, "max": 3, "unit": "INR/kg" },
-      "buyer_types": ["road contractors", "aggregate suppliers", "civil construction companies"],
+      "possible_products": [
+        "recycled concrete aggregate",
+        "road sub-base",
+        "fill material",
+        "embankment"
+      ],
+      "estimated_value_range": {
+        "min": 0.3,
+        "max": 3,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "road contractors",
+        "aggregate suppliers",
+        "civil construction companies"
+      ],
       "sustainability_notes": "Recycled concrete aggregate reduces quarrying and landfill use — core to green construction.",
       "risks": "Test for asbestos, lead paint, or other contaminants in pre-1990 buildings before processing.",
       "recommended_pathway": "recycle_or_reuse",
@@ -448,9 +889,22 @@
       "category": "Construction Waste",
       "composition": "Fired clay, fly ash, cement — reusable or crushable to aggregate",
       "hazard_level": "none",
-      "possible_products": ["reclaimed bricks", "crushed brick aggregate", "fill material", "landscaping"],
-      "estimated_value_range": { "min": 0.5, "max": 4, "unit": "INR/kg" },
-      "buyer_types": ["reclaimed building material dealers", "landscapers", "road base contractors"],
+      "possible_products": [
+        "reclaimed bricks",
+        "crushed brick aggregate",
+        "fill material",
+        "landscaping"
+      ],
+      "estimated_value_range": {
+        "min": 0.5,
+        "max": 4,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "reclaimed building material dealers",
+        "landscapers",
+        "road base contractors"
+      ],
       "sustainability_notes": "Reclaimed solid clay bricks can be reused directly, saving manufacturing energy.",
       "risks": "Mortar must be cleaned for full value. Broken or mortar-bonded bricks go to aggregate.",
       "recommended_pathway": "recycle_or_reuse",
@@ -460,9 +914,22 @@
       "category": "Construction Waste",
       "composition": "Calcium sulfate dihydrate — plasterboard, drywall off-cuts",
       "hazard_level": "low",
-      "possible_products": ["recycled gypsum powder", "soil conditioner", "new plasterboard", "cement additive"],
-      "estimated_value_range": { "min": 1, "max": 6, "unit": "INR/kg" },
-      "buyer_types": ["plasterboard manufacturers", "cement companies", "agricultural lime suppliers"],
+      "possible_products": [
+        "recycled gypsum powder",
+        "soil conditioner",
+        "new plasterboard",
+        "cement additive"
+      ],
+      "estimated_value_range": {
+        "min": 1,
+        "max": 6,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "plasterboard manufacturers",
+        "cement companies",
+        "agricultural lime suppliers"
+      ],
       "sustainability_notes": "Recycled gypsum is used as a cement set-retarder, replacing mined gypsum.",
       "risks": "Never mix with organic waste — gypsum + organics in landfill produces toxic hydrogen sulfide gas.",
       "recommended_pathway": "sell_or_process",
@@ -472,9 +939,17 @@
       "category": "Hazardous Waste",
       "composition": "Solvents, acids, alkalis, laboratory chemicals, industrial process waste",
       "hazard_level": "critical",
-      "possible_products": ["none – must be treated or destroyed by licensed facility"],
-      "estimated_value_range": { "min": 0, "max": 0, "unit": "INR/kg" },
-      "buyer_types": ["CPCB licensed hazardous waste treatment facilities only"],
+      "possible_products": [
+        "none – must be treated or destroyed by licensed facility"
+      ],
+      "estimated_value_range": {
+        "min": 0,
+        "max": 0,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "CPCB licensed hazardous waste treatment facilities only"
+      ],
       "sustainability_notes": "Proper treatment prevents groundwater contamination and soil toxicity for decades.",
       "risks": "CRITICAL HAZARD: Corrosive, flammable, or toxic. Covered under Hazardous Waste Management Rules 2016. Unauthorized disposal is a criminal offence. Requires manifesting and licensed transport.",
       "recommended_pathway": "certified_hazardous_waste_facility_only",
@@ -484,9 +959,21 @@
       "category": "Liquid Waste",
       "composition": "Heavy hydrocarbon residue, tank bottom sludge, water-oil emulsion from fuel storage",
       "hazard_level": "high",
-      "possible_products": ["recovered fuel oil", "industrial fuel supplement", "co-processing in cement kilns"],
-      "estimated_value_range": { "min": 5, "max": 20, "unit": "INR/kg" },
-      "buyer_types": ["cement kilns", "licensed oil recovery processors", "industrial fuel blenders"],
+      "possible_products": [
+        "recovered fuel oil",
+        "industrial fuel supplement",
+        "co-processing in cement kilns"
+      ],
+      "estimated_value_range": {
+        "min": 5,
+        "max": 20,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "cement kilns",
+        "licensed oil recovery processors",
+        "industrial fuel blenders"
+      ],
       "sustainability_notes": "Co-processing diesel sludge in cement kilns recovers energy and eliminates hazardous landfill disposal.",
       "risks": "HIGH RISK: Flammable vapors, toxic PAHs. Requires licensed transport and disposal. Covered under Hazardous Waste Management Rules.",
       "recommended_pathway": "certified_industrial_processor",
@@ -496,9 +983,21 @@
       "category": "Liquid Waste",
       "composition": "Used lubricating oil, engine oil residue, water-hydrocarbon emulsion",
       "hazard_level": "high",
-      "possible_products": ["re-refined base oil", "industrial fuel", "cement kiln co-processing"],
-      "estimated_value_range": { "min": 8, "max": 25, "unit": "INR/kg" },
-      "buyer_types": ["re-refinery processors", "cement kilns", "licensed waste oil collectors"],
+      "possible_products": [
+        "re-refined base oil",
+        "industrial fuel",
+        "cement kiln co-processing"
+      ],
+      "estimated_value_range": {
+        "min": 8,
+        "max": 25,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "re-refinery processors",
+        "cement kilns",
+        "licensed waste oil collectors"
+      ],
       "sustainability_notes": "Re-refining used oil uses 66% less energy than refining crude oil from scratch.",
       "risks": "HIGH RISK: Contains PAHs, heavy metals, toxic additives. Never drain into sewers or soil.",
       "recommended_pathway": "certified_industrial_processor",
@@ -508,9 +1007,22 @@
       "category": "E-waste",
       "composition": "Plastic casing, residual toner/ink (carbon black, pigments), metal components",
       "hazard_level": "medium",
-      "possible_products": ["refilled cartridges", "recycled plastic casing", "recovered toner", "metal recovery"],
-      "estimated_value_range": { "min": 20, "max": 80, "unit": "INR/unit" },
-      "buyer_types": ["cartridge refilling businesses", "OEM take-back programs", "toner recyclers"],
+      "possible_products": [
+        "refilled cartridges",
+        "recycled plastic casing",
+        "recovered toner",
+        "metal recovery"
+      ],
+      "estimated_value_range": {
+        "min": 20,
+        "max": 80,
+        "unit": "INR/unit"
+      },
+      "buyer_types": [
+        "cartridge refilling businesses",
+        "OEM take-back programs",
+        "toner recyclers"
+      ],
       "sustainability_notes": "Refilling one cartridge saves ~2.5 kg of CO2 vs. manufacturing a new one.",
       "risks": "Toner particles are a fine dust inhalation risk. Empty cartridges must not be incinerated.",
       "recommended_pathway": "recycle_or_refill",
@@ -520,9 +1032,21 @@
       "category": "Organic Waste",
       "composition": "Wastewater treatment sludge — biomass, nutrients, trace metals, pathogens",
       "hazard_level": "medium",
-      "possible_products": ["biogas feedstock", "composted biosolids (after treatment)", "soil conditioner"],
-      "estimated_value_range": { "min": 0.5, "max": 4, "unit": "INR/kg" },
-      "buyer_types": ["biogas plants", "municipal treatment facilities", "certified biosolid processors"],
+      "possible_products": [
+        "biogas feedstock",
+        "composted biosolids (after treatment)",
+        "soil conditioner"
+      ],
+      "estimated_value_range": {
+        "min": 0.5,
+        "max": 4,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "biogas plants",
+        "municipal treatment facilities",
+        "certified biosolid processors"
+      ],
       "sustainability_notes": "Treated biosolids used as agricultural fertilizer close the nutrient loop and reduce chemical fertilizer demand.",
       "risks": "Contains pathogens and possibly heavy metals — require testing and heat treatment before agricultural use.",
       "recommended_pathway": "biogas_or_compost",
@@ -532,9 +1056,21 @@
       "category": "Liquid Waste",
       "composition": "Spent lubricating oil, engine oil — degraded base oil with additive residues",
       "hazard_level": "high",
-      "possible_products": ["re-refined base oil", "industrial fuel", "metal working fluid"],
-      "estimated_value_range": { "min": 15, "max": 40, "unit": "INR/liter" },
-      "buyer_types": ["used oil re-refiners", "cement kilns", "licensed waste oil collectors"],
+      "possible_products": [
+        "re-refined base oil",
+        "industrial fuel",
+        "metal working fluid"
+      ],
+      "estimated_value_range": {
+        "min": 15,
+        "max": 40,
+        "unit": "INR/liter"
+      },
+      "buyer_types": [
+        "used oil re-refiners",
+        "cement kilns",
+        "licensed waste oil collectors"
+      ],
       "sustainability_notes": "Re-refining used engine oil recovers ~2 liters of base oil per 2.5 liters of used oil collected.",
       "risks": "HIGH RISK: Contains carcinogenic polycyclic aromatics (PAHs) and heavy metals. Never drain into soil or drains.",
       "recommended_pathway": "certified_industrial_processor",
@@ -550,9 +1086,23 @@
       "category": "Paper Waste",
       "composition": "Cellulose fiber, wood pulp, bleaching agents — general mixed office and printing paper",
       "hazard_level": "none",
-      "possible_products": ["recycled paper", "tissue paper", "packaging boards", "egg trays"],
-      "estimated_value_range": { "min": 5, "max": 15, "unit": "INR/kg" },
-      "buyer_types": ["paper recyclers", "kabadiwala", "tissue manufacturers", "packaging companies"],
+      "possible_products": [
+        "recycled paper",
+        "tissue paper",
+        "packaging boards",
+        "egg trays"
+      ],
+      "estimated_value_range": {
+        "min": 5,
+        "max": 15,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "paper recyclers",
+        "kabadiwala",
+        "tissue manufacturers",
+        "packaging companies"
+      ],
       "sustainability_notes": "Recycling 1 tonne of paper saves 1.5 tonnes CO2 and 17 trees.",
       "risks": "Confidential documents must be shredded before recycling. Wet paper loses most of its value.",
       "recommended_pathway": "recycle",
@@ -568,9 +1118,22 @@
       "category": "Paper Waste",
       "composition": "Groundwood pulp, newsprint — high lignin content, short fiber",
       "hazard_level": "none",
-      "possible_products": ["recycled newsprint", "packaging material", "seedling pots", "egg trays"],
-      "estimated_value_range": { "min": 4, "max": 10, "unit": "INR/kg" },
-      "buyer_types": ["paper recyclers", "kabadiwala", "packaging companies"],
+      "possible_products": [
+        "recycled newsprint",
+        "packaging material",
+        "seedling pots",
+        "egg trays"
+      ],
+      "estimated_value_range": {
+        "min": 4,
+        "max": 10,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "paper recyclers",
+        "kabadiwala",
+        "packaging companies"
+      ],
       "sustainability_notes": "Newspaper recycling diverts high-volume daily waste from landfill.",
       "risks": "Ink residue may require de-inking at mill. Keep dry.",
       "recommended_pathway": "recycle",
@@ -586,9 +1149,22 @@
       "category": "Paper Waste",
       "composition": "Virgin or recycled wood pulp — bleached, high-brightness printing and writing paper",
       "hazard_level": "none",
-      "possible_products": ["recycled writing paper", "tissue", "packaging", "molded pulp"],
-      "estimated_value_range": { "min": 6, "max": 18, "unit": "INR/kg" },
-      "buyer_types": ["paper recyclers", "kabadiwala", "tissue manufacturers"],
+      "possible_products": [
+        "recycled writing paper",
+        "tissue",
+        "packaging",
+        "molded pulp"
+      ],
+      "estimated_value_range": {
+        "min": 6,
+        "max": 18,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "paper recyclers",
+        "kabadiwala",
+        "tissue manufacturers"
+      ],
       "sustainability_notes": "High-grade office paper fetches premium rates at recyclers due to long fiber content.",
       "risks": "Shred documents containing personal or financial information before recycling.",
       "recommended_pathway": "recycle",
@@ -604,9 +1180,21 @@
       "category": "Paper Waste",
       "composition": "Mixed grades of paper — newspapers, cardboard, office paper, magazines",
       "hazard_level": "none",
-      "possible_products": ["recycled containerboard", "molded pulp products", "packaging material"],
-      "estimated_value_range": { "min": 3, "max": 10, "unit": "INR/kg" },
-      "buyer_types": ["paper mills", "kabadiwala", "cardboard manufacturers"],
+      "possible_products": [
+        "recycled containerboard",
+        "molded pulp products",
+        "packaging material"
+      ],
+      "estimated_value_range": {
+        "min": 3,
+        "max": 10,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "paper mills",
+        "kabadiwala",
+        "cardboard manufacturers"
+      ],
       "sustainability_notes": "Mixed paper is the most commonly recycled grade. Sorting improves value significantly.",
       "risks": "Food-contaminated paper reduces value. Remove food packaging before bundling.",
       "recommended_pathway": "recycle",
@@ -622,9 +1210,22 @@
       "category": "Plastic Waste",
       "composition": "Polyethylene Terephthalate (PET) — clear/coloured rigid plastic, water and beverage bottles",
       "hazard_level": "low",
-      "possible_products": ["rPET fiber", "new PET bottles", "polyester yarn", "packaging sheets"],
-      "estimated_value_range": { "min": 10, "max": 25, "unit": "INR/kg" },
-      "buyer_types": ["PET recyclers", "fiber manufacturers", "plastic pellet producers"],
+      "possible_products": [
+        "rPET fiber",
+        "new PET bottles",
+        "polyester yarn",
+        "packaging sheets"
+      ],
+      "estimated_value_range": {
+        "min": 10,
+        "max": 25,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "PET recyclers",
+        "fiber manufacturers",
+        "plastic pellet producers"
+      ],
       "sustainability_notes": "Recycling 1 tonne PET saves 1.5 tonnes CO2 vs virgin production. 100% recyclable.",
       "risks": "Contamination from residual liquid reduces value. Rinse bottles before collection.",
       "recommended_pathway": "recycle",
@@ -640,9 +1241,22 @@
       "category": "Plastic Waste",
       "composition": "Polypropylene — rigid/flexible plastic used in containers, woven bags, auto parts",
       "hazard_level": "low",
-      "possible_products": ["PP pellets", "woven bags", "auto parts filler", "non-woven fabric"],
-      "estimated_value_range": { "min": 8, "max": 20, "unit": "INR/kg" },
-      "buyer_types": ["plastic recyclers", "woven bag manufacturers", "auto parts companies"],
+      "possible_products": [
+        "PP pellets",
+        "woven bags",
+        "auto parts filler",
+        "non-woven fabric"
+      ],
+      "estimated_value_range": {
+        "min": 8,
+        "max": 20,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "plastic recyclers",
+        "woven bag manufacturers",
+        "auto parts companies"
+      ],
       "sustainability_notes": "PP recycling saves approximately 88% of the energy used to produce virgin PP.",
       "risks": "Multi-layer laminates containing PP are difficult to separate — lower value. Sort by grade.",
       "recommended_pathway": "recycle",
@@ -658,9 +1272,20 @@
       "category": "Plastic Waste",
       "composition": "Polyvinyl Chloride — pipes, cable insulation, window profiles, packaging film",
       "hazard_level": "medium",
-      "possible_products": ["recycled PVC pellets", "construction filler", "decking material"],
-      "estimated_value_range": { "min": 4, "max": 15, "unit": "INR/kg" },
-      "buyer_types": ["specialist PVC recyclers", "construction material companies"],
+      "possible_products": [
+        "recycled PVC pellets",
+        "construction filler",
+        "decking material"
+      ],
+      "estimated_value_range": {
+        "min": 4,
+        "max": 15,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "specialist PVC recyclers",
+        "construction material companies"
+      ],
       "sustainability_notes": "PVC recycling must use specialist facilities — contains chlorine that releases toxic gases if incinerated.",
       "risks": "NEVER incinerate PVC — releases dioxins and hydrogen chloride. Requires specialist recycler. Inform handler of PVC content.",
       "recommended_pathway": "certified_recycler",
@@ -676,9 +1301,22 @@
       "category": "Plastic Waste",
       "composition": "Commingled plastic — multiple resin types unsegregated (HDPE, LDPE, PP, PET, PS, PVC)",
       "hazard_level": "low",
-      "possible_products": ["plastic lumber", "park benches", "composite tiles", "road filler"],
-      "estimated_value_range": { "min": 2, "max": 8, "unit": "INR/kg" },
-      "buyer_types": ["plastic lumber producers", "composite material companies", "road-laying agencies"],
+      "possible_products": [
+        "plastic lumber",
+        "park benches",
+        "composite tiles",
+        "road filler"
+      ],
+      "estimated_value_range": {
+        "min": 2,
+        "max": 8,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "plastic lumber producers",
+        "composite material companies",
+        "road-laying agencies"
+      ],
       "sustainability_notes": "Mixed plastics are hard to recycle into high-value products — sorting improves value 3-5x.",
       "risks": "Low value due to mixed resins. Sorting recommended before disposal.",
       "recommended_pathway": "recycle",
@@ -694,9 +1332,21 @@
       "category": "Plastic Waste",
       "composition": "Generic plastic waste — resin type unspecified",
       "hazard_level": "low",
-      "possible_products": ["recycled plastic pellets", "plastic lumber", "fuel oil (pyrolysis)"],
-      "estimated_value_range": { "min": 3, "max": 18, "unit": "INR/kg" },
-      "buyer_types": ["plastic recyclers", "kabadiwala", "plastic lumber producers"],
+      "possible_products": [
+        "recycled plastic pellets",
+        "plastic lumber",
+        "fuel oil (pyrolysis)"
+      ],
+      "estimated_value_range": {
+        "min": 3,
+        "max": 18,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "plastic recyclers",
+        "kabadiwala",
+        "plastic lumber producers"
+      ],
       "sustainability_notes": "Identifying the resin type (check the recycling triangle number) can increase value 3-5x.",
       "risks": "Mixed resins reduce recyclability. Identify and sort where possible.",
       "recommended_pathway": "recycle",
@@ -712,9 +1362,22 @@
       "category": "Glass Waste",
       "composition": "Silica 70%, soda ash, lime — recyclable indefinitely without quality loss",
       "hazard_level": "low",
-      "possible_products": ["cullet for new glass", "glass tiles", "fiberglass insulation", "terrazzo"],
-      "estimated_value_range": { "min": 3, "max": 12, "unit": "INR/kg" },
-      "buyer_types": ["glass manufacturers", "tile makers", "construction material suppliers"],
+      "possible_products": [
+        "cullet for new glass",
+        "glass tiles",
+        "fiberglass insulation",
+        "terrazzo"
+      ],
+      "estimated_value_range": {
+        "min": 3,
+        "max": 12,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "glass manufacturers",
+        "tile makers",
+        "construction material suppliers"
+      ],
       "sustainability_notes": "Glass is 100% recyclable with no quality degradation. Each tonne recycled saves 1.2 tonnes CO2.",
       "risks": "Handle with care — sharp edges. Use gloves. Separate broken from intact glass.",
       "recommended_pathway": "recycle",
@@ -730,9 +1393,20 @@
       "category": "Glass Waste",
       "composition": "Flint/clear glass — highest purity silica, used for food and pharmaceutical bottles",
       "hazard_level": "low",
-      "possible_products": ["new clear glass bottles", "optical glass filler", "glass beads"],
-      "estimated_value_range": { "min": 5, "max": 15, "unit": "INR/kg" },
-      "buyer_types": ["glass bottle manufacturers", "pharma packaging companies"],
+      "possible_products": [
+        "new clear glass bottles",
+        "optical glass filler",
+        "glass beads"
+      ],
+      "estimated_value_range": {
+        "min": 5,
+        "max": 15,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "glass bottle manufacturers",
+        "pharma packaging companies"
+      ],
       "sustainability_notes": "Clear glass commands the highest recycling price and is easiest to reprocess into new containers.",
       "risks": "Sharp fragments. Handle with gloves. Keep separate from coloured glass for maximum value.",
       "recommended_pathway": "recycle",
@@ -748,9 +1422,20 @@
       "category": "Glass Waste",
       "composition": "Chromium/iron oxide tinted glass — green, brown, blue glass bottles",
       "hazard_level": "low",
-      "possible_products": ["recycled coloured glass cullet", "tile aggregate", "glass sand"],
-      "estimated_value_range": { "min": 2, "max": 8, "unit": "INR/kg" },
-      "buyer_types": ["glass manufacturers", "construction aggregate suppliers"],
+      "possible_products": [
+        "recycled coloured glass cullet",
+        "tile aggregate",
+        "glass sand"
+      ],
+      "estimated_value_range": {
+        "min": 2,
+        "max": 8,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "glass manufacturers",
+        "construction aggregate suppliers"
+      ],
       "sustainability_notes": "Coloured glass saves energy when recycled — mixing colours reduces value.",
       "risks": "Sharp edges. Mixing colours reduces recyclability and market price.",
       "recommended_pathway": "recycle",
@@ -766,9 +1451,22 @@
       "category": "Metal Waste",
       "composition": "Iron-carbon alloy — structural steel, scrap from fabrication, demolition",
       "hazard_level": "low",
-      "possible_products": ["recycled steel bars", "structural sections", "construction material"],
-      "estimated_value_range": { "min": 25, "max": 45, "unit": "INR/kg" },
-      "buyer_types": ["steel mills", "foundries", "scrap dealers", "construction companies"],
+      "possible_products": [
+        "recycled steel bars",
+        "structural sections",
+        "construction material"
+      ],
+      "estimated_value_range": {
+        "min": 25,
+        "max": 45,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "steel mills",
+        "foundries",
+        "scrap dealers",
+        "construction companies"
+      ],
       "sustainability_notes": "Recycled steel uses 60% less energy than virgin production and is infinitely recyclable.",
       "risks": "Sharp edges. Rust reduces value. Keep dry and separate from non-ferrous metals.",
       "recommended_pathway": "sell_to_scrap_dealer",
@@ -784,9 +1482,21 @@
       "category": "Metal Waste",
       "composition": "Cast iron, wrought iron, pig iron — higher carbon content than steel",
       "hazard_level": "low",
-      "possible_products": ["cast iron castings", "recycled iron ingots", "foundry charge material"],
-      "estimated_value_range": { "min": 18, "max": 35, "unit": "INR/kg" },
-      "buyer_types": ["foundries", "scrap dealers", "cast iron producers"],
+      "possible_products": [
+        "cast iron castings",
+        "recycled iron ingots",
+        "foundry charge material"
+      ],
+      "estimated_value_range": {
+        "min": 18,
+        "max": 35,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "foundries",
+        "scrap dealers",
+        "cast iron producers"
+      ],
       "sustainability_notes": "Cast iron recycling saves significant energy vs primary iron making from ore.",
       "risks": "Heavy — use mechanical handling. Rust reduces purity and price.",
       "recommended_pathway": "sell_to_scrap_dealer",
@@ -802,9 +1512,21 @@
       "category": "Metal Waste",
       "composition": "Copper-zinc alloy — taps, fittings, electrical terminals, decorative items",
       "hazard_level": "none",
-      "possible_products": ["brass ingots", "copper alloy billets", "casting material"],
-      "estimated_value_range": { "min": 200, "max": 380, "unit": "INR/kg" },
-      "buyer_types": ["brass foundries", "copper alloy manufacturers", "scrap dealers"],
+      "possible_products": [
+        "brass ingots",
+        "copper alloy billets",
+        "casting material"
+      ],
+      "estimated_value_range": {
+        "min": 200,
+        "max": 380,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "brass foundries",
+        "copper alloy manufacturers",
+        "scrap dealers"
+      ],
       "sustainability_notes": "Brass recycling saves 85% of the energy needed to produce primary copper-zinc alloy.",
       "risks": "Verify composition — leadbearing brass (e.g. plumbing) has different value than free-cutting brass.",
       "recommended_pathway": "sell_to_scrap_dealer",
@@ -820,9 +1542,23 @@
       "category": "Metal Waste",
       "composition": "Aluminium alloy — cans, foil, extrusions, die castings — 98% recyclable",
       "hazard_level": "none",
-      "possible_products": ["recycled aluminium ingots", "new cans", "automotive parts", "construction sections"],
-      "estimated_value_range": { "min": 40, "max": 85, "unit": "INR/kg" },
-      "buyer_types": ["aluminium smelters", "beverage companies", "auto parts manufacturers", "scrap dealers"],
+      "possible_products": [
+        "recycled aluminium ingots",
+        "new cans",
+        "automotive parts",
+        "construction sections"
+      ],
+      "estimated_value_range": {
+        "min": 40,
+        "max": 85,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "aluminium smelters",
+        "beverage companies",
+        "auto parts manufacturers",
+        "scrap dealers"
+      ],
       "sustainability_notes": "Recycling aluminium uses 95% less energy than virgin production. Infinitely recyclable.",
       "risks": "Clean and separate from steel for maximum value. Painted or anodised aluminium may be slightly lower value.",
       "recommended_pathway": "sell_to_scrap_dealer",
@@ -838,9 +1574,21 @@
       "category": "Metal Waste",
       "composition": "Mixed metal scrap — unspecified alloys, ferrous and non-ferrous mixed",
       "hazard_level": "low",
-      "possible_products": ["recycled metal ingots", "foundry charge", "construction material"],
-      "estimated_value_range": { "min": 15, "max": 50, "unit": "INR/kg" },
-      "buyer_types": ["scrap dealers", "foundries", "metal recyclers"],
+      "possible_products": [
+        "recycled metal ingots",
+        "foundry charge",
+        "construction material"
+      ],
+      "estimated_value_range": {
+        "min": 15,
+        "max": 50,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "scrap dealers",
+        "foundries",
+        "metal recyclers"
+      ],
       "sustainability_notes": "Sorting mixed scrap into ferrous and non-ferrous fractions can double value.",
       "risks": "Sharp edges. Mixed scrap reduces value — sorting improves recovery significantly.",
       "recommended_pathway": "sell_to_scrap_dealer",
@@ -856,9 +1604,22 @@
       "category": "Organic Waste",
       "composition": "Food preparation scraps — vegetable peels, cooked food remnants, tea bags, coffee grounds",
       "hazard_level": "low",
-      "possible_products": ["biogas", "compost", "vermicompost", "liquid fertilizer"],
-      "estimated_value_range": { "min": 0.5, "max": 3, "unit": "INR/kg" },
-      "buyer_types": ["biogas plants", "composting facilities", "municipal agencies"],
+      "possible_products": [
+        "biogas",
+        "compost",
+        "vermicompost",
+        "liquid fertilizer"
+      ],
+      "estimated_value_range": {
+        "min": 0.5,
+        "max": 3,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "biogas plants",
+        "composting facilities",
+        "municipal agencies"
+      ],
       "sustainability_notes": "Kitchen waste to biogas can supply 20-30% of campus kitchen energy needs.",
       "risks": "Must be segregated. Delays cause leachate and methane emissions. Process within 24 hours.",
       "recommended_pathway": "biogas_or_compost",
@@ -874,9 +1635,22 @@
       "category": "Organic Waste",
       "composition": "Mixed organic matter — food waste, garden waste, paper, natural fibers",
       "hazard_level": "low",
-      "possible_products": ["compost", "biogas", "vermicompost", "biochar"],
-      "estimated_value_range": { "min": 0.5, "max": 3, "unit": "INR/kg" },
-      "buyer_types": ["composting facilities", "biogas plants", "organic farms"],
+      "possible_products": [
+        "compost",
+        "biogas",
+        "vermicompost",
+        "biochar"
+      ],
+      "estimated_value_range": {
+        "min": 0.5,
+        "max": 3,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "composting facilities",
+        "biogas plants",
+        "organic farms"
+      ],
       "sustainability_notes": "Organic waste composting avoids methane generation in landfill — significant GHG benefit.",
       "risks": "Pathogens if not processed promptly. Segregate immediately.",
       "recommended_pathway": "biogas_or_compost",
@@ -892,9 +1666,22 @@
       "category": "Organic Waste",
       "composition": "Vegetable peels, trimmings, spoiled produce — high moisture, nitrogen-rich",
       "hazard_level": "none",
-      "possible_products": ["compost", "biogas feedstock", "animal feed", "vermicompost"],
-      "estimated_value_range": { "min": 0.5, "max": 2.5, "unit": "INR/kg" },
-      "buyer_types": ["composting facilities", "animal farms", "biogas plants"],
+      "possible_products": [
+        "compost",
+        "biogas feedstock",
+        "animal feed",
+        "vermicompost"
+      ],
+      "estimated_value_range": {
+        "min": 0.5,
+        "max": 2.5,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "composting facilities",
+        "animal farms",
+        "biogas plants"
+      ],
       "sustainability_notes": "Excellent C:N ratio for composting when mixed with carbon-rich dry material.",
       "risks": "Rapid decomposition — process within 24 hours. Odor management required.",
       "recommended_pathway": "compost_or_biogas",
@@ -910,9 +1697,22 @@
       "category": "Organic Waste",
       "composition": "Fruit peels, pulp, cores, seeds — high sugar content, rapid fermentation",
       "hazard_level": "none",
-      "possible_products": ["compost", "biogas", "pectin extraction", "vermicompost"],
-      "estimated_value_range": { "min": 0.5, "max": 3, "unit": "INR/kg" },
-      "buyer_types": ["composting facilities", "biogas plants", "pectin manufacturers"],
+      "possible_products": [
+        "compost",
+        "biogas",
+        "pectin extraction",
+        "vermicompost"
+      ],
+      "estimated_value_range": {
+        "min": 0.5,
+        "max": 3,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "composting facilities",
+        "biogas plants",
+        "pectin manufacturers"
+      ],
       "sustainability_notes": "Citrus peels contain limonene — value-added extraction possible at scale.",
       "risks": "Rapid decomposition. High sugar accelerates fermentation and odor.",
       "recommended_pathway": "compost_or_biogas",
@@ -928,9 +1728,22 @@
       "category": "Garden Waste",
       "composition": "Dry leaf litter — cellulose, lignin, trace minerals, organic carbon source",
       "hazard_level": "none",
-      "possible_products": ["leaf mold compost", "mulch", "biochar", "garden substrate"],
-      "estimated_value_range": { "min": 0, "max": 2, "unit": "INR/kg" },
-      "buyer_types": ["organic farms", "nurseries", "municipal composting"],
+      "possible_products": [
+        "leaf mold compost",
+        "mulch",
+        "biochar",
+        "garden substrate"
+      ],
+      "estimated_value_range": {
+        "min": 0,
+        "max": 2,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "organic farms",
+        "nurseries",
+        "municipal composting"
+      ],
       "sustainability_notes": "Leaf mulch retains soil moisture, suppresses weeds, and improves soil structure.",
       "risks": "Avoid burning — air quality violation in urban areas. Disease risk if leaves from infected plants composted.",
       "recommended_pathway": "compost_on_site",
@@ -946,9 +1759,23 @@
       "category": "Garden Waste",
       "composition": "Woody prunings, branches, stems — lignocellulosic biomass",
       "hazard_level": "none",
-      "possible_products": ["wood chips", "mulch", "biochar", "firewood", "wood pellets"],
-      "estimated_value_range": { "min": 0.5, "max": 5, "unit": "INR/kg" },
-      "buyer_types": ["biomass energy plants", "wood chip producers", "landscapers"],
+      "possible_products": [
+        "wood chips",
+        "mulch",
+        "biochar",
+        "firewood",
+        "wood pellets"
+      ],
+      "estimated_value_range": {
+        "min": 0.5,
+        "max": 5,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "biomass energy plants",
+        "wood chip producers",
+        "landscapers"
+      ],
       "sustainability_notes": "Chipped branches make excellent mulch and can be used in boiler fuel programmes.",
       "risks": "Sharp cut ends. Large branches require mechanical chipping.",
       "recommended_pathway": "chip_and_compost",
@@ -964,9 +1791,22 @@
       "category": "Garden Waste",
       "composition": "Fresh grass cuttings — high nitrogen, moisture 75-85%",
       "hazard_level": "none",
-      "possible_products": ["compost activator", "silage", "biogas feedstock", "mulch"],
-      "estimated_value_range": { "min": 0, "max": 1.5, "unit": "INR/kg" },
-      "buyer_types": ["composting facilities", "biogas plants", "organic farms"],
+      "possible_products": [
+        "compost activator",
+        "silage",
+        "biogas feedstock",
+        "mulch"
+      ],
+      "estimated_value_range": {
+        "min": 0,
+        "max": 1.5,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "composting facilities",
+        "biogas plants",
+        "organic farms"
+      ],
       "sustainability_notes": "Grass clippings are an excellent nitrogen source ('green' activator) for compost piles.",
       "risks": "High nitrogen causes rapid heating and odor in piles. Mix with carbon-rich material.",
       "recommended_pathway": "compost_on_site",
@@ -982,9 +1822,22 @@
       "category": "Liquid Waste",
       "composition": "Triglycerides, free fatty acids — post-frying degraded vegetable oil",
       "hazard_level": "low",
-      "possible_products": ["biodiesel", "soap", "lubricant", "animal feed additive"],
-      "estimated_value_range": { "min": 15, "max": 35, "unit": "INR/liter" },
-      "buyer_types": ["biodiesel producers", "soap manufacturers", "FSSAI approved processors"],
+      "possible_products": [
+        "biodiesel",
+        "soap",
+        "lubricant",
+        "animal feed additive"
+      ],
+      "estimated_value_range": {
+        "min": 15,
+        "max": 35,
+        "unit": "INR/liter"
+      },
+      "buyer_types": [
+        "biodiesel producers",
+        "soap manufacturers",
+        "FSSAI approved processors"
+      ],
       "sustainability_notes": "1 liter of used cooking oil produces ~0.85 liters of biodiesel, displacing fossil fuel.",
       "risks": "NEVER pour down drain — clogs pipes and contaminates waterways. Legal violations under EPR rules.",
       "recommended_pathway": "sell_to_biodiesel_unit",
@@ -1000,9 +1853,21 @@
       "category": "Liquid Waste",
       "composition": "Spent lubricating oil, motor oil — degraded base oil with metal particles",
       "hazard_level": "high",
-      "possible_products": ["re-refined base oil", "industrial fuel", "metal working fluid"],
-      "estimated_value_range": { "min": 15, "max": 40, "unit": "INR/liter" },
-      "buyer_types": ["used oil re-refiners", "cement kilns", "licensed waste oil collectors"],
+      "possible_products": [
+        "re-refined base oil",
+        "industrial fuel",
+        "metal working fluid"
+      ],
+      "estimated_value_range": {
+        "min": 15,
+        "max": 40,
+        "unit": "INR/liter"
+      },
+      "buyer_types": [
+        "used oil re-refiners",
+        "cement kilns",
+        "licensed waste oil collectors"
+      ],
       "sustainability_notes": "Re-refining engine oil recovers high-quality base oil using 66% less energy than crude oil refining.",
       "risks": "Contains carcinogenic PAHs and heavy metals. Never drain into soil or drains — punishable under Environment Protection Act.",
       "recommended_pathway": "certified_industrial_processor",
@@ -1018,9 +1883,23 @@
       "category": "Textile Waste",
       "composition": "Cotton, polyester, nylon, blended fibers — wearable and industrial",
       "hazard_level": "low",
-      "possible_products": ["industrial wipers", "insulation fiber", "recycled yarn", "stuffing material", "upcycled fashion"],
-      "estimated_value_range": { "min": 5, "max": 25, "unit": "INR/kg" },
-      "buyer_types": ["recycled yarn mills", "auto parts makers", "furniture stuffing units"],
+      "possible_products": [
+        "industrial wipers",
+        "insulation fiber",
+        "recycled yarn",
+        "stuffing material",
+        "upcycled fashion"
+      ],
+      "estimated_value_range": {
+        "min": 5,
+        "max": 25,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "recycled yarn mills",
+        "auto parts makers",
+        "furniture stuffing units"
+      ],
       "sustainability_notes": "Textile recycling saves 1.7 kg CO2 per kg of fiber recovered. Indian textiles sector generates 5.5M tonnes of waste annually.",
       "risks": "Chemical dyes may require pre-treatment. Synthetic-natural blends harder to recycle than pure fiber.",
       "recommended_pathway": "recycle_or_upcycle",
@@ -1036,9 +1915,22 @@
       "category": "Textile Waste",
       "composition": "Woven or knitted fabric — cotton, polyester, silk, wool, synthetic blends",
       "hazard_level": "low",
-      "possible_products": ["industrial wipers", "recycled fiber", "stuffing", "insulation"],
-      "estimated_value_range": { "min": 4, "max": 20, "unit": "INR/kg" },
-      "buyer_types": ["textile recyclers", "industrial wiper manufacturers", "upholstery companies"],
+      "possible_products": [
+        "industrial wipers",
+        "recycled fiber",
+        "stuffing",
+        "insulation"
+      ],
+      "estimated_value_range": {
+        "min": 4,
+        "max": 20,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "textile recyclers",
+        "industrial wiper manufacturers",
+        "upholstery companies"
+      ],
       "sustainability_notes": "Cut fabric waste from garment factories commands higher recycling rates than post-consumer textiles.",
       "risks": "Dyes and finishes may require pre-treatment before recycling.",
       "recommended_pathway": "recycle_or_upcycle",
@@ -1054,9 +1946,21 @@
       "category": "Industrial Waste",
       "composition": "Collagen protein, chromium tanning agents, dyes — post-processing leather scraps",
       "hazard_level": "high",
-      "possible_products": ["reconstituted leather board", "art crafts", "bonded leather accessories"],
-      "estimated_value_range": { "min": 10, "max": 40, "unit": "INR/kg" },
-      "buyer_types": ["recycled leather board makers", "art studios", "certified waste processors"],
+      "possible_products": [
+        "reconstituted leather board",
+        "art crafts",
+        "bonded leather accessories"
+      ],
+      "estimated_value_range": {
+        "min": 10,
+        "max": 40,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "recycled leather board makers",
+        "art studios",
+        "certified waste processors"
+      ],
       "sustainability_notes": "Chrome-tanned leather scraps require special handling to prevent hexavalent chromium leaching.",
       "risks": "HIGH RISK: Chrome VI in tanning waste is carcinogenic. Do not compost. Requires certified treatment facility.",
       "recommended_pathway": "certified_industrial_processor",
@@ -1072,9 +1976,22 @@
       "category": "Industrial Waste",
       "composition": "Natural rubber 30%, synthetic rubber, carbon black, steel wire",
       "hazard_level": "medium",
-      "possible_products": ["crumb rubber", "playground surfaces", "rubberised asphalt", "fuel TDF"],
-      "estimated_value_range": { "min": 3, "max": 20, "unit": "INR/kg" },
-      "buyer_types": ["tyre recyclers", "road construction agencies", "sports surface companies"],
+      "possible_products": [
+        "crumb rubber",
+        "playground surfaces",
+        "rubberised asphalt",
+        "fuel TDF"
+      ],
+      "estimated_value_range": {
+        "min": 3,
+        "max": 20,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "tyre recyclers",
+        "road construction agencies",
+        "sports surface companies"
+      ],
       "sustainability_notes": "Rubberised asphalt roads last 20% longer than conventional roads and reduce road noise.",
       "risks": "Open burning of rubber is illegal — toxic dioxins. Use only authorised recyclers.",
       "recommended_pathway": "certified_recycler",
@@ -1090,9 +2007,22 @@
       "category": "Industrial Waste",
       "composition": "Natural and synthetic rubber, carbon black, steel cord, fabric reinforcement",
       "hazard_level": "medium",
-      "possible_products": ["crumb rubber", "rubberised asphalt", "playground surfaces", "tyre-derived fuel"],
-      "estimated_value_range": { "min": 3, "max": 20, "unit": "INR/kg" },
-      "buyer_types": ["certified tyre recyclers", "road construction agencies", "retreaders"],
+      "possible_products": [
+        "crumb rubber",
+        "rubberised asphalt",
+        "playground surfaces",
+        "tyre-derived fuel"
+      ],
+      "estimated_value_range": {
+        "min": 3,
+        "max": 20,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "certified tyre recyclers",
+        "road construction agencies",
+        "retreaders"
+      ],
       "sustainability_notes": "Retreading tyres uses 70% less energy than manufacturing new tyres.",
       "risks": "Open burning releases toxic dioxins and is a criminal offence. CPCB-authorized recyclers only.",
       "recommended_pathway": "certified_recycler",
@@ -1108,9 +2038,21 @@
       "category": "Industrial Waste",
       "composition": "Natural and synthetic rubber, carbon black, steel cord — worn vehicle tyre",
       "hazard_level": "medium",
-      "possible_products": ["crumb rubber", "rubberised asphalt", "playground surfaces"],
-      "estimated_value_range": { "min": 3, "max": 20, "unit": "INR/kg" },
-      "buyer_types": ["certified tyre recyclers", "road agencies", "retreaders"],
+      "possible_products": [
+        "crumb rubber",
+        "rubberised asphalt",
+        "playground surfaces"
+      ],
+      "estimated_value_range": {
+        "min": 3,
+        "max": 20,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "certified tyre recyclers",
+        "road agencies",
+        "retreaders"
+      ],
       "sustainability_notes": "One recycled truck tyre = 6.5 kg of crumb rubber usable in sports surfaces or asphalt.",
       "risks": "Open burning is illegal. Use CPCB-authorized recyclers only.",
       "recommended_pathway": "certified_recycler",
@@ -1126,9 +2068,23 @@
       "category": "Biomass Waste",
       "composition": "Cellulose, lignin, hemicellulose — natural untreated wood",
       "hazard_level": "none",
-      "possible_products": ["wood pellets", "particleboard", "biochar", "firewood", "mulch"],
-      "estimated_value_range": { "min": 2, "max": 15, "unit": "INR/kg" },
-      "buyer_types": ["biomass energy plants", "furniture makers", "particle board manufacturers"],
+      "possible_products": [
+        "wood pellets",
+        "particleboard",
+        "biochar",
+        "firewood",
+        "mulch"
+      ],
+      "estimated_value_range": {
+        "min": 2,
+        "max": 15,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "biomass energy plants",
+        "furniture makers",
+        "particle board manufacturers"
+      ],
       "sustainability_notes": "Wood waste bioenergy offsets fossil fuel use. Biochar sequesters carbon for decades.",
       "risks": "Treated or painted wood may contain VOCs and lead — separate from clean wood before processing.",
       "recommended_pathway": "sell_or_process",
@@ -1144,9 +2100,21 @@
       "category": "Biomass Waste",
       "composition": "Laminated wood veneers bonded with urea/phenol formaldehyde resin",
       "hazard_level": "low",
-      "possible_products": ["particleboard filler", "wood composite panels", "fuel (calorific value)"],
-      "estimated_value_range": { "min": 1, "max": 8, "unit": "INR/kg" },
-      "buyer_types": ["particle board makers", "biomass plants", "composite material companies"],
+      "possible_products": [
+        "particleboard filler",
+        "wood composite panels",
+        "fuel (calorific value)"
+      ],
+      "estimated_value_range": {
+        "min": 1,
+        "max": 8,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "particle board makers",
+        "biomass plants",
+        "composite material companies"
+      ],
       "sustainability_notes": "Plywood contains adhesive resins — recovery value is lower than clean wood but still divertible from landfill.",
       "risks": "Formaldehyde in resins — do not burn indoors. Separate from clean wood for processing.",
       "recommended_pathway": "sell_or_process",
@@ -1162,9 +2130,22 @@
       "category": "Biomass Waste",
       "composition": "Solid wood or plywood — pallet boards and stringers",
       "hazard_level": "none",
-      "possible_products": ["repaired reusable pallets", "pallet wood furniture", "mulch", "biomass fuel"],
-      "estimated_value_range": { "min": 50, "max": 400, "unit": "INR/pallet" },
-      "buyer_types": ["pallet repair and leasing companies", "furniture makers", "logistics firms"],
+      "possible_products": [
+        "repaired reusable pallets",
+        "pallet wood furniture",
+        "mulch",
+        "biomass fuel"
+      ],
+      "estimated_value_range": {
+        "min": 50,
+        "max": 400,
+        "unit": "INR/pallet"
+      },
+      "buyer_types": [
+        "pallet repair and leasing companies",
+        "furniture makers",
+        "logistics firms"
+      ],
       "sustainability_notes": "Repairing and reusing pallets is far higher value than chipping — check condition before disposal.",
       "risks": "Pallets treated with methyl bromide (MB marked) are hazardous — do not chip or burn.",
       "recommended_pathway": "reuse_or_repair",
@@ -1180,9 +2161,21 @@
       "category": "Construction Waste",
       "composition": "Ceramic, porcelain, or terracotta clay — fired inert material",
       "hazard_level": "none",
-      "possible_products": ["recycled aggregate", "mosaic art filler", "road sub-base material"],
-      "estimated_value_range": { "min": 0.3, "max": 4, "unit": "INR/kg" },
-      "buyer_types": ["road contractors", "aggregate suppliers", "mosaic artists"],
+      "possible_products": [
+        "recycled aggregate",
+        "mosaic art filler",
+        "road sub-base material"
+      ],
+      "estimated_value_range": {
+        "min": 0.3,
+        "max": 4,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "road contractors",
+        "aggregate suppliers",
+        "mosaic artists"
+      ],
       "sustainability_notes": "Crushed tiles are an excellent sub-base aggregate for road construction and landscaping.",
       "risks": "Sharp fragments during handling. Use gloves and boots.",
       "recommended_pathway": "recycle_or_reuse",
@@ -1198,9 +2191,17 @@
       "category": "Hazardous Waste",
       "composition": "Chrysotile or amphibole asbestos fiber — bonded in cement or insulation board",
       "hazard_level": "critical",
-      "possible_products": ["none — must be encapsulated and safely landfilled"],
-      "estimated_value_range": { "min": 0, "max": 0, "unit": "INR/kg" },
-      "buyer_types": ["CPCB licensed hazardous waste disposal facilities only"],
+      "possible_products": [
+        "none — must be encapsulated and safely landfilled"
+      ],
+      "estimated_value_range": {
+        "min": 0,
+        "max": 0,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "CPCB licensed hazardous waste disposal facilities only"
+      ],
       "sustainability_notes": "No recovery pathway. Safe containment and disposal is the only responsible option.",
       "risks": "CRITICAL: Asbestos fibers cause mesothelioma and lung cancer. Any disturbance releases carcinogenic fibers. NEVER drill, cut, sand, or break asbestos-containing material. This is a notifiable hazard.",
       "recommended_pathway": "certified_hazardous_waste_facility_only",
@@ -1216,9 +2217,21 @@
       "category": "E-waste",
       "composition": "Desktop computers — PCB, CPU, RAM, HDD, PSU, aluminium/steel chassis, copper wiring",
       "hazard_level": "critical",
-      "possible_products": ["precious metal recovery (gold, silver, palladium)", "copper wiring", "refurbished components"],
-      "estimated_value_range": { "min": 50, "max": 300, "unit": "INR/unit" },
-      "buyer_types": ["CPCB certified e-waste recyclers only", "refurbishers", "EPR take-back programs"],
+      "possible_products": [
+        "precious metal recovery (gold, silver, palladium)",
+        "copper wiring",
+        "refurbished components"
+      ],
+      "estimated_value_range": {
+        "min": 50,
+        "max": 300,
+        "unit": "INR/unit"
+      },
+      "buyer_types": [
+        "CPCB certified e-waste recyclers only",
+        "refurbishers",
+        "EPR take-back programs"
+      ],
       "sustainability_notes": "A computer PCB contains 40-50x more gold per tonne than gold ore. Responsible recycling is critical.",
       "risks": "CRITICAL: Contains lead solder, cadmium, mercury, brominated flame retardants. Toxic to humans and environment. E-Waste Management Rules 2022 mandate authorised recyclers only.",
       "recommended_pathway": "certified_e_waste_recycler_only",
@@ -1234,9 +2247,21 @@
       "category": "E-waste",
       "composition": "Laptop computer — Li-ion battery, LCD screen, PCB, aluminium shell, copper traces",
       "hazard_level": "critical",
-      "possible_products": ["precious metal recovery", "battery material recovery", "refurbished unit"],
-      "estimated_value_range": { "min": 100, "max": 500, "unit": "INR/unit" },
-      "buyer_types": ["CPCB certified e-waste recyclers", "refurbishers", "OEM take-back schemes"],
+      "possible_products": [
+        "precious metal recovery",
+        "battery material recovery",
+        "refurbished unit"
+      ],
+      "estimated_value_range": {
+        "min": 100,
+        "max": 500,
+        "unit": "INR/unit"
+      },
+      "buyer_types": [
+        "CPCB certified e-waste recyclers",
+        "refurbishers",
+        "OEM take-back schemes"
+      ],
       "sustainability_notes": "Li-ion battery recycling recovers lithium, cobalt, and nickel — critical for EV manufacturing.",
       "risks": "CRITICAL: Li-ion battery can self-ignite if damaged. Lead, mercury, cadmium in PCB. E-Waste Management Rules 2022.",
       "recommended_pathway": "certified_e_waste_recycler_only",
@@ -1252,9 +2277,21 @@
       "category": "E-waste",
       "composition": "Smartphone — Li-ion battery, LCD/OLED screen, PCB, camera module, sensors",
       "hazard_level": "critical",
-      "possible_products": ["gold, silver, palladium recovery from PCB", "Li-ion material recovery", "refurbished phone"],
-      "estimated_value_range": { "min": 50, "max": 2000, "unit": "INR/unit" },
-      "buyer_types": ["CPCB certified e-waste recyclers", "refurbishers", "OEM take-back programs"],
+      "possible_products": [
+        "gold, silver, palladium recovery from PCB",
+        "Li-ion material recovery",
+        "refurbished phone"
+      ],
+      "estimated_value_range": {
+        "min": 50,
+        "max": 2000,
+        "unit": "INR/unit"
+      },
+      "buyer_types": [
+        "CPCB certified e-waste recyclers",
+        "refurbishers",
+        "OEM take-back programs"
+      ],
       "sustainability_notes": "Mobile phone PCBs contain more gold per kg than gold ore — high intrinsic value when properly recycled.",
       "risks": "CRITICAL: Li-ion fire risk if punctured. Lead, cadmium, beryllium in components. E-Waste Management Rules 2022.",
       "recommended_pathway": "certified_e_waste_recycler_only",
@@ -1270,9 +2307,21 @@
       "category": "E-waste",
       "composition": "Mobile phones, smartphones, feature phones — Li-ion battery, PCB, display",
       "hazard_level": "critical",
-      "possible_products": ["precious metal recovery", "battery material recovery", "refurbished devices"],
-      "estimated_value_range": { "min": 50, "max": 2000, "unit": "INR/unit" },
-      "buyer_types": ["CPCB certified e-waste recyclers", "refurbishers", "OEM take-back programs"],
+      "possible_products": [
+        "precious metal recovery",
+        "battery material recovery",
+        "refurbished devices"
+      ],
+      "estimated_value_range": {
+        "min": 50,
+        "max": 2000,
+        "unit": "INR/unit"
+      },
+      "buyer_types": [
+        "CPCB certified e-waste recyclers",
+        "refurbishers",
+        "OEM take-back programs"
+      ],
       "sustainability_notes": "Smartphones contain over 60 elements including critical rare earth metals.",
       "risks": "CRITICAL: Li-ion fire risk. E-Waste Management Rules 2022.",
       "recommended_pathway": "certified_e_waste_recycler_only",
@@ -1288,9 +2337,20 @@
       "category": "E-waste",
       "composition": "LCD monitor — backlight, LCD panel, PCB, plastic housing, copper wiring",
       "hazard_level": "critical",
-      "possible_products": ["copper and aluminium recovery", "plastic casing recycle", "glass cullet (LCD)"],
-      "estimated_value_range": { "min": 50, "max": 200, "unit": "INR/unit" },
-      "buyer_types": ["CPCB certified e-waste recyclers", "refurbishers"],
+      "possible_products": [
+        "copper and aluminium recovery",
+        "plastic casing recycle",
+        "glass cullet (LCD)"
+      ],
+      "estimated_value_range": {
+        "min": 50,
+        "max": 200,
+        "unit": "INR/unit"
+      },
+      "buyer_types": [
+        "CPCB certified e-waste recyclers",
+        "refurbishers"
+      ],
       "sustainability_notes": "LCD monitors contain indium in the display — a critical rare earth metal recovered through specialist recycling.",
       "risks": "CRITICAL: CRT monitors (older models) contain up to 4 kg of lead — critical hazard. LCD contains fluorescent lamps (mercury) in older models. E-Waste Management Rules 2022.",
       "recommended_pathway": "certified_e_waste_recycler_only",
@@ -1306,9 +2366,20 @@
       "category": "E-waste",
       "composition": "Inkjet/laser printer — PCB, rollers, motors, toner/ink cartridges, plastic casing",
       "hazard_level": "critical",
-      "possible_products": ["copper and steel recovery", "plastic casing recycle", "cartridge refill"],
-      "estimated_value_range": { "min": 30, "max": 150, "unit": "INR/unit" },
-      "buyer_types": ["CPCB certified e-waste recyclers", "cartridge refilling businesses"],
+      "possible_products": [
+        "copper and steel recovery",
+        "plastic casing recycle",
+        "cartridge refill"
+      ],
+      "estimated_value_range": {
+        "min": 30,
+        "max": 150,
+        "unit": "INR/unit"
+      },
+      "buyer_types": [
+        "CPCB certified e-waste recyclers",
+        "cartridge refilling businesses"
+      ],
       "sustainability_notes": "Printer cartridges should be removed and recycled separately — they have higher individual recovery value.",
       "risks": "Toner powder is a fine carcinogenic dust. Do not dismantle without PPE. E-Waste Management Rules 2022.",
       "recommended_pathway": "certified_e_waste_recycler_only",
@@ -1324,9 +2395,20 @@
       "category": "Hazardous Waste",
       "composition": "Valve-regulated lead acid (VRLA) batteries — lead plates, sulfuric acid electrolyte, ABS casing",
       "hazard_level": "critical",
-      "possible_products": ["lead recovery", "ABS plastic recovery", "acid neutralisation"],
-      "estimated_value_range": { "min": 25, "max": 60, "unit": "INR/kg" },
-      "buyer_types": ["CPCB authorized battery recyclers only", "lead smelters"],
+      "possible_products": [
+        "lead recovery",
+        "ABS plastic recovery",
+        "acid neutralisation"
+      ],
+      "estimated_value_range": {
+        "min": 25,
+        "max": 60,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "CPCB authorized battery recyclers only",
+        "lead smelters"
+      ],
       "sustainability_notes": "Lead acid batteries have one of the highest recycling rates globally (~95%). Lead is almost infinitely recyclable.",
       "risks": "CRITICAL: Corrosive sulfuric acid, heavy lead content. NEVER dispose in general waste. Batteries Management Rules 2022.",
       "recommended_pathway": "certified_battery_recycler_only",
@@ -1342,9 +2424,20 @@
       "category": "Hazardous Waste",
       "composition": "Lead plates, sulfuric acid electrolyte, polypropylene casing — automotive and industrial",
       "hazard_level": "critical",
-      "possible_products": ["lead recovery (99.9% recyclable)", "ABS plastic", "sulfuric acid neutralisation"],
-      "estimated_value_range": { "min": 30, "max": 80, "unit": "INR/kg" },
-      "buyer_types": ["CPCB authorized battery recyclers only", "lead smelters"],
+      "possible_products": [
+        "lead recovery (99.9% recyclable)",
+        "ABS plastic",
+        "sulfuric acid neutralisation"
+      ],
+      "estimated_value_range": {
+        "min": 30,
+        "max": 80,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "CPCB authorized battery recyclers only",
+        "lead smelters"
+      ],
       "sustainability_notes": "Lead acid batteries have the highest recycling rate of any product (~99% in India).",
       "risks": "CRITICAL: Corrosive sulfuric acid. Explosive hydrogen gas if sparks nearby. Lead is highly toxic. Batteries Management Rules 2022.",
       "recommended_pathway": "certified_battery_recycler_only",
@@ -1360,9 +2453,20 @@
       "category": "Hazardous Waste",
       "composition": "Lithium-ion or lithium-polymer cells — lithium, cobalt oxide, graphite, electrolyte",
       "hazard_level": "critical",
-      "possible_products": ["lithium carbonate recovery", "cobalt recovery", "graphite recovery"],
-      "estimated_value_range": { "min": 50, "max": 200, "unit": "INR/kg" },
-      "buyer_types": ["CPCB certified Li-ion battery recyclers", "battery material recovery companies"],
+      "possible_products": [
+        "lithium carbonate recovery",
+        "cobalt recovery",
+        "graphite recovery"
+      ],
+      "estimated_value_range": {
+        "min": 50,
+        "max": 200,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "CPCB certified Li-ion battery recyclers",
+        "battery material recovery companies"
+      ],
       "sustainability_notes": "Li-ion battery materials (cobalt, lithium) are critical for EV manufacturing — high future value.",
       "risks": "CRITICAL: Thermal runaway risk if punctured, crushed, or overheated — can cause fire. NEVER dispose in regular bins. Batteries Management Rules 2022.",
       "recommended_pathway": "certified_battery_recycler_only",
@@ -1378,9 +2482,22 @@
       "category": "Hazardous Waste",
       "composition": "Glass tube, mercury vapour, phosphor coating, aluminium end caps",
       "hazard_level": "high",
-      "possible_products": ["mercury recovery", "phosphor powder recovery", "glass cullet", "aluminium recovery"],
-      "estimated_value_range": { "min": 5, "max": 20, "unit": "INR/unit" },
-      "buyer_types": ["lamp recyclers", "mercury recovery processors", "CPCB authorized facilities"],
+      "possible_products": [
+        "mercury recovery",
+        "phosphor powder recovery",
+        "glass cullet",
+        "aluminium recovery"
+      ],
+      "estimated_value_range": {
+        "min": 5,
+        "max": 20,
+        "unit": "INR/unit"
+      },
+      "buyer_types": [
+        "lamp recyclers",
+        "mercury recovery processors",
+        "CPCB authorized facilities"
+      ],
       "sustainability_notes": "Mercury from fluorescent lamps is recoverable and reusable — prevents soil and water contamination.",
       "risks": "HIGH RISK: Each lamp contains 3-5 mg mercury — causes neurological damage. NEVER break lamps. Do not dispose in general waste.",
       "recommended_pathway": "certified_lamp_recycler",
@@ -1396,9 +2513,20 @@
       "category": "E-waste",
       "composition": "LED chips, aluminium heat sink, driver PCB, plastic/glass cover",
       "hazard_level": "low",
-      "possible_products": ["aluminium recovery", "copper recovery", "LED component reuse"],
-      "estimated_value_range": { "min": 5, "max": 15, "unit": "INR/unit" },
-      "buyer_types": ["e-waste recyclers", "aluminium scrap dealers"],
+      "possible_products": [
+        "aluminium recovery",
+        "copper recovery",
+        "LED component reuse"
+      ],
+      "estimated_value_range": {
+        "min": 5,
+        "max": 15,
+        "unit": "INR/unit"
+      },
+      "buyer_types": [
+        "e-waste recyclers",
+        "aluminium scrap dealers"
+      ],
       "sustainability_notes": "LED bulbs contain no mercury — safer than fluorescent. Aluminium heat sink is high-value.",
       "risks": "Low hazard. Driver PCB contains trace lead solder. Do not crush — dispose as e-waste, not general waste.",
       "recommended_pathway": "recycle_as_e_waste",
@@ -1414,9 +2542,20 @@
       "category": "E-waste",
       "composition": "Plastic casing, residual ink (organic solvents, pigments), copper contacts",
       "hazard_level": "medium",
-      "possible_products": ["refilled cartridges", "recycled plastic casing", "ink recovery"],
-      "estimated_value_range": { "min": 20, "max": 80, "unit": "INR/unit" },
-      "buyer_types": ["cartridge refilling businesses", "OEM take-back programs"],
+      "possible_products": [
+        "refilled cartridges",
+        "recycled plastic casing",
+        "ink recovery"
+      ],
+      "estimated_value_range": {
+        "min": 20,
+        "max": 80,
+        "unit": "INR/unit"
+      },
+      "buyer_types": [
+        "cartridge refilling businesses",
+        "OEM take-back programs"
+      ],
       "sustainability_notes": "Refilling one ink cartridge saves ~2.5 kg CO2 vs manufacturing a new one.",
       "risks": "Ink pigments may be toxic. Do not incinerate. Residual ink is a mild skin irritant.",
       "recommended_pathway": "recycle_or_refill",
@@ -1432,9 +2571,21 @@
       "category": "E-waste",
       "composition": "Fine carbon black polymer powder — iron oxide particles, wax, resin binder",
       "hazard_level": "medium",
-      "possible_products": ["refilled toner cartridge", "recycled plastic casing", "recovered toner powder"],
-      "estimated_value_range": { "min": 30, "max": 100, "unit": "INR/unit" },
-      "buyer_types": ["toner cartridge refilling services", "OEM take-back programs", "certified e-waste recyclers"],
+      "possible_products": [
+        "refilled toner cartridge",
+        "recycled plastic casing",
+        "recovered toner powder"
+      ],
+      "estimated_value_range": {
+        "min": 30,
+        "max": 100,
+        "unit": "INR/unit"
+      },
+      "buyer_types": [
+        "toner cartridge refilling services",
+        "OEM take-back programs",
+        "certified e-waste recyclers"
+      ],
       "sustainability_notes": "Toner refilling reduces cartridge manufacturing energy by ~70% per cycle.",
       "risks": "Fine toner dust is a carcinogen if inhaled. Do not empty cartridges manually. Do not incinerate.",
       "recommended_pathway": "recycle_or_refill",
@@ -1450,9 +2601,22 @@
       "category": "Organic Waste",
       "composition": "Spent tea leaves and tea bags — organic matter, nitrogen, tannic acid, some fiber",
       "hazard_level": "none",
-      "possible_products": ["compost", "natural fertilizer", "vermicompost", "plant deterrent"],
-      "estimated_value_range": { "min": 0.5, "max": 5, "unit": "INR/kg" },
-      "buyer_types": ["organic farms", "composting facilities", "mushroom cultivators"],
+      "possible_products": [
+        "compost",
+        "natural fertilizer",
+        "vermicompost",
+        "plant deterrent"
+      ],
+      "estimated_value_range": {
+        "min": 0.5,
+        "max": 5,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "organic farms",
+        "composting facilities",
+        "mushroom cultivators"
+      ],
       "sustainability_notes": "Spent tea improves soil drainage and adds nitrogen. Tannic acid acts as natural pest deterrent.",
       "risks": "Teabags with synthetic mesh (nylon) must be separated from natural fiber bags — nylon does not compost.",
       "recommended_pathway": "compost_or_sell",
@@ -1468,9 +2632,22 @@
       "category": "Inert Waste",
       "composition": "Residual mineral matter from wood, coal, or biomass combustion — silica, calcium, potassium",
       "hazard_level": "low",
-      "possible_products": ["soil amendment", "cement additive (fly ash)", "road base stabiliser", "de-icing material"],
-      "estimated_value_range": { "min": 0.2, "max": 5, "unit": "INR/kg" },
-      "buyer_types": ["cement companies (fly ash)", "organic farms (wood ash)", "road contractors"],
+      "possible_products": [
+        "soil amendment",
+        "cement additive (fly ash)",
+        "road base stabiliser",
+        "de-icing material"
+      ],
+      "estimated_value_range": {
+        "min": 0.2,
+        "max": 5,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "cement companies (fly ash)",
+        "organic farms (wood ash)",
+        "road contractors"
+      ],
       "sustainability_notes": "Wood ash is a direct substitute for agricultural lime — raises soil pH and provides potassium.",
       "risks": "Fine dust inhalation hazard. Coal/industrial ash may contain heavy metals and PAHs — test before agricultural use.",
       "recommended_pathway": "sell_or_process",
@@ -1486,9 +2663,22 @@
       "category": "Industrial Waste",
       "composition": "Fine aluminosilicate particles from coal combustion — SiO2 60%, Al2O3 25%, Fe2O3, CaO",
       "hazard_level": "low",
-      "possible_products": ["cement replacement (pozzolan)", "concrete filler", "geopolymer cement", "road sub-base"],
-      "estimated_value_range": { "min": 0.5, "max": 3, "unit": "INR/kg" },
-      "buyer_types": ["cement manufacturers", "ready-mix concrete companies", "brick manufacturers"],
+      "possible_products": [
+        "cement replacement (pozzolan)",
+        "concrete filler",
+        "geopolymer cement",
+        "road sub-base"
+      ],
+      "estimated_value_range": {
+        "min": 0.5,
+        "max": 3,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "cement manufacturers",
+        "ready-mix concrete companies",
+        "brick manufacturers"
+      ],
       "sustainability_notes": "Fly ash as cement replacement reduces CO2 by 0.85 tonnes per tonne of cement replaced.",
       "risks": "Fine inhalation hazard. May contain trace heavy metals and radioactive elements — use certified testing.",
       "recommended_pathway": "sell_or_process",
@@ -1504,9 +2694,21 @@
       "category": "Mixed Waste",
       "composition": "Unsegregated household and commercial waste — organics, paper, plastic, glass, metal, inerts",
       "hazard_level": "low",
-      "possible_products": ["mechanical-biological treatment output", "refuse-derived fuel (RDF)", "compost fraction"],
-      "estimated_value_range": { "min": 0, "max": 1, "unit": "INR/kg" },
-      "buyer_types": ["waste-to-energy plants", "RDF processors", "municipal treatment facilities"],
+      "possible_products": [
+        "mechanical-biological treatment output",
+        "refuse-derived fuel (RDF)",
+        "compost fraction"
+      ],
+      "estimated_value_range": {
+        "min": 0,
+        "max": 1,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "waste-to-energy plants",
+        "RDF processors",
+        "municipal treatment facilities"
+      ],
       "sustainability_notes": "Segregation at source recovers 3-5x more value from the same waste. Mixed waste has the lowest recovery rate of all streams.",
       "risks": "Hazardous items (batteries, chemicals) mixed in unsegregated waste create safety risks for handlers.",
       "recommended_pathway": "segregate_then_recycle",
@@ -1522,9 +2724,17 @@
       "category": "Hazardous Waste",
       "composition": "Generic hazardous waste — specific composition unknown; may include chemicals, oils, solvents, heavy metals",
       "hazard_level": "critical",
-      "possible_products": ["none until classified — refer to specific material entry"],
-      "estimated_value_range": { "min": 0, "max": 0, "unit": "INR/kg" },
-      "buyer_types": ["CPCB licensed hazardous waste treatment facilities only"],
+      "possible_products": [
+        "none until classified — refer to specific material entry"
+      ],
+      "estimated_value_range": {
+        "min": 0,
+        "max": 0,
+        "unit": "INR/kg"
+      },
+      "buyer_types": [
+        "CPCB licensed hazardous waste treatment facilities only"
+      ],
       "sustainability_notes": "Proper classification and disposal prevents groundwater contamination and soil toxicity for decades.",
       "risks": "CRITICAL: Do not handle, move, or dispose of unclassified hazardous waste without professional assessment. Legal liability under Environment Protection Act 1986.",
       "recommended_pathway": "classify_then_route_to_certified_facility",

@@ -167,6 +167,7 @@ def analyze_waste_batch(items: list) -> dict:
         for r in known if r.get("hazard_warning")
     ]
 
+    meta = _kb_meta()
     return {
         "agent":                   "Waste-to-Wealth Agent",
         "status":                  "analyzed",
@@ -183,6 +184,8 @@ def analyze_waste_batch(items: list) -> dict:
         "top_opportunity_pathway": top_item.get("recommended_pathway") if top_item else None,
         "compliance_warnings":     compliance_warnings,
         "items":                   results,
+        "kb_last_verified":        meta.get("kb_last_verified", "unknown"),
+        "kb_source_note":          meta.get("source_note", ""),
         "confidence":              0.88,
         "disclaimer":              get_disclaimer(),
     }
@@ -338,6 +341,10 @@ def normalize_waste_key(raw_key: str) -> str:
     return k
 
 
+def _kb_meta() -> dict:
+    return _get_kb().get("_meta", {})
+
+
 def get_kb_materials_list() -> list[dict]:
     """Return sorted, categorized list of all KB materials for the frontend dropdown."""
     kb = _get_kb()
@@ -470,6 +477,7 @@ Rules:
 
         ai_recommendation, ai_used = call_openai(prompt, fallback_rec)
 
+    meta = _kb_meta()
     return {
         "agent":                    "Waste-to-Wealth Agent",
         "status":                   "analyzed",
@@ -491,6 +499,8 @@ Rules:
         "ai_recommendation":        ai_recommendation,
         "ai_powered":               ai_used,
         "reasoning_trace":          reasoning_trace,
+        "kb_last_verified":         meta.get("kb_last_verified", "unknown"),
+        "kb_source_note":           meta.get("source_note", ""),
         "confidence":               0.92,
         "disclaimer":               get_disclaimer(),
         # Enriched fields — present in expanded knowledge base entries
