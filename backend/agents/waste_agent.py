@@ -1,3 +1,6 @@
+# OpenAI is used ONLY to generate the following narrative field: ai_recommendation.
+# All other fields (hidden_value_score, estimated_recovery, hazard_warning, reasoning_trace)
+# are computed by deterministic Python above the OpenAI call.
 from core.simulation import load_waste_kb
 from core.guardrails import apply_hazard_guardrail, validate_quantity, get_disclaimer, sanitize_prompt_input
 from core.openai_client import call_openai
@@ -497,7 +500,8 @@ Rules:
         "estimated_recovery":       estimated_recovery,
         "estimated_recovery_note":  estimated_recovery_note,
         "ai_recommendation":        ai_recommendation,
-        "ai_powered":               ai_used,
+        "ai_enhanced":              ai_used,
+        "computation_type":         "deterministic",
         "reasoning_trace":          reasoning_trace,
         "kb_last_verified":         meta.get("kb_last_verified", "unknown"),
         "kb_source_note":           meta.get("source_note", ""),

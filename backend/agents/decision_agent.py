@@ -1,3 +1,6 @@
+# OpenAI is used ONLY to generate the following narrative field: top_action_explanation.
+# All numeric fields (priority_score, roi, urgency, feasibility, cost_saving_inr) are
+# computed by deterministic Python above the OpenAI call.
 from core.guardrails import get_disclaimer
 from core.openai_client import call_openai
 
@@ -182,7 +185,7 @@ Rules:
 
         top_action_explanation, ai_used = call_openai(prompt, fallback_explanation)
         top["ai_priority_explanation"] = top_action_explanation
-        top["ai_powered"]              = ai_used
+        top["ai_enhanced"]             = ai_used
 
     reasoning_trace = [
         f"Step 1 — Received results from {len(actions)} domain agents.",
@@ -203,6 +206,7 @@ Rules:
         "top_priority_domain":         actions[0]["domain"] if actions else None,
         "top_action_explanation":      top_action_explanation,
         "ai_enhanced":                 ai_used,
+        "computation_type":            "deterministic",
         "reasoning_trace":             reasoning_trace,
         "confidence":                  0.90,
         "disclaimer":                  get_disclaimer(),

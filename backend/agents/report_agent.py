@@ -1,3 +1,6 @@
+# OpenAI is used ONLY to generate the following narrative field: executive_summary.
+# All numeric fields (silent_losses, campus_health_index, building_risk_ranking, action_plan
+# thresholds, sdg_alignment, data_notice) are computed by deterministic Python above the call.
 from datetime import datetime
 from core.guardrails import get_disclaimer, get_simulated_notice, sanitize_prompt_input
 from core.openai_client import call_openai, openai_status
@@ -184,6 +187,7 @@ Rules:
         "analysis_metadata":  analysis_metadata or {},
         "executive_summary":  executive_summary,
         "ai_enhanced":        ai_used,
+        "computation_type":   "deterministic",
         "ai_layer":           openai_status(),
         "action_plan":        action_plan,
         "silent_losses":      silent_losses,

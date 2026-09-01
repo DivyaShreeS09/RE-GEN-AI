@@ -112,6 +112,54 @@ def health_check():
     }
 
 
+@app.get("/system/architecture", tags=["System"], summary="System architecture disclosure")
+def system_architecture():
+    """
+    Machine-readable disclosure of which agents are deterministic Python vs OpenAI-narrated.
+    Intended for technical reviewers and judges who want to verify claims without reading source.
+    """
+    from core.openai_client import openai_status
+    return {
+        "architecture_version": "1.0",
+        "computation_model": "deterministic_core_with_llm_narration",
+        "summary": (
+            "All quantitative analysis (anomaly detection, severity classification, cost/CO2 math, "
+            "RE:GEN scoring, ROI calculations) is deterministic Python. "
+            "OpenAI (gpt-4o-mini) is used exclusively to generate narrative text in 3 specific call sites."
+        ),
+        "deterministic_agents": [
+            {"agent": "Water Leakage Agent",       "endpoint": "/analyze/water",        "openai_calls": 0},
+            {"agent": "Energy Optimization Agent", "endpoint": "/analyze/energy",       "openai_calls": 0},
+            {"agent": "Pollution & Impact Agent",  "endpoint": "/analyze/impact",       "openai_calls": 0},
+            {"agent": "RE:GEN Score Agent",        "endpoint": "/generate/action-plan", "openai_calls": 0},
+        ],
+        "llm_narrated_agents": [
+            {
+                "agent": "Waste-to-Wealth Agent",
+                "endpoint": "/analyze/waste",
+                "openai_calls": 1,
+                "llm_fields": ["ai_recommendation"],
+                "deterministic_fields": ["hidden_value_score", "estimated_recovery", "hazard_warning", "reasoning_trace"],
+            },
+            {
+                "agent": "Decision Engine Agent",
+                "endpoint": "/generate/action-plan",
+                "openai_calls": 1,
+                "llm_fields": ["top_action_explanation"],
+                "deterministic_fields": ["ranked_actions", "priority_score", "roi", "urgency", "feasibility"],
+            },
+            {
+                "agent": "Report Agent",
+                "endpoint": "/generate/action-plan",
+                "openai_calls": 1,
+                "llm_fields": ["executive_summary"],
+                "deterministic_fields": ["silent_losses", "campus_health_index", "building_risk_ranking", "action_plan", "sdg_alignment"],
+            },
+        ],
+        "openai_status": openai_status(),
+    }
+
+
 @app.get("/analyze/waste/materials", tags=["Waste"], summary="List waste materials")
 def get_waste_materials():
     """
