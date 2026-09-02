@@ -37,7 +37,7 @@ jobs:
         run: |
           node --version
           npm --version
-          npm ci
+          npm install
       - name: Lint
         working-directory: frontend
         run: npm run lint
