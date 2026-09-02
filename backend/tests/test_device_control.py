@@ -7,8 +7,7 @@ from fastapi.testclient import TestClient
 
 
 class TestDeviceControlUnit:
-    def test_known_action_returns_executed(self, monkeypatch):
-        monkeypatch.delenv("DEVICE_CONTROL_LIVE", raising=False)
+    def test_known_action_returns_executed(self):
         from core.device_control import execute_action
         result = execute_action("W1")
         assert result["status"] == "executed"
@@ -16,27 +15,19 @@ class TestDeviceControlUnit:
         assert result["mode"] == "mock"
         assert "simulation_note" in result
 
-    def test_unknown_action_returns_unknown(self, monkeypatch):
-        monkeypatch.delenv("DEVICE_CONTROL_LIVE", raising=False)
+    def test_unknown_action_returns_unknown(self):
         from core.device_control import execute_action
         result = execute_action("UNKNOWN_XYZ")
         assert result["status"] == "unknown_action"
         assert result["mode"] == "mock"
 
-    def test_live_mode_label(self, monkeypatch):
-        monkeypatch.setenv("DEVICE_CONTROL_LIVE", "true")
-        from core.device_control import execute_action
-        result = execute_action("E1")
-        assert result["mode"] == "live"
-        assert "LIVE" in result["message"]
-
-    def test_all_known_actions_execute(self, monkeypatch):
-        monkeypatch.delenv("DEVICE_CONTROL_LIVE", raising=False)
+    def test_all_known_actions_execute(self):
         from core.device_control import execute_action, _KNOWN_ACTIONS
         for action_id in _KNOWN_ACTIONS:
             result = execute_action(action_id)
             assert result["status"] == "executed"
             assert result["action_id"] == action_id
+            assert result["mode"] == "mock"
 
 
 class TestDeviceControlEndpoint:

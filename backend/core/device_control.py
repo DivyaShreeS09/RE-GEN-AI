@@ -2,11 +2,9 @@
 Device control simulation for action execution (prompt 2.4).
 
 All executions are simulated — no real hardware is connected.
-Set DEVICE_CONTROL_LIVE=true env var to label responses as "live mode"
-(still simulated; exists to allow integration testing of the mode label).
+Mode is always "mock"; "live" is never claimed without a real external call.
 """
 
-import os
 from datetime import datetime, timezone
 
 _KNOWN_ACTIONS = {
@@ -20,14 +18,13 @@ _KNOWN_ACTIONS = {
 def execute_action(action_id: str) -> dict:
     """
     Simulate executing a device control action.
-    Returns a result dict with mode, status, and a simulation note.
+    Always returns mode='mock'; no real hardware is contacted.
     """
-    mode = "live" if os.environ.get("DEVICE_CONTROL_LIVE", "false").lower() == "true" else "mock"
     action_meta = _KNOWN_ACTIONS.get(action_id)
     if action_meta is None:
         return {
             "action_id": action_id,
-            "mode": mode,
+            "mode": "mock",
             "status": "unknown_action",
             "message": f"Action '{action_id}' is not registered in the device control registry.",
             "executed_at": datetime.now(timezone.utc).isoformat(),
@@ -37,10 +34,10 @@ def execute_action(action_id: str) -> dict:
         "action_id": action_id,
         "action_name": action_meta["name"],
         "device_type": action_meta["device_type"],
-        "mode": mode,
+        "mode": "mock",
         "status": "executed",
         "message": (
-            f"[{mode.upper()} MODE] Command dispatched to {action_meta['device_type']} "
+            f"[MOCK MODE] Command dispatched to {action_meta['device_type']} "
             f"for action '{action_meta['name']}'."
         ),
         "executed_at": datetime.now(timezone.utc).isoformat(),
