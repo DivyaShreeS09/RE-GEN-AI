@@ -725,7 +725,7 @@ export default function App() {
           <AgentWarRoom initialData={warRoomData} wasteResult={wasteResult} uploadResult={uploadResult} />
 
           <div className="section-divider" />
-          <ActionPlan data={actionPlanData} selectedBuilding={selectedBuilding} />
+          <ActionPlan data={actionPlanData} selectedBuilding={selectedBuilding} analysisId={uploadResult?.analysis_id} />
 
           <div className="section-divider" />
           <WhyThisMatters />

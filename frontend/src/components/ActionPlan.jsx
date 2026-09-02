@@ -1,4 +1,5 @@
-import { Clock, Calendar, CalendarDays, TrendingUp, CheckCircle, Download, User, Printer, Award, Building2, Globe } from 'lucide-react'
+import { Clock, Calendar, CalendarDays, TrendingUp, CheckCircle, Download, User, Printer, Award, Building2, Globe, ShieldCheck } from 'lucide-react'
+import { BASE_URL } from '../api'
 
 const PRIORITY_CONFIG = {
   immediate:    { label: 'CRITICAL',  color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.3)' },
@@ -330,7 +331,7 @@ function BuildingRankingSection({ ranking }) {
   )
 }
 
-export default function ActionPlan({ data, selectedBuilding }) {
+export default function ActionPlan({ data, selectedBuilding, analysisId }) {
   if (!data) return null
 
   const plan           = data?.report?.action_plan       || data?.action_plan
@@ -685,6 +686,18 @@ ${sdgAlignment?.length ? `
             <Download className="w-4 h-4" />
             Export JSON
           </button>
+          {analysisId && (
+            <a
+              href={`${BASE_URL}/report/${analysisId}/audit-record.pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary flex items-center gap-1.5"
+              title="Download tamper-evident audit record (SHA-256 signed)"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Audit Record
+            </a>
+          )}
         </div>
       </div>
 

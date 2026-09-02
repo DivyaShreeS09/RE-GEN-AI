@@ -25,7 +25,8 @@ from agents.decision_agent import generate_decisions
 from agents.regen_score_agent import compute_regen_score
 from agents.report_agent import generate_report
 from core.guardrails import get_disclaimer, get_simulated_notice, sanitize_prompt_input
-from core.database import save_run, get_history
+from core.database import save_run, get_history, get_run_by_id
+from core.audit import build_audit_record, build_pdf
 from core.openai_client import call_openai, openai_status
 from core.data_processor import (
     validate_water_df, validate_energy_df, validate_fuel_df,
@@ -983,9 +984,10 @@ async def analyze_upload(
             wasted_kwh=effective_energy.get("total_wasted_kwh", 0),
             co2_kg=impact.get("total_co2_saved_kg", 0),
             payload_dict={
-                "water": effective_water,
-                "energy": effective_energy,
-                "impact": impact,
+                "water":      effective_water,
+                "energy":     effective_energy,
+                "impact":     impact,
+                "decision":   decision,
                 "regen_score": regen,
             },
         )
@@ -1002,6 +1004,29 @@ async def analyze_upload(
 def analysis_history(org_name: str, limit: int = 20):
     """Return the last N analysis runs for the given org_name, newest first."""
     return {"org_name": org_name, "runs": get_history(org_name, limit=min(limit, 100))}
+
+
+@app.get("/report/{analysis_id}/audit-record", tags=["Audit"], summary="JSON audit record for an analysis run")
+def get_audit_record(analysis_id: int):
+    run = get_run_by_id(analysis_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail=f"Analysis run {analysis_id} not found")
+    return build_audit_record(run)
+
+
+@app.get("/report/{analysis_id}/audit-record.pdf", tags=["Audit"], summary="PDF audit record for an analysis run")
+def get_audit_record_pdf(analysis_id: int):
+    run = get_run_by_id(analysis_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail=f"Analysis run {analysis_id} not found")
+    record = build_audit_record(run)
+    pdf_bytes = build_pdf(record)
+    filename = f"regen-audit-{analysis_id}.pdf"
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @app.get("/demo-data/{dataset_type}", tags=["Data"], summary="Download a demo dataset CSV")

@@ -64,6 +64,27 @@ def save_run(
         return row.id
 
 
+def get_run_by_id(analysis_id: int) -> dict | None:
+    with Session(engine) as session:
+        row = session.get(AnalysisRun, analysis_id)
+        if row is None:
+            return None
+    return {
+        "id":                   row.id,
+        "org_name":             row.org_name,
+        "org_type":             row.org_type,
+        "created_at":           row.created_at.isoformat(),
+        "coverage_pct":         row.coverage_pct,
+        "confidence_pct":       row.confidence_pct,
+        "regen_score_before":   row.regen_score_before,
+        "regen_score_after":    row.regen_score_after,
+        "total_wasted_liters":  row.total_wasted_liters,
+        "total_wasted_kwh":     row.total_wasted_kwh,
+        "total_co2_saved_kg":   row.total_co2_saved_kg,
+        "payload":              json.loads(row.payload) if row.payload else {},
+    }
+
+
 def get_history(org_name: str, limit: int = 20) -> list[dict]:
     with Session(engine) as session:
         rows = (
