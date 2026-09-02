@@ -1,6 +1,7 @@
 from core.simulation import load_water_data
 from core.guardrails import get_disclaimer, get_simulated_notice
 from core.data_processor import auto_detect_anomalies_water
+from core.anomaly_detection import detect_anomalies_water_if
 
 NIGHT_HOURS = list(range(0, 6))
 BASELINE_NIGHT_LITERS = 12
@@ -14,6 +15,7 @@ _DEMO_LEVEL = {
 
 
 def analyze_water(df=None, is_uploaded: bool = False, analysis_level_info: dict = None) -> dict:
+    _if_meta = None
     if df is None:
         df = load_water_data()
         level_info = _DEMO_LEVEL
@@ -24,7 +26,7 @@ def analyze_water(df=None, is_uploaded: bool = False, analysis_level_info: dict 
         if _run_anomaly:
             has_anomalies = bool(df["anomaly"].any())
             if not has_anomalies:
-                df = auto_detect_anomalies_water(df)
+                df, _if_meta = detect_anomalies_water_if(df)
         # If not running anomaly detection, anomaly column stays all False
 
     anomaly_rows = df[df["anomaly"] == True].copy()
@@ -100,14 +102,22 @@ def analyze_water(df=None, is_uploaded: bool = False, analysis_level_info: dict 
 
     # Reasoning trace
     if _run_anomaly:
+        _method_note = (
+            f"IsolationForest fit on {_if_meta['n_locations_if']} location(s); "
+            f"{_if_meta['n_locations_fallback']} location(s) used 4× night-baseline fallback "
+            f"(< {_if_meta['min_samples_threshold']} samples). "
+            f"Method: {_if_meta['method']}."
+            if _if_meta else "Pre-labeled anomalies used (demo / uploaded with anomaly column)."
+        )
         reasoning_trace = [
             f"Step 1 — Loaded {level_info['label']} water data: {len(df)} records.",
-            f"Step 2 — Identified {len(anomaly_rows)} anomalous readings across {len(anomaly_events)} event(s).",
-            f"Step 3 — Night-hour baseline: {round(baseline, 1)} L/hr.",
-            f"Step 4 — Estimated wasted liters: {wasted_liters} L.",
-            f"Step 5 — Severity: {severity.upper()}.",
-            f"Step 6 — Estimated cost: Rs. {estimated_cost_inr}.",
-            f"Step 7 — CO2 equivalent: {co2_equivalent_kg} kg.",
+            f"Step 2 — Anomaly detection: {_method_note}",
+            f"Step 3 — Identified {len(anomaly_rows)} anomalous readings across {len(anomaly_events)} event(s).",
+            f"Step 4 — Night-hour baseline: {round(baseline, 1)} L/hr.",
+            f"Step 5 — Estimated wasted liters: {wasted_liters} L.",
+            f"Step 6 — Severity: {severity.upper()}.",
+            f"Step 7 — Estimated cost: Rs. {estimated_cost_inr}.",
+            f"Step 8 — CO2 equivalent: {co2_equivalent_kg} kg.",
         ]
     else:
         reasoning_trace = [
@@ -120,8 +130,14 @@ def analyze_water(df=None, is_uploaded: bool = False, analysis_level_info: dict 
 
     # War-room level fields
     if _run_anomaly:
+        _det_method = (
+            f"IsolationForest fit per location (contamination=auto, random_state=42)"
+            if _if_meta and _if_meta["method"] == "isolation_forest"
+            else "Threshold-based or pre-labeled anomaly detection"
+        )
         war_room_reasoning = (
             f"Analyzed {len(anomaly_events)} event(s) from {len(df)} records. "
+            f"Detection: {_det_method}. "
             f"Night-hour baseline: {round(baseline, 1)} L/hr. "
             f"Excess above baseline during anomalous periods: {wasted_liters} L."
         )

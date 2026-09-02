@@ -1,6 +1,7 @@
 from core.simulation import load_energy_data
 from core.guardrails import get_disclaimer, get_simulated_notice
 from core.data_processor import auto_detect_anomalies_energy
+from core.anomaly_detection import detect_anomalies_energy_if
 
 AFTER_HOURS = list(range(0, 6)) + [22, 23]
 BASELINE_AFTER_HOURS_KWH = 2.5
@@ -14,6 +15,7 @@ _DEMO_LEVEL = {
 
 
 def analyze_energy(df=None, is_uploaded: bool = False, analysis_level_info: dict = None) -> dict:
+    _if_meta = None
     if df is None:
         df = load_energy_data()
         level_info = _DEMO_LEVEL
@@ -24,7 +26,7 @@ def analyze_energy(df=None, is_uploaded: bool = False, analysis_level_info: dict
         if _run_anomaly:
             has_anomalies = bool(df["anomaly"].any())
             if not has_anomalies:
-                df = auto_detect_anomalies_energy(df)
+                df, _if_meta = detect_anomalies_energy_if(df)
         # If not running anomaly detection, anomaly column stays all False
 
     anomaly_rows  = df[df["anomaly"] == True].copy()
@@ -102,9 +104,16 @@ def analyze_energy(df=None, is_uploaded: bool = False, analysis_level_info: dict
 
     # Reasoning trace
     if _run_anomaly:
+        _method_note = (
+            f"IsolationForest fit on {_if_meta['n_zones_if']} zone(s); "
+            f"{_if_meta['n_zones_fallback']} zone(s) used 3.5× after-hours-baseline fallback "
+            f"(< {_if_meta['min_samples_threshold']} samples). "
+            f"Method: {_if_meta['method']}."
+            if _if_meta else "Pre-labeled anomalies used (demo / uploaded with anomaly column)."
+        )
         reasoning_trace = [
             f"Step 1 — Loaded {level_info['label']} energy data: {len(df)} records.",
-            f"Step 2 — After-hours window (10 PM–6 AM): {len(AFTER_HOURS)} hours.",
+            f"Step 2 — Anomaly detection: {_method_note}",
             f"Step 3 — Found {len(anomaly_rows)} anomalous readings across {len(anomaly_events)} event(s).",
             f"Step 4 — Normal after-hours baseline: {round(baseline, 2)} kWh/hr.",
             f"Step 5 — Estimated wasted kWh: {wasted_kwh} kWh.",
@@ -123,8 +132,14 @@ def analyze_energy(df=None, is_uploaded: bool = False, analysis_level_info: dict
 
     # War-room level fields
     if _run_anomaly:
+        _det_method = (
+            f"IsolationForest fit per zone (contamination=auto, random_state=42)"
+            if _if_meta and _if_meta["method"] == "isolation_forest"
+            else "Threshold-based or pre-labeled anomaly detection"
+        )
         war_room_reasoning = (
             f"Scanned {len(df)} records for after-hours consumption anomalies. "
+            f"Detection: {_det_method}. "
             f"Normal after-hours baseline: {round(baseline, 2)} kWh/hr. "
             f"Excess above baseline in {len(anomaly_events)} event(s): {wasted_kwh} kWh."
         )

@@ -283,3 +283,74 @@ class TestDecisionAgentInstallCosts:
         assert 3000 <= cost <= 50000
         cost2, _ = _scale_install_cost("W1", 1_000_000, 0)
         assert cost2 <= 50000  # upper clamp
+
+
+# ─── IsolationForest anomaly detection (prompt 2.1) ──────────────────────────
+
+class TestIsolationForestAnomalyDetection:
+    def _make_water_df(self, n_days=7, spike=True):
+        rows = []
+        for d in range(n_days):
+            for h in range(24):
+                usage = 10.0 if h < 6 else 30.0
+                rows.append({"date": f"2024-01-{d+1:02d}", "hour": h,
+                             "usage_liters": usage, "location": "Hostel A", "anomaly": False})
+        if spike:
+            for h in range(1, 4):
+                rows[4 * 24 + h]["usage_liters"] = 250.0
+        return pd.DataFrame(rows)
+
+    def _make_energy_df(self, n_days=7, spike=True):
+        rows = []
+        for d in range(n_days):
+            for h in range(24):
+                usage = 2.0 if h in list(range(0, 6)) + [22, 23] else 15.0
+                rows.append({"date": f"2024-01-{d+1:02d}", "hour": h,
+                             "usage_kwh": usage, "zone": "Lab Block", "anomaly": False,
+                             "equipment": "Mixed"})
+        if spike:
+            for h in range(0, 4):
+                rows[3 * 24 + h]["usage_kwh"] = 80.0
+        return pd.DataFrame(rows)
+
+    def test_if_detects_planted_water_spike(self):
+        from core.anomaly_detection import detect_anomalies_water_if
+        df, meta = detect_anomalies_water_if(self._make_water_df())
+        assert df["anomaly"].any()
+        assert meta["n_locations_if"] >= 1
+
+    def test_water_fallback_for_small_dataset(self):
+        from core.anomaly_detection import detect_anomalies_water_if, MIN_SAMPLES_FOR_IF
+        # Only 12 rows — below the 24-sample threshold
+        rows = [{"date": "2024-01-01", "hour": h, "usage_liters": 10.0,
+                 "location": "Hostel A", "anomaly": False} for h in range(12)]
+        small = pd.DataFrame(rows)
+        assert len(small) < MIN_SAMPLES_FOR_IF
+        _, meta = detect_anomalies_water_if(small)
+        assert meta["n_locations_fallback"] >= 1
+
+    def test_if_detects_planted_energy_spike(self):
+        from core.anomaly_detection import detect_anomalies_energy_if
+        df, meta = detect_anomalies_energy_if(self._make_energy_df())
+        assert df["anomaly"].any()
+        assert meta["n_zones_if"] >= 1
+
+    def test_energy_fallback_for_small_dataset(self):
+        from core.anomaly_detection import detect_anomalies_energy_if, MIN_SAMPLES_FOR_IF
+        rows = [{"date": "2024-01-01", "hour": h, "usage_kwh": 2.0,
+                 "zone": "Lab Block", "anomaly": False, "equipment": "Mixed"}
+                for h in range(12)]
+        small = pd.DataFrame(rows)
+        assert len(small) < MIN_SAMPLES_FOR_IF
+        _, meta = detect_anomalies_energy_if(small)
+        assert meta["n_zones_fallback"] >= 1
+
+    def test_water_agent_reasoning_trace_mentions_detection(self):
+        result = analyze_water(df=self._make_water_df(), is_uploaded=True, analysis_level_info=_LEVEL3)
+        trace = " ".join(result["reasoning_trace"])
+        assert "IsolationForest" in trace or "detection" in trace.lower()
+
+    def test_energy_agent_reasoning_trace_mentions_detection(self):
+        result = analyze_energy(df=self._make_energy_df(), is_uploaded=True, analysis_level_info=_LEVEL3)
+        trace = " ".join(result["reasoning_trace"])
+        assert "IsolationForest" in trace or "detection" in trace.lower()
