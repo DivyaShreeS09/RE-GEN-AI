@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Clock, Calendar, CalendarDays, TrendingUp, CheckCircle, Download, User, Printer, Award, Building2, Globe, ShieldCheck } from 'lucide-react'
 import { BASE_URL } from '../api'
 
@@ -48,6 +49,7 @@ function gradeStyle(grade) {
 function PlanSection({ sectionKey, icon, title, color, items, timeline, highlightDomains }) {
   const pc = PRIORITY_CONFIG[sectionKey] || PRIORITY_CONFIG.long_term
   const ec = EFFORT_CONFIG[sectionKey]   || EFFORT_CONFIG.long_term
+  const [execState, setExecState] = useState({}) // { [item.id]: 'pending'|'done'|'error' }
 
   return (
     <div className="glass-card p-5">
@@ -140,6 +142,30 @@ function PlanSection({ sectionKey, icon, title, color, items, timeline, highligh
                     style={{ background: 'rgba(167,139,250,0.06)', border: '1px solid rgba(167,139,250,0.15)' }}>
                     <span className="text-purple-400 font-bold not-italic">AI:</span>{' '}
                     {item.ai_priority_explanation}
+                  </div>
+                )}
+                {item.id && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      disabled={!!execState[item.id]}
+                      onClick={() => {
+                        setExecState(s => ({ ...s, [item.id]: 'pending' }))
+                        fetch(`${BASE_URL}/actions/${item.id}/execute`, { method: 'POST' })
+                          .then(r => r.json())
+                          .then(() => setExecState(s => ({ ...s, [item.id]: 'done' })))
+                          .catch(() => setExecState(s => ({ ...s, [item.id]: 'error' })))
+                      }}
+                      className="text-xs px-2.5 py-1 rounded font-semibold"
+                      style={{
+                        background: execState[item.id] === 'done' ? 'rgba(0,255,136,0.1)' : 'rgba(0,229,255,0.08)',
+                        border: `1px solid ${execState[item.id] === 'done' ? 'rgba(0,255,136,0.3)' : 'rgba(0,229,255,0.25)'}`,
+                        color: execState[item.id] === 'done' ? '#00ff88' : execState[item.id] === 'error' ? '#ef4444' : '#00e5ff',
+                        cursor: execState[item.id] ? 'default' : 'pointer',
+                        opacity: execState[item.id] === 'pending' ? 0.6 : 1,
+                      }}>
+                      {execState[item.id] === 'done' ? '✓ Executed' : execState[item.id] === 'error' ? '✗ Failed' : execState[item.id] === 'pending' ? 'Executing…' : 'Execute Now'}
+                    </button>
+                    <span className="text-xs text-slate-600">MOCK simulation — no real hardware</span>
                   </div>
                 )}
               </div>

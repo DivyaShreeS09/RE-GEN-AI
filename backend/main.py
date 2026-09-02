@@ -29,6 +29,7 @@ from core.guardrails import get_disclaimer, get_simulated_notice, sanitize_promp
 from core.database import save_run, get_history, get_run_by_id
 from core.audit import build_audit_record, build_pdf
 from core.alerting import send_alert
+from core.device_control import execute_action
 from core.openai_client import call_openai, openai_status
 from core.data_processor import (
     validate_water_df, validate_energy_df, validate_fuel_df,
@@ -1052,6 +1053,17 @@ def get_audit_record_pdf(analysis_id: int):
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@app.post("/actions/{action_id}/execute", tags=["Device Control"], summary="Simulate executing a device control action")
+def execute_device_action(action_id: str):
+    """
+    Simulates dispatching a device control command for the given action_id.
+    All executions are simulated — no real hardware is connected.
+    Set DEVICE_CONTROL_LIVE=true to label responses as live mode (still simulated).
+    """
+    result = execute_action(action_id)
+    return result
 
 
 @app.get("/demo-data/{dataset_type}", tags=["Data"], summary="Download a demo dataset CSV")
