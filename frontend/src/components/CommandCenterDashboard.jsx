@@ -593,6 +593,15 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
         </div>
       )}
 
+      {uploadResult?.alert_sent === true && (
+        <div className="glass-card p-4 mb-6 flex items-center gap-3" style={{ border: '1px solid #f59e0b44' }}>
+          <span style={{ fontSize: 18 }}>🔔</span>
+          <p className="text-xs text-amber-400 font-semibold">
+            Slack alert sent — critical/high severity findings were reported to your team channel.
+          </p>
+        </div>
+      )}
+
       {/* Stat grid with storytelling */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {anomalyAvailable ? (

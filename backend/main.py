@@ -28,6 +28,7 @@ from agents.benchmark_agent import compute_benchmark
 from core.guardrails import get_disclaimer, get_simulated_notice, sanitize_prompt_input
 from core.database import save_run, get_history, get_run_by_id
 from core.audit import build_audit_record, build_pdf
+from core.alerting import send_alert
 from core.openai_client import call_openai, openai_status
 from core.data_processor import (
     validate_water_df, validate_energy_df, validate_fuel_df,
@@ -1012,6 +1013,12 @@ async def analyze_upload(
         response["analysis_id"] = analysis_id
     except Exception:
         pass  # persistence is non-critical — never break the analysis response
+
+    try:
+        alert_sent = send_alert(effective_water, effective_energy, org_name, response.get("analysis_id"))
+        response["alert_sent"] = alert_sent
+    except Exception:
+        response["alert_sent"] = False
 
     return response
 
