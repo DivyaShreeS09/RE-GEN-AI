@@ -25,6 +25,7 @@ from agents.decision_agent import generate_decisions
 from agents.regen_score_agent import compute_regen_score
 from agents.report_agent import generate_report
 from core.guardrails import get_disclaimer, get_simulated_notice, sanitize_prompt_input
+from core.database import save_run, get_history
 from core.openai_client import call_openai, openai_status
 from core.data_processor import (
     validate_water_df, validate_energy_df, validate_fuel_df,
@@ -951,7 +952,7 @@ async def analyze_upload(
         },
     ]
 
-    return {
+    response = {
         "mode":              "upload",
         "org_name":          org_name,
         "org_type":          org_type,
@@ -970,8 +971,38 @@ async def analyze_upload(
         "disclaimer":        get_disclaimer(),
     }
 
+    try:
+        analysis_id = save_run(
+            org_name=org_name,
+            org_type=org_type,
+            coverage_pct=coverage.get("data_coverage_pct", 0),
+            confidence_pct=confidence_pct,
+            regen_before=regen.get("before_score", 0),
+            regen_after=regen.get("after_score", 0),
+            wasted_liters=effective_water.get("total_wasted_liters", 0),
+            wasted_kwh=effective_energy.get("total_wasted_kwh", 0),
+            co2_kg=impact.get("total_co2_saved_kg", 0),
+            payload_dict={
+                "water": effective_water,
+                "energy": effective_energy,
+                "impact": impact,
+                "regen_score": regen,
+            },
+        )
+        response["analysis_id"] = analysis_id
+    except Exception:
+        pass  # persistence is non-critical — never break the analysis response
+
+    return response
+
 
 # â”€â”€ Demo data download â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+@app.get("/history/{org_name}", tags=["History"], summary="Fetch analysis run history for an org")
+def analysis_history(org_name: str, limit: int = 20):
+    """Return the last N analysis runs for the given org_name, newest first."""
+    return {"org_name": org_name, "runs": get_history(org_name, limit=min(limit, 100))}
+
 
 @app.get("/demo-data/{dataset_type}", tags=["Data"], summary="Download a demo dataset CSV")
 def download_demo_data(dataset_type: str):

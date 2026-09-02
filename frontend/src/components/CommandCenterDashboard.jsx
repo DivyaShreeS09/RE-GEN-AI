@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Droplets, Zap, Leaf, AlertTriangle, TrendingUp, DollarSign, TrendingDown, CheckCircle, Activity, Car, Home, Plane } from 'lucide-react'
 import RegenScoreGauge from './RegenScoreGauge'
 import useCountUp from '../hooks/useCountUp'
+import { getHistory } from '../api'
 
 function ScanTimeline({ anomalyAvailable }) {
   const SCAN_STAGES = [
@@ -466,6 +467,12 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
   const analysisMeta  = uploadResult?.analysis_metadata || null
   const anomalyAvailable = !isUploadMode || (analysisMeta?.anomaly_detection_available !== false)
 
+  const [historyRuns, setHistoryRuns] = useState([])
+  useEffect(() => {
+    if (!isUploadMode || !uploadResult?.org_name) return
+    getHistory(uploadResult.org_name).then(r => setHistoryRuns(r.data?.runs || [])).catch(() => {})
+  }, [isUploadMode, uploadResult?.org_name])
+
   const silent_losses  = data?.silent_losses
   const water_summary  = data?.water_summary
   const energy_summary = data?.energy_summary
@@ -522,6 +529,7 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
           improvement={regen_score?.improvement || 0}
           rating={regen_score?.target_rating || 'N/A'}
           analysisMeta={analysisMeta}
+          history={historyRuns}
         />
       </div>
 

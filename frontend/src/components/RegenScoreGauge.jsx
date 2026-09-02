@@ -1,10 +1,12 @@
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+
 const LEVEL_LABELS = {
   level1: { label: 'Preliminary',  color: '#f59e0b' },
   level2: { label: 'Operational',  color: '#00b4ff' },
   level3: { label: 'Advanced AI',  color: '#00ff88' },
 }
 
-export default function RegenScoreGauge({ before, after, improvement, rating, analysisMeta }) {
+export default function RegenScoreGauge({ before, after, improvement, rating, analysisMeta, history }) {
   const radius = 70
   const circumference = 2 * Math.PI * radius
   const beforeOffset = circumference - (before / 100) * circumference
@@ -112,6 +114,29 @@ export default function RegenScoreGauge({ before, after, improvement, rating, an
           }}>{rating}</span>
         </div>
       </div>
+
+      {Array.isArray(history) && history.length >= 2 && (
+        <div className="mt-6 w-full">
+          <p className="text-xs font-semibold text-cyan-400 uppercase tracking-widest mb-3">Score History</p>
+          <ResponsiveContainer width="100%" height={140}>
+            <LineChart data={[...history].reverse().map((r, i) => ({
+              run: `#${i + 1}`,
+              Before: Math.round(r.regen_score_before),
+              After:  Math.round(r.regen_score_after),
+            }))}>
+              <XAxis dataKey="run" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} width={28} />
+              <Tooltip
+                contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 8 }}
+                labelStyle={{ color: '#94a3b8', fontSize: 11 }}
+                itemStyle={{ fontSize: 11 }}
+              />
+              <Line type="monotone" dataKey="Before" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+              <Line type="monotone" dataKey="After"  stroke="#00ff88" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   )
 }

@@ -30,4 +30,7 @@ export const analyzeUpload = (formData) =>
 export const interpretDatasets = (payload) =>
   api.post('/interpret/datasets', payload)
 
+export const getHistory = (orgName, limit = 20) =>
+  api.get(`/history/${encodeURIComponent(orgName)}`, { params: { limit } })
+
 export const BASE_URL = BASE
