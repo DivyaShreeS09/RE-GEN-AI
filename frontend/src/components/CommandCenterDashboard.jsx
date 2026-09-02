@@ -545,6 +545,54 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
         />
       </div>
 
+      {/* Peer Benchmarking */}
+      {data?.benchmark?.available && (
+        <div className="glass-card p-5 mb-8">
+          <p className="text-xs font-bold text-cyan-400 uppercase tracking-widest mb-4">
+            Peer Benchmarking — {data.benchmark.org_type}
+          </p>
+          <div className="flex flex-wrap gap-4">
+            {[
+              { key: 'water', label: 'Water', unit: 'L/occupant/day', color: '#00b4ff' },
+              { key: 'energy', label: 'Energy', unit: 'kWh/occupant/day', color: '#f59e0b' },
+            ].map(({ key, label, color }) => {
+              const bm = data.benchmark[key]
+              if (!bm) return null
+              if (!bm.available) return (
+                <div key={key} className="flex-1 min-w-[200px]">
+                  <p className="text-xs font-semibold mb-1" style={{ color: '#94a3b8' }}>{label}</p>
+                  <p className="text-xs text-slate-600">{bm.reason}</p>
+                </div>
+              )
+              const bucketColor = {
+                top_20pct_efficient: '#00ff88',
+                typical_range: '#f59e0b',
+                bottom_20pct_high_use: '#ef4444',
+              }[bm.bucket] || '#94a3b8'
+              return (
+                <div key={key} className="flex-1 min-w-[200px]">
+                  <p className="text-xs font-semibold mb-1" style={{ color: '#94a3b8' }}>{label}</p>
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{
+                    background: bucketColor + '18',
+                    border: `1px solid ${bucketColor}44`,
+                    color: bucketColor,
+                  }}>
+                    {bm.label}
+                  </span>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {bm.value_per_occupant_per_day} {bm.unit} vs reference {bm.reference_range?.efficient_upper}–{bm.reference_range?.typical_upper}
+                  </p>
+                  <p className="text-xs text-slate-600 mt-0.5">{bm.source_note}</p>
+                </div>
+              )
+            })}
+          </div>
+          <p className="text-xs text-slate-600 mt-3">
+            Source: {data.benchmark.reference_source} · {data.benchmark.reference_last_verified}
+          </p>
+        </div>
+      )}
+
       {/* Stat grid with storytelling */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {anomalyAvailable ? (

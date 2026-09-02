@@ -462,6 +462,7 @@ export default function App() {
         waste_result: result.waste || null,
         disclaimer:   result.disclaimer || '',
         data_notice:  result.report?.data_notice || '',
+        benchmark:    result.benchmark || null,
       })
 
       setTimeout(() => {

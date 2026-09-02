@@ -24,6 +24,7 @@ from agents.impact_agent import analyze_impact
 from agents.decision_agent import generate_decisions
 from agents.regen_score_agent import compute_regen_score
 from agents.report_agent import generate_report
+from agents.benchmark_agent import compute_benchmark
 from core.guardrails import get_disclaimer, get_simulated_notice, sanitize_prompt_input
 from core.database import save_run, get_history, get_run_by_id
 from core.audit import build_audit_record, build_pdf
@@ -540,6 +541,8 @@ async def analyze_upload(
     # Legacy single-item fallback (backward compat)
     waste_type:           Optional[str]   = Form(None),
     waste_quantity_kg:    Optional[float] = Form(None),
+    # Occupancy — optional; enables peer benchmarking when provided
+    occupancy_count:      Optional[int]   = Form(None),
 ):
     """
     Run multi-agent analysis on uploaded organizational data.
@@ -953,6 +956,20 @@ async def analyze_upload(
         },
     ]
 
+    # Infer days of data from whichever agent processed the most rows
+    _days = (
+        effective_water.get("days_of_data")
+        or effective_energy.get("days_of_data")
+        or 7
+    )
+    benchmark_result = compute_benchmark(
+        org_type=org_type,
+        occupancy_count=occupancy_count,
+        total_consumption_liters=effective_water.get("total_consumption_liters", 0),
+        total_consumption_kwh=effective_energy.get("total_consumption_kwh", 0),
+        days_of_data=_days,
+    )
+
     response = {
         "mode":              "upload",
         "org_name":          org_name,
@@ -969,6 +986,7 @@ async def analyze_upload(
         "regen_score":       regen,
         "report":            report,
         "war_room":          war_room_agents,
+        "benchmark":         benchmark_result,
         "disclaimer":        get_disclaimer(),
     }
 

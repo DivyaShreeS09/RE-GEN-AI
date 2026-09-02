@@ -1,0 +1,134 @@
+{
+  "_meta": {
+    "description": "Per-occupant/per-unit daily resource consumption reference ranges by organisation type.",
+    "sources": [
+      {
+        "name": "Bureau of Energy Efficiency (BEE) India — Energy Performance Benchmarks for Buildings",
+        "url": "https://beeindia.gov.in/content/energy-performance-index",
+        "note": "BEE publishes energy intensity norms for commercial/institutional building types in India."
+      },
+      {
+        "name": "CPWD (Central Public Works Department) — Manual on Norms and Standards for Plumbing",
+        "url": "https://cpwd.gov.in",
+        "note": "CPWD publishes per-capita water consumption norms for institutional buildings in India."
+      }
+    ],
+    "last_verified": "2026-09-02",
+    "unit_note": "water_liters_per_occupant_per_day and energy_kwh_per_occupant_per_day. 'Occupant' = bed (hospital), room (hotel), or student/employee (others).",
+    "disclaimer": "Reference ranges are indicative benchmarks from published Indian standards. Actual performance depends on climate, building vintage, and operational hours. Do not use as a compliance target without verifying the applicable standard for your jurisdiction."
+  },
+  "University / College": {
+    "water_liters_per_occupant_per_day": {
+      "efficient_upper": 60,
+      "typical_lower": 60,
+      "typical_upper": 120,
+      "high_use_lower": 120,
+      "source_note": "CPWD norms: 45-135 L/student/day for residential + day-use institutions."
+    },
+    "energy_kwh_per_occupant_per_day": {
+      "insufficient_reference_data": true,
+      "reason": "BEE does not publish a per-student energy intensity norm for Indian universities. Building-level m2 benchmarks exist but cannot be converted to per-occupant without floor-area data."
+    }
+  },
+  "Hospital / Healthcare": {
+    "water_liters_per_occupant_per_day": {
+      "efficient_upper": 250,
+      "typical_lower": 250,
+      "typical_upper": 450,
+      "high_use_lower": 450,
+      "source_note": "CPWD norms: 250-450 L/bed/day for general hospitals."
+    },
+    "energy_kwh_per_occupant_per_day": {
+      "efficient_upper": 0.96,
+      "typical_lower": 0.96,
+      "typical_upper": 1.37,
+      "high_use_lower": 1.37,
+      "source_note": "BEE Hospital EPI: 350-500 kWh/bed/year -> 0.96-1.37 kWh/bed/day."
+    }
+  },
+  "Hotel / Hospitality": {
+    "water_liters_per_occupant_per_day": {
+      "efficient_upper": 150,
+      "typical_lower": 150,
+      "typical_upper": 300,
+      "high_use_lower": 300,
+      "source_note": "CPWD norms: 150-300 L/room/day for hotels."
+    },
+    "energy_kwh_per_occupant_per_day": {
+      "efficient_upper": 0.55,
+      "typical_lower": 0.55,
+      "typical_upper": 1.10,
+      "high_use_lower": 1.10,
+      "source_note": "BEE Hotel EPI: 200-400 kWh/room/year -> 0.55-1.10 kWh/room/day."
+    }
+  },
+  "Office / Corporate": {
+    "water_liters_per_occupant_per_day": {
+      "efficient_upper": 30,
+      "typical_lower": 30,
+      "typical_upper": 60,
+      "high_use_lower": 60,
+      "source_note": "CPWD norms: 30-60 L/person/day for office buildings."
+    },
+    "energy_kwh_per_occupant_per_day": {
+      "insufficient_reference_data": true,
+      "reason": "BEE office benchmarks are per m2 of floor area (EPI). Cannot convert without floor-area data."
+    }
+  },
+  "Industrial Facility": {
+    "water_liters_per_occupant_per_day": {
+      "insufficient_reference_data": true,
+      "reason": "Industrial water use is highly process-specific. No reliable per-worker per-day norm exists across facility types."
+    },
+    "energy_kwh_per_occupant_per_day": {
+      "insufficient_reference_data": true,
+      "reason": "Industrial energy benchmarks are sector-specific (SEC per unit of production) and cannot be expressed per occupant."
+    }
+  },
+  "Government Building": {
+    "water_liters_per_occupant_per_day": {
+      "efficient_upper": 30,
+      "typical_lower": 30,
+      "typical_upper": 60,
+      "high_use_lower": 60,
+      "source_note": "CPWD norms for government offices: 30-60 L/person/day, same as commercial offices."
+    },
+    "energy_kwh_per_occupant_per_day": {
+      "insufficient_reference_data": true,
+      "reason": "BEE publishes m2-based benchmarks for government buildings, not per-occupant figures."
+    }
+  },
+  "Retail / Mall": {
+    "water_liters_per_occupant_per_day": {
+      "insufficient_reference_data": true,
+      "reason": "Retail water use depends heavily on food courts and tenant mix; no reliable per-visitor norm available."
+    },
+    "energy_kwh_per_occupant_per_day": {
+      "insufficient_reference_data": true,
+      "reason": "BEE mall EPI is per m2 of conditioned area, not per visitor."
+    }
+  },
+  "Research Institution": {
+    "water_liters_per_occupant_per_day": {
+      "efficient_upper": 60,
+      "typical_lower": 60,
+      "typical_upper": 120,
+      "high_use_lower": 120,
+      "source_note": "Using University/College CPWD norms as closest published proxy."
+    },
+    "energy_kwh_per_occupant_per_day": {
+      "insufficient_reference_data": true,
+      "reason": "Lab-heavy research institutions have highly variable energy loads; no published per-researcher norm available."
+    }
+  },
+  "Other": {
+    "water_liters_per_occupant_per_day": {
+      "insufficient_reference_data": true,
+      "reason": "No reference data available for unspecified organisation type."
+    },
+    "energy_kwh_per_occupant_per_day": {
+      "insufficient_reference_data": true,
+      "reason": "No reference data available for unspecified organisation type."
+    }
+  }
+}
