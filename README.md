@@ -14,36 +14,6 @@
 
 ---
 
-## 🏆 ChatGPT Codex India Hackathon 2026 Submission
-
-**Official Submission Theme:** **Theme 8 — AI for Societal Good**
-
-**Project Domain:** Sustainability Intelligence & Environmental Resource Optimization
-
-RE:GEN AI is officially submitted under **Theme 8 — AI for Societal Good** because the platform addresses real-world environmental and sustainability challenges through AI-powered decision support, helping organizations improve resource efficiency, reduce environmental impact, and make more sustainable operational decisions.
-
-The project demonstrates how collaborative AI systems can support hospitals, educational institutions, industries, commercial buildings, campuses, smart cities, governments, and other organizations by transforming fragmented sustainability data into transparent, explainable, and actionable recommendations.
-
-While the official submission theme is **AI for Societal Good**, the engineering architecture also closely aligns with **Theme 4 — Domain Agents**. The platform is implemented as a collaborative multi-agent system where seven specialized AI agents work together across waste analysis, water intelligence, energy optimization, environmental impact assessment, decision intelligence, sustainability scoring, and executive reporting.
-
-This combination demonstrates both meaningful societal impact and a practical domain-specific AI workflow while showcasing genuine agentic software engineering with OpenAI Codex.
-
-Throughout development, OpenAI Codex was used as an engineering assistant for:
-
-- System architecture planning
-- Multi-agent workflow design
-- Implementation planning
-- Engineering review
-- Code quality improvements
-- Debugging and iterative refinement
-- Repository auditing
-- Quality assurance
-- Release readiness verification
-
-The final software architecture, sustainability methodology, engineering decisions, implementation, testing, deployment, documentation, and integration were completed by the developer.
-
----
-
 ## The Problem
 
 Campuses, hospitals, hotels, and industrial facilities silently lose significant water, energy, and waste value every week — not from a lack of concern, but because the data lives in disconnected systems with no one synthesising it into action.
@@ -67,7 +37,8 @@ RE:GEN AI runs a coordinated network of seven specialised AI agents against your
 | **Multi-Agent AI** — Seven specialised agents run in parallel, each owning a distinct resource domain | **Three Analysis Levels** — Auto-detected from data resolution; confidence calibrated honestly to what the data supports | **Upload + Demo Modes** — Upload your own CSV/Excel data or explore instantly with bundled sensor logs |
 | **Digital Twin** — Facility visualisation at the correct analysis level: resource nodes (L1), zone archetypes (L2), or anomaly-driven map (L3) | **Agent War Room** — Live agent reasoning, findings, skip reasons, and confidence levels — all from real backend data in upload mode | **97-Material Waste KB** — Production knowledge base: 15 categories, 100+ alias normalisations, Indian regulatory compliance notes |
 | **RE:GEN Score** — Weighted sustainability health index before and after interventions | **Action Plan + PDF** — Ranked intervention stack with estimated savings, exported via browser print API | **Carbon Calculator** — Scope 1+2 CO₂ formula using IPCC 2006 and BEE India emission factors, shown inline with sources |
-| **OpenAI Integration** — Narrative layer with deterministic fallback; no analysis fails without a key | **Graceful Degradation** — Missing datasets produce a skip with an explanation, never a crash | **Honest Disclosure** — Anomaly detection availability explicitly surfaced everywhere it matters |
+| **IsolationForest Anomaly Detection** — scikit-learn ML model replaces static Z-score thresholds; degrades gracefully when data is insufficient | **Peer Benchmarking** — Per-occupant consumption scored against sector reference baselines (hospital, university, hotel, factory) | **Slack Alerting** — Webhook notification dispatched automatically for every critical or high-severity finding |
+| **Device Control Simulation** — Execute Now button dispatches mock commands to valve, HVAC, and sensor systems; no false "live" claims | **Run History** — Every analysis persisted to SQLite via SQLAlchemy; full history retrievable per organisation | **OpenAI Integration** — Narrative layer with deterministic fallback; no analysis fails without a key |
 
 ---
 
@@ -162,6 +133,59 @@ When anomaly detection is unavailable, the system explicitly discloses this in t
 
 ---
 
+## Anomaly Detection
+
+Water and energy agents use **IsolationForest** (scikit-learn) to detect anomalous consumption events. The model is trained per-run on the uploaded time series; outliers are flagged with an isolation score, not a static threshold.
+
+When the dataset is too small to train a reliable model (< 10 rows), the agent falls back to a simple percentile-based method and explicitly discloses the degraded detection mode in the War Room reasoning trace. This disclosure propagates to the report and Mission Summary — the system never claims ML-powered detection from a 3-row dataset.
+
+---
+
+## Peer Benchmarking
+
+After each analysis, the platform compares the facility's per-occupant consumption against sector reference baselines:
+
+| Sector | Water (L/person/day) | Energy (kWh/person/day) |
+|---|---|---|
+| Hospital | 400 | 25 |
+| University | 120 | 8 |
+| Hotel | 300 | 18 |
+| Factory | 80 | 35 |
+| Office | 50 | 6 |
+
+The benchmark score shows where the facility sits relative to its peer group — above or below the reference baseline — and feeds into the RE:GEN Score as an additional weighted dimension. Reference values are stored in `backend/core/benchmark_reference.json` and are updatable without code changes.
+
+---
+
+## Slack Alerting
+
+When the Decision Engine produces a finding at `critical` or `high` severity, the platform dispatches a Slack webhook notification containing:
+
+- Severity level and finding summary
+- Estimated monthly impact (cost + CO₂)
+- Organisation name and analysis timestamp
+
+The Slack webhook URL is configured via the `SLACK_WEBHOOK_URL` environment variable. When unset, alerting is silently skipped — no analysis failure occurs.
+
+---
+
+## Device Control Simulation
+
+The Action Plan's **Execute Now** button dispatches a simulated command to the relevant device control system. All executions are simulated — no real hardware is connected.
+
+Registered actions:
+
+| Action ID | Name | Device Type |
+|---|---|---|
+| W1 | Install pressure-reduction valve | valve_control |
+| W2 | Inspect night-flow pipes | sensor_query |
+| E1 | Schedule HVAC/lighting shutdown | building_automation |
+| E2 | Smart occupancy-based auto-shutoff | occupancy_sensor |
+
+The response always returns `mode: "mock"` and a simulation note. The API never claims live hardware execution without a real external call.
+
+---
+
 ## Waste-to-Wealth Intelligence
 
 The Waste-to-Wealth agent uses a production-quality knowledge base of **97 materials** across 15 categories.
@@ -241,6 +265,7 @@ Every displayed value originates from a single backend field. No frontend recomp
 | War Room recommendations | `war_room[].recommendation` from `/analyze/upload` |
 | Report executive summary | `report_result.executive_summary` |
 | PDF numbers | Same `report_result` object — no re-derivation |
+| Peer benchmark score | `benchmark_result.score` from `/analyze/upload` |
 
 ---
 
@@ -249,11 +274,34 @@ Every displayed value originates from a single backend field. No frontend recomp
 | Layer | Technology |
 |---|---|
 | Frontend | React 19, Vite 8, Framer Motion, Lucide React, Tailwind CSS 4 |
-| Backend | FastAPI, Python 3.11+, Pydantic v2, pandas, openpyxl |
-| AI Layer | OpenAI gpt-4o-mini (with deterministic fallback) |
+| Backend | FastAPI, Python 3.11+, Pydantic v2, pandas, openpyxl, SQLAlchemy |
+| AI / ML | OpenAI gpt-4o-mini (with deterministic fallback), scikit-learn IsolationForest |
+| Alerting | Slack Incoming Webhooks |
 | Deployment | Vercel (frontend) + Render (backend) |
-| Data | JSON knowledge base (97 materials) + CSV demo datasets |
+| CI | GitHub Actions — pytest (backend) + oxlint + vitest (frontend) |
+| Data | JSON knowledge base (97 materials) + CSV demo datasets + SQLite run history |
 | Export | Browser print API (`window.print()`) — formatted print stylesheet, no external library |
+
+---
+
+## CI Pipeline
+
+GitHub Actions runs on every push and pull request to `main`:
+
+```
+Backend (pytest)
+  ├── Python 3.12
+  ├── pip install -r backend/requirements.txt
+  └── pytest backend/tests/ -v   (124 tests)
+
+Frontend (oxlint + vitest)
+  ├── Node 22
+  ├── npm install
+  ├── npm run lint   (oxlint)
+  └── npm run test   (vitest, 16 tests)
+```
+
+Both jobs must pass before a PR can merge.
 
 ---
 
@@ -272,43 +320,14 @@ Environment variables:
 
 ```
 # backend/.env
-OPENAI_API_KEY=sk-...        # Optional — system degrades gracefully without it
+OPENAI_API_KEY=sk-...            # Optional — system degrades gracefully without it
+SLACK_WEBHOOK_URL=https://...    # Optional — alerting silently skipped when unset
 
 # Vercel project settings
 VITE_API_URL=https://regen-ai-backend.onrender.com
 ```
 
 > **Cold start** — Render's free tier sleeps after 15 minutes of inactivity. The first request after a sleep takes 30 – 90 seconds. The UI shows a specific message during this wait.
-
----
-
-## Hackathon Alignment
-
-### Technical Excellence
-- Seven specialised agents with typed interfaces, deterministic calculations, and explicit confidence levels
-- Three-tier analysis level system that honestly discloses data resolution limitations rather than fabricating precision
-- Production-quality knowledge base: 97 materials, 100+ alias normalisations, regulatory citations
-- Zero data fabrication — every displayed number traces to a single backend field
-- Graceful degradation across all failure modes: missing API key, missing datasets, unknown materials, cold start
-
-### Agentic Design
-- Each agent is independently callable with typed inputs and outputs
-- The Decision Engine consumes all agent outputs and produces a ranked intervention stack scored by urgency × impact × cost
-- The Report Agent synthesises findings across all agents into a professional executive summary
-- The War Room visualises live agent reasoning, skip reasons, and confidence levels
-- OpenAI enhances deterministic outputs; it never replaces them
-
-### Real-World Impact
-- Quantifiable outputs: litres saved, kWh recovered, INR recovery estimated, CO₂ avoided
-- SDG alignment: SDG 6 (Clean Water), SDG 7 (Affordable Energy), SDG 12 (Responsible Consumption), SDG 13 (Climate Action)
-- Applicable to any organisation type: University, Hospital, Hotel, Factory, Airport, Mall, Office
-- Waste-to-Wealth maps 97 material streams to recovery value and compliance guidance
-
-### Honest AI
-- Analysis level system calibrates confidence to actual data resolution — rare in sustainability tools
-- Alias normalisation prevents false "unknown" classifications for common variant spellings
-- War Room never surfaces hardcoded demo text in upload mode — all reasoning derives from real agent outputs
-- Carbon formula is transparent and shown inline with component breakdown and regulatory source
 
 ---
 
@@ -380,28 +399,8 @@ VITE_API_URL=https://regen-ai-backend.onrender.com
 | Petrol CO₂ | `litres × 2.31 kg/L` | IPCC 2006 |
 | LPG CO₂ | `litres × 1.51 kg/L` | IPCC 2006 |
 | Total Carbon | `water_co2 + energy_co2 + fuel_co2` | Scope 1 + 2 |
-| RE:GEN Score | Weighted composite of water / energy / carbon / waste / coverage | Internal |
+| RE:GEN Score | Weighted composite of water / energy / carbon / waste / coverage / benchmark | Internal |
 | Recovery value | `quantity_kg × value_range_per_kg` | KB benchmark rates |
-
----
-
-## Built with OpenAI Codex
-
-OpenAI Codex served as the primary engineering assistant throughout the development lifecycle of RE:GEN AI.
-
-**How Codex was used:**
-
-- **Architecture planning** — Codex helped reason through the multi-agent pipeline structure: how seven independent agents would own separate resource domains, share a typed decision interface, and degrade gracefully when datasets are absent or incomplete.
-- **Implementation planning** — Before writing each module, Codex was used to plan the implementation approach: data flow, edge cases, API contract design, and confidence calibration across three analysis levels.
-- **Engineering guidance** — Codex provided guidance on FastAPI patterns, Pydantic v2 schema design, Vite proxy configuration, React hook correctness (including rules-of-hooks compliance), and vitest setup for a component test suite.
-- **Code review** — Each agent, endpoint, and frontend component was reviewed through Codex to identify logic errors, unsafe patterns, and missed edge cases before committing.
-- **Debugging** — Codex was used to trace and resolve issues including conditional hook order violations, `useMemo` stabilisation for stream references, prompt injection sanitisation gaps, and Pydantic deprecation warnings.
-- **Iterative improvements** — The backend OpenAPI documentation (tags, summaries, docstrings), action plan transparency badges, and dynamic PDF metadata were all implemented through Codex-guided iterative refinement.
-- **Quality assurance** — A 10-step independent QA audit was conducted with Codex acting as QA engineer: inspecting every endpoint, verifying stress-test responses, confirming security properties, and scoring the submission across architecture, code quality, security, and production readiness dimensions.
-- **Repository review** — Codex reviewed the full repository for tracked secrets, temporary files, encoding artifacts, dead code, and release-blocking issues prior to submission.
-- **Release readiness verification** — Final build verification, lint checks, full test suite execution (51 backend + 16 frontend tests), and deployment validation were performed under Codex guidance.
-
-Throughout development, Codex acted as an engineering assistant and reviewer. All architectural decisions, domain logic, knowledge base design, and final implementation choices remained under developer control. Codex accelerated the engineering process — it did not automate it.
 
 ---
 
