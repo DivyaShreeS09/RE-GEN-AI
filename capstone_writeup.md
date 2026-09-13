@@ -10,7 +10,7 @@ I was thinking about a problem that is easy to ignore because it happens slowly 
 
 Night-time water leaks run for hours before anyone notices. Lab equipment left on overnight costs thousands of rupees in electricity per year across a single building. Recyclable materials like circuit boards, metals, and organic waste get thrown into general bins because the recovery pathway is not obvious and nobody has mapped it.
 
-The question that drove this project: what if a set of specialised agents could read those resource logs autonomously, calculate what is being lost, and produce a ranked action plan that a sustainability officer could act on immediately?
+The question that drove this project: what if a set of specialised agents could read those resource logs, calculate what is being lost, and produce a ranked action plan that a sustainability officer could act on immediately?
 
 That is what RE:GEN AI attempts to do.
 
@@ -151,7 +151,7 @@ Mission Readiness uses: `coverage × 0.6 + confidence × 0.4` where coverage and
 
 **Backend:** Python 3.12, FastAPI, Uvicorn. Agent functions are pure Python. Data loading uses Pandas; file parsing supports CSV and Excel (`.xlsx`, `.xls`) with multi-encoding fallback. Gemini calls use the official `google-genai` SDK (≥ 1.0.0). Orchestration is explicit FastAPI code — no LLM framework, making the pipeline fully auditable.
 
-**Frontend:** React 19 with Vite 8. Framer Motion for animations. Recharts for data visualisation. Lucide React for icons. Dark theme. The Agent War Room renders a live SVG node graph showing the AI Core connected to all 7 agents, with animated dots travelling along connection paths during analysis.
+**Frontend:** React 19 with Vite 8. Framer Motion for animations. Recharts for data visualisation. Lucide React for icons. Dark theme. The Agent War Room renders an animated SVG node graph showing the AI Core connected to all 7 agents, with dots travelling along connection paths during analysis.
 
 **Data:** Water and energy demo data are synthetic CSVs in `backend/data/`. The waste knowledge base is a JSON file with 97 material entries across 18 categories, each containing hazard level, estimated value range, possible products, buyer types, and sustainability notes.
 

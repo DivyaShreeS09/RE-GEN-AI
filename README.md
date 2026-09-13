@@ -28,7 +28,7 @@ Night-time pipe leaks run undetected until the bill arrives. Lab equipment left 
 
 ## Solution
 
-RE:GEN AI runs a coordinated network of seven specialised AI agents against your uploaded resource data. Each agent independently detects anomalies in its domain, calculates sustainability impact, and contributes findings to a shared decision pipeline. The Decision Engine ranks interventions by urgency, estimated cost savings, and environmental impact. Gemini `gemini-3.6-flash` adds a narrative reasoning layer — explaining priority decisions in plain language — while all numerical analysis remains fully deterministic and auditable.
+RE:GEN AI runs a coordinated pipeline of seven specialised agents against your uploaded resource data. Each agent runs its own domain-specific analysis — anomaly detection, impact calculation, waste lookup — and contributes structured findings to a shared decision pipeline. The Decision Engine ranks interventions by urgency, estimated cost savings, and environmental impact. Gemini `gemini-3.6-flash` adds a narrative reasoning layer — explaining priority decisions in plain language — while all numerical analysis remains fully deterministic and auditable.
 
 **Two modes.** Demo mode runs instantly on bundled sensor data. Upload mode accepts your organisation's CSV, Excel, or manually entered figures for any combination of water, energy, fuel, and waste datasets.
 
@@ -39,7 +39,7 @@ RE:GEN AI runs a coordinated network of seven specialised AI agents against your
 | | | |
 |---|---|---|
 | **Multi-Agent AI** — Seven specialised agents run in parallel, each owning a distinct resource domain | **Three Analysis Levels** — Auto-detected from data resolution; confidence calibrated honestly to what the data supports | **Upload + Demo Modes** — Upload your own CSV/Excel data or explore instantly with bundled sensor logs |
-| **Digital Twin** — Facility visualisation at the correct analysis level: resource nodes (L1), zone archetypes (L2), or anomaly-driven map (L3) | **Agent War Room** — Live agent reasoning, findings, skip reasons, and confidence levels — all from real backend data in upload mode | **97-Material Waste KB** — Production knowledge base: 18 categories, 120+ alias normalisations, Indian regulatory compliance notes |
+| **Facility Visualisation** — Renders the facility at the correct analysis level: resource nodes (L1), zone archetypes (L2), or anomaly-driven map (L3) | **Agent War Room** — Per-agent findings, skip reasons, and confidence levels — all sourced from real backend data in upload mode | **97-Material Waste KB** — Production knowledge base: 18 categories, 120+ alias normalisations, Indian regulatory compliance notes |
 | **RE:GEN Score** — Weighted sustainability health index before and after interventions | **Action Plan + PDF** — Ranked intervention stack with estimated savings, exported via browser print API | **Carbon Calculator** — Scope 1+2 CO₂ formula using IPCC 2006 and BEE India emission factors, shown inline with sources |
 | **IsolationForest Anomaly Detection** — scikit-learn ML model replaces static Z-score thresholds; degrades gracefully when data is insufficient | **Peer Benchmarking** — Per-occupant consumption scored against sector reference baselines (hospital, university, hotel, industrial facility) | **Slack Alerting** — Webhook notification dispatched automatically for every critical or high-severity finding |
 | **Device Control Simulation** — Execute Now button dispatches mock commands to valve, HVAC, and sensor systems; no false "live" claims | **Run History** — Every analysis persisted to SQLite via SQLAlchemy; full history retrievable per organisation | **Gemini Integration** — Narrative layer with deterministic fallback; no analysis fails without a key |
@@ -133,7 +133,7 @@ The system auto-detects data resolution from the uploaded file and adjusts every
 | **Level 2** — Operational Analysis | Daily or weekly meter exports (≥ 3 days) | Trend analysis, consumption hotspots, building comparison | ≤ 72% |
 | **Level 3** — Advanced AI Analysis | Hourly data, ≥ 3 days, ≥ 12 hour-slots/day | Full anomaly detection, leak detection, predictive maintenance | 85 – 95% |
 
-When anomaly detection is unavailable, the system explicitly discloses this in the War Room, Digital Twin, every generated report, and the Mission Summary — never silently claiming to detect leaks from monthly aggregates.
+When anomaly detection is unavailable, the system explicitly discloses this in the War Room, Facility Visualisation, every generated report, and the Mission Summary — never silently claiming to detect leaks from monthly aggregates.
 
 ---
 
@@ -211,9 +211,9 @@ The material dropdown is generated live from `/analyze/waste/materials`. Additio
 
 ---
 
-## Digital Twin
+## Facility Visualisation
 
-The Digital Twin renders the facility at the correct analysis level — never over-claiming.
+The Facility Visualisation renders the facility at the correct analysis level — never over-claiming.
 
 - **Level 1** — Five resource nodes (Water, Energy, Fuel, Waste, Carbon) showing actual uploaded totals; zone-level detection explicitly marked unavailable
 - **Level 2** — Organisation-type zone archetypes (University, Hospital, Hotel, Factory, etc.) with proportional consumption estimates; no fabricated anomaly colouring
@@ -373,15 +373,15 @@ VITE_API_URL=https://regen-ai-backend.onrender.com
 
 ![Command Center Dashboard](docs/screenshots/05-dashboard.png)
 
-*Real-time key metrics: total wasted litres, kWh lost, CO₂ avoided, and RE:GEN Score across all resource domains.*
+*Post-analysis key metrics: total wasted litres, kWh lost, CO₂ avoided, and RE:GEN Score across all resource domains.*
 
 ---
 
-### Digital Twin
+### Facility Visualisation
 
-![Digital Twin](docs/screenshots/06-digital-twin.png)
+![Facility Visualisation](docs/screenshots/06-digital-twin.png)
 
-*Facility visualised at the correct analysis level — resource nodes (L1), zone archetypes (L2), or anomaly-driven map (L3).*
+*Facility rendered at the correct analysis level — resource nodes (L1), zone archetypes (L2), or anomaly-driven map (L3).*
 
 ---
 
@@ -389,7 +389,7 @@ VITE_API_URL=https://regen-ai-backend.onrender.com
 
 ![Agent War Room](docs/screenshots/07-war-room.png)
 
-*Seven autonomous agents — live reasoning, findings, confidence levels, and skip reasons all sourced from real backend data.*
+*Seven specialised agents — findings, confidence levels, and skip reasons all sourced from real backend data in upload mode.*
 
 ---
 
