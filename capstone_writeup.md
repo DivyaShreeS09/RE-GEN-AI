@@ -27,7 +27,7 @@ Seven specialised agents work in a coordinated pipeline:
 
 - **Water Leakage Agent** detects night-flow anomalies in hourly water usage data and estimates wasted liters, cost impact, and severity.
 - **Energy Optimization Agent** identifies after-hours energy waste across zones and estimates kWh lost and CO2 impact.
-- **Waste-to-Wealth Agent** accepts a waste material and quantity, looks it up in a 30-category knowledge base, applies hazard guardrails, and maps it to a recovery pathway with an estimated value range.
+- **Waste-to-Wealth Agent** accepts a waste material and quantity, looks it up in a 97-material knowledge base (18 categories), applies hazard guardrails, and maps it to a recovery pathway with an estimated value range.
 - **Pollution & Impact Agent** aggregates water CO2, energy CO2, and fuel CO2 (each passed directly — no cross-domain conversion). Expresses impact in relatable terms and aligns to SDGs 6, 7, 12, and 13. **Carbon is always derived automatically — never uploaded.**
 - **Decision Engine** scores and ranks interventions using a weighted composite formula, then calls OpenAI `gpt-4o-mini` to explain the top-priority action in plain, actionable language.
 - **RE:GEN Score Agent** produces a sustainability health index (0–100) with a before/after projection showing estimated improvement if all recommendations are implemented.
@@ -153,7 +153,7 @@ Mission Readiness uses: `coverage × 0.6 + confidence × 0.4` where coverage and
 
 **Frontend:** React 19 with Vite 8. Framer Motion for animations. Recharts for data visualisation. Lucide React for icons. Dark theme. The Agent War Room renders a live SVG node graph showing the AI Core connected to all 7 agents, with animated dots travelling along connection paths during analysis.
 
-**Data:** Water and energy demo data are synthetic CSVs in `backend/data/`. The waste knowledge base is a JSON file with 30 material entries, each containing hazard level, estimated value range, possible products, buyer types, and sustainability notes.
+**Data:** Water and energy demo data are synthetic CSVs in `backend/data/`. The waste knowledge base is a JSON file with 97 material entries across 18 categories, each containing hazard level, estimated value range, possible products, buyer types, and sustainability notes.
 
 **Upload pipeline:** `core/data_processor.py` handles CSV/Excel parsing, column synonym detection, anomaly auto-detection, and coverage/confidence/readiness computation. All validation is deterministic.
 

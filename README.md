@@ -20,6 +20,10 @@ Campuses, hospitals, hotels, and industrial facilities silently lose significant
 
 Night-time pipe leaks run undetected until the bill arrives. Lab equipment left on overnight drains electricity budgets. Recyclable materials accumulate in general waste because no one has mapped their recovery pathway. When an analyst finally collects the data, it takes weeks of manual work to produce even a basic sustainability report — by which time the next month's losses have already compounded.
 
+**How might we use AI to turn scattered, unmonitored resource data into a ranked, evidence-backed action plan so that campuses and institutional facilities can become more water-, energy-, and waste-efficient?**
+
+**SDG alignment:** SDG 6 (Clean Water & Sanitation), SDG 7 (Affordable & Clean Energy), SDG 12 (Responsible Consumption & Production), SDG 13 (Climate Action) — the same four goals the Pollution & Impact Agent maps every analysis run to (`backend/agents/impact_agent.py`), not a marketing add-on.
+
 ---
 
 ## Solution
@@ -35,7 +39,7 @@ RE:GEN AI runs a coordinated network of seven specialised AI agents against your
 | | | |
 |---|---|---|
 | **Multi-Agent AI** — Seven specialised agents run in parallel, each owning a distinct resource domain | **Three Analysis Levels** — Auto-detected from data resolution; confidence calibrated honestly to what the data supports | **Upload + Demo Modes** — Upload your own CSV/Excel data or explore instantly with bundled sensor logs |
-| **Digital Twin** — Facility visualisation at the correct analysis level: resource nodes (L1), zone archetypes (L2), or anomaly-driven map (L3) | **Agent War Room** — Live agent reasoning, findings, skip reasons, and confidence levels — all from real backend data in upload mode | **97-Material Waste KB** — Production knowledge base: 15 categories, 100+ alias normalisations, Indian regulatory compliance notes |
+| **Digital Twin** — Facility visualisation at the correct analysis level: resource nodes (L1), zone archetypes (L2), or anomaly-driven map (L3) | **Agent War Room** — Live agent reasoning, findings, skip reasons, and confidence levels — all from real backend data in upload mode | **97-Material Waste KB** — Production knowledge base: 18 categories, 120+ alias normalisations, Indian regulatory compliance notes |
 | **RE:GEN Score** — Weighted sustainability health index before and after interventions | **Action Plan + PDF** — Ranked intervention stack with estimated savings, exported via browser print API | **Carbon Calculator** — Scope 1+2 CO₂ formula using IPCC 2006 and BEE India emission factors, shown inline with sources |
 | **IsolationForest Anomaly Detection** — scikit-learn ML model replaces static Z-score thresholds; degrades gracefully when data is insufficient | **Peer Benchmarking** — Per-occupant consumption scored against sector reference baselines (hospital, university, hotel, factory) | **Slack Alerting** — Webhook notification dispatched automatically for every critical or high-severity finding |
 | **Device Control Simulation** — Execute Now button dispatches mock commands to valve, HVAC, and sensor systems; no false "live" claims | **Run History** — Every analysis persisted to SQLite via SQLAlchemy; full history retrievable per organisation | **OpenAI Integration** — Narrative layer with deterministic fallback; no analysis fails without a key |
@@ -188,7 +192,7 @@ The response always returns `mode: "mock"` and a simulation note. The API never 
 
 ## Waste-to-Wealth Intelligence
 
-The Waste-to-Wealth agent uses a production-quality knowledge base of **97 materials** across 15 categories.
+The Waste-to-Wealth agent uses a production-quality knowledge base of **97 materials** across 18 categories.
 
 | Field | Description |
 |---|---|
@@ -201,7 +205,7 @@ The Waste-to-Wealth agent uses a production-quality knowledge base of **97 mater
 | `buyer_types` | Kabadiwala, paper mill, CPCB-authorised handler, and others |
 | `hazard_level` | none / low / medium / high / critical |
 
-**Alias normalisation** — 100+ variant spellings are normalised before lookup: "PET bottles" → `pet`, "corrugated cardboard" → `cardboard`, "biomedical waste" → `medical waste`. Unknown materials receive inferred category guidance and interim handling advice — never a silent failure.
+**Alias normalisation** — 120+ variant spellings are normalised before lookup: "PET bottles" → `pet`, "corrugated cardboard" → `cardboard`, "biomedical waste" → `medical waste`. Unknown materials receive inferred category guidance and interim handling advice — never a silent failure.
 
 The material dropdown is generated live from `/analyze/waste/materials`. Additions to the knowledge base surface automatically with no frontend edits required.
 
@@ -247,6 +251,22 @@ Seven agents are visualised as an animated node network. In upload mode:
 | Executive summary | 3-paragraph report calibrated to analysis level; discloses if anomaly detection was unavailable | Deterministic template using actual numbers |
 
 Every financial figure is prefixed with *estimated*. No exact profit is claimed. No data is invented. If OpenAI is unavailable or rate-limited, the system degrades gracefully — no analysis fails.
+
+---
+
+## Responsible AI Considerations
+
+RE:GEN AI is built for a domain — sustainability and waste decisions — where a misleading or opaque recommendation can cause real financial or environmental harm. The following design choices address this directly:
+
+**Fairness.** All numerical analysis (anomaly detection, cost estimates, CO₂ calculations, scoring) is deterministic Python — the same formulas run identically regardless of who submits data or which organisation is analysed. The system collects no demographic, identity, or individual-level data, so no agent decision can be conditioned on it. Peer benchmarking compares consumption against sector-type reference bands (hospital, university, hotel, factory) drawn from a fixed lookup table, not against other users' data.
+
+**Transparency.** Every agent response includes a `reasoning_trace` (a step-by-step account of how the result was reached), a `status` (`analyzed` / `skipped` / `error` / `unknown_material`), and a `confidence` score. Responses distinguish AI-generated language from deterministic output via an `ai_enhanced` flag, and every response carries a `data_notice` stating whether the analysis ran on uploaded or simulated data. Every CO₂ and emission-factor formula shown in this README cites its public source (UK Water Industry Research, BEE India, IPCC 2006) rather than presenting an unexplained number.
+
+**Ethics.** OpenAI prompts (`backend/agents/*.py`) explicitly forbid claiming exact profit, require the word "estimated" on every financial figure, and forbid hype language ("revolutionary", "powerful AI", "next-generation"). The hazard guardrail (`backend/core/guardrails.py`) suppresses recovery-value estimates entirely for hazardous materials and instead shows a compliance warning directing the user to a licensed handler — the system never nudges a user toward unsafe or non-compliant disposal for the sake of a better-looking number. The Device Control Simulation always returns `mode: "mock"` and never claims to have actuated real hardware.
+
+**Privacy.** The application collects only aggregate operational data — water/energy/fuel meter readings and a free-text organisation name/type — never personal, biometric, or individually identifiable information, and has no login or user-tracking system. Uploaded files are parsed in memory for the request and only aggregate analysis results (not raw uploaded rows) are persisted, in a local SQLite run history. Any user-supplied text that reaches an OpenAI prompt is passed through `sanitize_prompt_input()` first, which strips prompt-injection patterns and control characters before it is sent.
+
+A disclaimer — *"RE:GEN AI is a decision-support prototype. Not professional regulatory, financial, or engineering advice."* — is attached to every agent output via `core/guardrails.py`, so the system is never presented as a substitute for a licensed professional's judgment.
 
 ---
 

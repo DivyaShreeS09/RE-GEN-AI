@@ -1,11 +1,13 @@
 import { Globe, Cpu } from 'lucide-react'
 
+// Public reference figures — cited, not measured by RE:GEN AI. See source note below the strip.
 const INDIA_STATS = [
-  { stat: '1,000+', label: 'University Campuses',  sub: 'potential deployment sites',    color: '#ff9900' },
-  { stat: '5 M+',   label: 'Hostel Residents',     sub: 'daily water + energy consumers', color: '#00e5ff' },
-  { stat: '₹500 Cr', label: 'Annual Waste Value',  sub: 'lost to landfill every year',   color: '#00ff88' },
-  { stat: '35–40%', label: 'Water Lost',            sub: 'in campus infrastructure',      color: '#a78bfa' },
+  { stat: '1,289',   label: 'Universities in India',  sub: 'potential deployment sites',        color: '#ff9900' },
+  { stat: '48,246',  label: 'Colleges Nationwide',    sub: 'AISHE 2023–24',                     color: '#00e5ff' },
+  { stat: '1.7L t',  label: 'Waste Generated / Day',  sub: '~46% untreated or unaccounted',      color: '#00ff88' },
+  { stat: '30–40%',  label: 'Non-Revenue Water Loss', sub: 'in urban distribution systems',      color: '#a78bfa' },
 ]
+const INDIA_STATS_SOURCE = 'Sources: AISHE 2023–24 (Dept. of Higher Education) · CPCB/CEEW municipal solid waste analysis, FY2021–22 · CPHEEO/NIUA non-revenue water estimates. National reference figures, shown for context — not RE:GEN AI\'s own measurements.'
 
 const CAMPUS_DOMAINS = [
   {
@@ -65,7 +67,7 @@ export default function IndiaGlobalSection() {
       </div>
 
       {/* India stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-14">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
         {INDIA_STATS.map((s) => (
           <div key={s.label} className="glass-card p-5 text-center agent-card-hover"
             style={{ borderColor: s.color + '22' }}>
@@ -75,6 +77,9 @@ export default function IndiaGlobalSection() {
           </div>
         ))}
       </div>
+      <p className="text-[11px] text-slate-600 text-center mb-14 max-w-3xl mx-auto leading-relaxed">
+        {INDIA_STATS_SOURCE}
+      </p>
 
       {/* Campus domain cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-14">
@@ -127,7 +132,6 @@ export default function IndiaGlobalSection() {
             {[
               { num: 6,  label: 'Clean Water',        color: '#26bde2' },
               { num: 7,  label: 'Affordable Energy',  color: '#fcc30b' },
-              { num: 11, label: 'Sustainable Cities', color: '#fd9d24' },
               { num: 12, label: 'Responsible Consumption', color: '#bf8b2e' },
               { num: 13, label: 'Climate Action',     color: '#3f7e44' },
             ].map((sdg) => (

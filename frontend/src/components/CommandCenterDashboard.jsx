@@ -555,7 +555,7 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
             {[
               { key: 'water', label: 'Water', unit: 'L/occupant/day', color: '#00b4ff' },
               { key: 'energy', label: 'Energy', unit: 'kWh/occupant/day', color: '#f59e0b' },
-            ].map(({ key, label, color }) => {
+            ].map(({ key, label }) => {
               const bm = data.benchmark[key]
               if (!bm) return null
               if (!bm.available) return (

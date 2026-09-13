@@ -77,7 +77,7 @@ def analyze_impact(water_saved_liters: float, energy_saved_kwh: float, waste_val
         {
             "goal": "12", "title": "Responsible Consumption & Production", "relevance": "High",
             "contribution": (
-                "The Waste-to-Wealth pipeline identifies estimated recovery value across 30 material categories, "
+                "The Waste-to-Wealth pipeline identifies estimated recovery value across a 97-material knowledge base, "
                 "converting waste streams into economic opportunity and reducing landfill burden — a direct "
                 "responsible-consumption outcome."
             ),
