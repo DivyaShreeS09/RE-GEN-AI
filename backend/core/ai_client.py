@@ -29,18 +29,30 @@ def call_ai(prompt: str, fallback: str = "") -> tuple:
     if not AI_AVAILABLE or _client is None:
         return fallback, False
     try:
-        # gemini-3.6-flash performs internal "thinking" before answering, which
-        # consumes part of max_output_tokens. A low cap (e.g. 320) lets thinking
-        # exhaust the whole budget and truncates the answer to nothing — 2048
-        # leaves enough room for both on prompts of this length.
+        # gemini-3.6-flash performs internal "thinking" before answering, and the
+        # amount varies a lot by prompt (observed 100-2000+ thinking tokens on our
+        # actual prompts) — a low cap lets thinking alone exhaust the budget and
+        # truncates the answer to nothing. 4096 leaves comfortable headroom above
+        # the largest thinking usage measured against our longest prompt.
         response = _client.models.generate_content(
             model=_MODEL,
             contents=prompt,
             config=genai_types.GenerateContentConfig(
-                max_output_tokens=2048,
+                max_output_tokens=4096,
                 temperature=0.3,
             ),
         )
+        candidates = getattr(response, "candidates", None) or []
+        finish_reason = candidates[0].finish_reason if candidates else None
+        # Never serve a truncated or otherwise abnormal completion as if it were
+        # a finished answer — a cut-off sentence is worse than the deterministic
+        # fallback, so treat anything other than a clean STOP as a failed call.
+        if finish_reason is not None and str(finish_reason).split(".")[-1] != "STOP":
+            logging.warning(
+                f"Gemini call did not finish cleanly (finish_reason={finish_reason}); "
+                "using rule-based fallback to avoid serving truncated text."
+            )
+            return fallback, False
         text = (response.text or "").strip()
         if not text:
             return fallback, False
