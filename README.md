@@ -41,7 +41,7 @@ RE:GEN AI runs a coordinated network of seven specialised AI agents against your
 | **Multi-Agent AI** — Seven specialised agents run in parallel, each owning a distinct resource domain | **Three Analysis Levels** — Auto-detected from data resolution; confidence calibrated honestly to what the data supports | **Upload + Demo Modes** — Upload your own CSV/Excel data or explore instantly with bundled sensor logs |
 | **Digital Twin** — Facility visualisation at the correct analysis level: resource nodes (L1), zone archetypes (L2), or anomaly-driven map (L3) | **Agent War Room** — Live agent reasoning, findings, skip reasons, and confidence levels — all from real backend data in upload mode | **97-Material Waste KB** — Production knowledge base: 18 categories, 120+ alias normalisations, Indian regulatory compliance notes |
 | **RE:GEN Score** — Weighted sustainability health index before and after interventions | **Action Plan + PDF** — Ranked intervention stack with estimated savings, exported via browser print API | **Carbon Calculator** — Scope 1+2 CO₂ formula using IPCC 2006 and BEE India emission factors, shown inline with sources |
-| **IsolationForest Anomaly Detection** — scikit-learn ML model replaces static Z-score thresholds; degrades gracefully when data is insufficient | **Peer Benchmarking** — Per-occupant consumption scored against sector reference baselines (hospital, university, hotel, factory) | **Slack Alerting** — Webhook notification dispatched automatically for every critical or high-severity finding |
+| **IsolationForest Anomaly Detection** — scikit-learn ML model replaces static Z-score thresholds; degrades gracefully when data is insufficient | **Peer Benchmarking** — Per-occupant consumption scored against sector reference baselines (hospital, university, hotel, industrial facility) | **Slack Alerting** — Webhook notification dispatched automatically for every critical or high-severity finding |
 | **Device Control Simulation** — Execute Now button dispatches mock commands to valve, HVAC, and sensor systems; no false "live" claims | **Run History** — Every analysis persisted to SQLite via SQLAlchemy; full history retrievable per organisation | **Gemini Integration** — Narrative layer with deterministic fallback; no analysis fails without a key |
 
 ---
@@ -147,17 +147,17 @@ When the dataset is too small to train a reliable model (< 24 rows per location/
 
 ## Peer Benchmarking
 
-After each analysis, the platform compares the facility's per-occupant consumption against sector reference baselines:
+After each analysis, the platform compares the facility's per-occupant consumption against sector reference ranges sourced from BEE India (Energy Performance Index) and CPWD (Manual on Norms and Standards for Plumbing):
 
-| Sector | Water (L/person/day) | Energy (kWh/person/day) |
-|---|---|---|
-| Hospital | 400 | 25 |
-| University | 120 | 8 |
-| Hotel | 300 | 18 |
-| Factory | 80 | 35 |
-| Office | 50 | 6 |
+| Sector | Water (L/occupant/day) | Energy (kWh/occupant/day) | Source |
+|---|---|---|---|
+| Hospital | 250 – 450 | 0.96 – 1.37 | CPWD norms / BEE Hospital EPI |
+| University / College | 60 – 120 | — | CPWD norms (BEE has no per-student energy norm) |
+| Hotel / Hospitality | 150 – 300 | 0.55 – 1.10 | CPWD norms / BEE Hotel EPI |
+| Office / Corporate | 30 – 60 | — | CPWD norms (BEE benchmark is per m², not per occupant) |
+| Industrial Facility | — | — | No reliable per-worker norm; process-specific |
 
-The benchmark score shows where the facility sits relative to its peer group — above or below the reference baseline — and feeds into the RE:GEN Score as an additional weighted dimension. Reference values are stored in `backend/data/benchmark_reference.json` and are updatable without code changes.
+`—` means the reference data file explicitly marks that cell as unavailable — the agent skips that dimension rather than fabricating a comparison. The benchmark score shows where the facility sits within the efficient / typical / high-use bands for its sector type, and feeds into the RE:GEN Score as an additional weighted dimension. Reference values, source notes, and the disclaimer are stored in `backend/data/benchmark_reference.json` and are updatable without code changes.
 
 ---
 
@@ -258,7 +258,7 @@ Every financial figure is prefixed with *estimated*. No exact profit is claimed.
 
 RE:GEN AI is built for a domain — sustainability and waste decisions — where a misleading or opaque recommendation can cause real financial or environmental harm. The following design choices address this directly:
 
-**Fairness.** All numerical analysis (anomaly detection, cost estimates, CO₂ calculations, scoring) is deterministic Python — the same formulas run identically regardless of who submits data or which organisation is analysed. The system collects no demographic, identity, or individual-level data, so no agent decision can be conditioned on it. Peer benchmarking compares consumption against sector-type reference bands (hospital, university, hotel, factory) drawn from a fixed lookup table, not against other users' data.
+**Fairness.** All numerical analysis (anomaly detection, cost estimates, CO₂ calculations, scoring) is deterministic Python — the same formulas run identically regardless of who submits data or which organisation is analysed. The system collects no demographic, identity, or individual-level data, so no agent decision can be conditioned on it. Peer benchmarking compares consumption against sector-type reference bands (hospital, university, hotel, industrial facility) drawn from a fixed lookup table, not against other users' data.
 
 **Transparency.** Every agent response includes a `reasoning_trace` (a step-by-step account of how the result was reached), a `status` (`analyzed` / `skipped` / `error` / `unknown_material`), and a `confidence` score. Responses distinguish AI-generated language from deterministic output via an `ai_enhanced` flag, and every response carries a `data_notice` stating whether the analysis ran on uploaded or simulated data. Every CO₂ and emission-factor formula shown in this README cites its public source (UK Water Industry Research, BEE India, IPCC 2006) rather than presenting an unexplained number.
 
