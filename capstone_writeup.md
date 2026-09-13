@@ -29,7 +29,7 @@ Seven specialised agents work in a coordinated pipeline:
 - **Energy Optimization Agent** identifies after-hours energy waste across zones and estimates kWh lost and CO2 impact.
 - **Waste-to-Wealth Agent** accepts a waste material and quantity, looks it up in a 97-material knowledge base (18 categories), applies hazard guardrails, and maps it to a recovery pathway with an estimated value range.
 - **Pollution & Impact Agent** aggregates water CO2, energy CO2, and fuel CO2 (each passed directly — no cross-domain conversion). Expresses impact in relatable terms and aligns to SDGs 6, 7, 12, and 13. **Carbon is always derived automatically — never uploaded.**
-- **Decision Engine** scores and ranks interventions using a weighted composite formula, then calls Gemini `gemini-2.5-flash` to explain the top-priority action in plain, actionable language.
+- **Decision Engine** scores and ranks interventions using a weighted composite formula, then calls Gemini `gemini-3.6-flash` to explain the top-priority action in plain, actionable language.
 - **RE:GEN Score Agent** produces a sustainability health index (0–100) with a before/after projection showing estimated improvement if all recommendations are implemented.
 - **Report Agent** assembles all findings into an executive brief. Skipped agents are documented — not treated as complete. Gemini generates the narrative summary; a deterministic fallback is used if unavailable.
 
@@ -74,7 +74,7 @@ This structure makes agent outputs composable and the pipeline fully auditable.
 
 ## 5. How Gemini Is Used
 
-`gemini-2.5-flash` is used via the `google-genai` SDK (≥ 1.0.0) in three places only:
+`gemini-3.6-flash` is used via the `google-genai` SDK (≥ 1.0.0) in three places only:
 
 **Waste recommendation:** When a non-hazardous material is analysed, Gemini generates a 2-sentence recommendation for the sustainability officer. The prompt embeds guardrails: say "estimated" for all financial figures, do not claim exact profit, name one specific recovery product, be actionable. Hazardous materials never call Gemini.
 

@@ -8,7 +8,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)
-![Gemini](https://img.shields.io/badge/Gemini-2.5--flash-4285F4?style=flat-square&logo=googlegemini&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini-3.6--flash-4285F4?style=flat-square&logo=googlegemini&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-deployed-000000?style=flat-square&logo=vercel&logoColor=white)
 ![Render](https://img.shields.io/badge/Render-deployed-46E3B7?style=flat-square&logo=render&logoColor=white)
 
@@ -28,7 +28,7 @@ Night-time pipe leaks run undetected until the bill arrives. Lab equipment left 
 
 ## Solution
 
-RE:GEN AI runs a coordinated network of seven specialised AI agents against your uploaded resource data. Each agent independently detects anomalies in its domain, calculates sustainability impact, and contributes findings to a shared decision pipeline. The Decision Engine ranks interventions by urgency, estimated cost savings, and environmental impact. Gemini `gemini-2.5-flash` adds a narrative reasoning layer — explaining priority decisions in plain language — while all numerical analysis remains fully deterministic and auditable.
+RE:GEN AI runs a coordinated network of seven specialised AI agents against your uploaded resource data. Each agent independently detects anomalies in its domain, calculates sustainability impact, and contributes findings to a shared decision pipeline. The Decision Engine ranks interventions by urgency, estimated cost savings, and environmental impact. Gemini `gemini-3.6-flash` adds a narrative reasoning layer — explaining priority decisions in plain language — while all numerical analysis remains fully deterministic and auditable.
 
 **Two modes.** Demo mode runs instantly on bundled sensor data. Upload mode accepts your organisation's CSV, Excel, or manually entered figures for any combination of water, energy, fuel, and waste datasets.
 
@@ -70,7 +70,7 @@ RE:GEN AI runs a coordinated network of seven specialised AI agents against your
               └───────┘  └────────┘  └────────┘
                            │
            ┌───────────────▼───────────────┐
-           │        Gemini 2.5 Flash        │
+           │        Gemini 3.6 Flash        │
            │   Narrative  ·  Explanations   │
            │  (deterministic KB fallback)   │
            └───────────────┬───────────────┘
@@ -242,7 +242,7 @@ Seven agents are visualised as an animated node network. In upload mode:
 
 ## Gemini Integration
 
-`gemini-2.5-flash` is integrated at three points in the pipeline, each with a deterministic fallback:
+`gemini-3.6-flash` is integrated at three points in the pipeline, each with a deterministic fallback:
 
 | Point | GPT contribution | Fallback |
 |---|---|---|
@@ -295,7 +295,7 @@ Every displayed value originates from a single backend field. No frontend recomp
 |---|---|
 | Frontend | React 19, Vite 8, Framer Motion, Lucide React, Tailwind CSS 4 |
 | Backend | FastAPI, Python 3.11+, Pydantic v2, pandas, openpyxl, SQLAlchemy |
-| AI / ML | Google Gemini 2.5 Flash (with deterministic fallback), scikit-learn IsolationForest |
+| AI / ML | Google Gemini 3.6 Flash (with deterministic fallback), scikit-learn IsolationForest |
 | Alerting | Slack Incoming Webhooks |
 | Deployment | Vercel (frontend) + Render (backend) |
 | CI | GitHub Actions — pytest (backend) + oxlint + vitest (frontend) |

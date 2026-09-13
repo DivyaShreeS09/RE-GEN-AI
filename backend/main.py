@@ -154,7 +154,7 @@ def system_architecture():
         "summary": (
             "All quantitative analysis (anomaly detection, severity classification, cost/CO2 math, "
             "RE:GEN scoring, ROI calculations) is deterministic Python. "
-            "Gemini (gemini-2.5-flash) is used exclusively to generate narrative text in 3 specific call sites."
+            "Gemini (gemini-3.6-flash) is used exclusively to generate narrative text in 3 specific call sites."
         ),
         "deterministic_agents": [
             {"agent": "Water Leakage Agent",       "endpoint": "/analyze/water",        "llm_calls": 0},

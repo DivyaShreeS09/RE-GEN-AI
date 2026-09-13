@@ -648,7 +648,7 @@ ${sdgAlignment?.length ? `
       <tr><td style="font-weight:700;width:160pt;">System</td><td>RE:GEN AI — Sustainability Intelligence OS</td></tr>
       <tr><td style="font-weight:700;">Version</td><td>RE:GEN AI v2.0 · Multi-Agent Sustainability Intelligence Platform</td></tr>
       <tr><td style="font-weight:700;">Agents</td><td>Water Leakage · Energy Optimizer · Waste-to-Wealth · Impact Analyzer · Sustainability Score · Decision Priority · Report Narrative</td></tr>
-      <tr><td style="font-weight:700;">AI Layer</td><td>${aiUsed ? 'Gemini 2.5 Flash · Multi-agent coordination (graceful fallback to rule-based engine)' : 'Rule-based Analysis · Deterministic multi-agent pipeline (Gemini unavailable during this session)'}</td></tr>
+      <tr><td style="font-weight:700;">AI Layer</td><td>${aiUsed ? 'Gemini 3.6 Flash · Multi-agent coordination (graceful fallback to rule-based engine)' : 'Rule-based Analysis · Deterministic multi-agent pipeline (Gemini unavailable during this session)'}</td></tr>
       <tr><td style="font-weight:700;">Data Source</td><td>${dataSource}</td></tr>
       <tr><td style="font-weight:700;">Generated</td><td>${new Date().toISOString()}</td></tr>
     </tbody>

@@ -6,7 +6,7 @@ load_dotenv()
 
 AI_AVAILABLE = False
 _client = None
-_MODEL = "gemini-2.5-flash"
+_MODEL = "gemini-3.6-flash"
 
 
 try:
@@ -29,11 +29,15 @@ def call_ai(prompt: str, fallback: str = "") -> tuple:
     if not AI_AVAILABLE or _client is None:
         return fallback, False
     try:
+        # gemini-3.6-flash performs internal "thinking" before answering, which
+        # consumes part of max_output_tokens. A low cap (e.g. 320) lets thinking
+        # exhaust the whole budget and truncates the answer to nothing — 2048
+        # leaves enough room for both on prompts of this length.
         response = _client.models.generate_content(
             model=_MODEL,
             contents=prompt,
             config=genai_types.GenerateContentConfig(
-                max_output_tokens=320,
+                max_output_tokens=2048,
                 temperature=0.3,
             ),
         )
