@@ -4,6 +4,15 @@ import RegenScoreGauge from './RegenScoreGauge'
 import useCountUp from '../hooks/useCountUp'
 import { getHistory } from '../api'
 
+// Demo mode has no persisted run history of its own, so we seed a plausible
+// improving trend to demonstrate the Score History chart during a walkthrough.
+// Upload mode never uses this — it always fetches real history from the backend.
+const DEMO_HISTORY = [
+  { regen_score_before: 41, regen_score_after: 55 },
+  { regen_score_before: 46, regen_score_after: 60 },
+  { regen_score_before: 52, regen_score_after: 67 },
+]
+
 function ScanTimeline({ anomalyAvailable }) {
   const SCAN_STAGES = [
     { label: 'Sensor data loaded',                                          icon: '📡' },
@@ -469,7 +478,11 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
 
   const [historyRuns, setHistoryRuns] = useState([])
   useEffect(() => {
-    if (!isUploadMode || !uploadResult?.org_name) return
+    if (!isUploadMode) {
+      setHistoryRuns(DEMO_HISTORY)
+      return
+    }
+    if (!uploadResult?.org_name) return
     getHistory(uploadResult.org_name).then(r => setHistoryRuns(r.data?.runs || [])).catch(() => {})
   }, [isUploadMode, uploadResult?.org_name])
 

@@ -141,7 +141,7 @@ When anomaly detection is unavailable, the system explicitly discloses this in t
 
 Water and energy agents use **IsolationForest** (scikit-learn) to detect anomalous consumption events. The model is trained per-run on the uploaded time series; outliers are flagged with an isolation score, not a static threshold.
 
-When the dataset is too small to train a reliable model (< 10 rows), the agent falls back to a simple percentile-based method and explicitly discloses the degraded detection mode in the War Room reasoning trace. This disclosure propagates to the report and Mission Summary — the system never claims ML-powered detection from a 3-row dataset.
+When the dataset is too small to train a reliable model (< 24 rows per location/zone), the agent falls back to a simple percentile-based method and explicitly discloses the degraded detection mode in the War Room reasoning trace. This disclosure propagates to the report and Mission Summary — the system never claims ML-powered detection from a 3-row dataset.
 
 ---
 
@@ -157,7 +157,7 @@ After each analysis, the platform compares the facility's per-occupant consumpti
 | Factory | 80 | 35 |
 | Office | 50 | 6 |
 
-The benchmark score shows where the facility sits relative to its peer group — above or below the reference baseline — and feeds into the RE:GEN Score as an additional weighted dimension. Reference values are stored in `backend/core/benchmark_reference.json` and are updatable without code changes.
+The benchmark score shows where the facility sits relative to its peer group — above or below the reference baseline — and feeds into the RE:GEN Score as an additional weighted dimension. Reference values are stored in `backend/data/benchmark_reference.json` and are updatable without code changes.
 
 ---
 
