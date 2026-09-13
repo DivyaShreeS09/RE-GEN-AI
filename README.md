@@ -1,6 +1,6 @@
 # RE:GEN AI
 
-> **Multi-agent sustainability intelligence.** Seven specialised AI agents detect hidden resource loss, map waste streams to recovery value, and generate evidence-backed intervention plans — for any campus, hospital, hotel, or industrial facility.
+> **Multi-agent sustainability intelligence.** Seven specialised agents detect hidden resource loss, map waste streams to recovery value, and generate evidence-backed intervention plans — for any campus, hospital, hotel, or industrial facility.
 
 **[Live Demo](https://frontend-two-rho-85.vercel.app)** · **[Backend API](https://regen-ai-backend.onrender.com/health)** · **[Demo Video](https://youtu.be/yrCC-NWa108)** · **[GitHub](https://github.com/DivyaShreeS09/RE-GEN-AI)**
 
@@ -244,7 +244,7 @@ Seven agents are visualised as an animated node network. In upload mode:
 
 `gemini-3.6-flash` is integrated at three points in the pipeline, each with a deterministic fallback:
 
-| Point | GPT contribution | Fallback |
+| Point | Gemini contribution | Fallback |
 |---|---|---|
 | Waste-to-Wealth | 2-sentence actionable guidance for the sustainability officer | Constructed from KB fields |
 | War Room reasoning | Plain-language explanation of each agent's finding and priority | Rule-based template from agent output |
@@ -312,7 +312,7 @@ GitHub Actions runs on every push and pull request to `main`:
 Backend (pytest)
   ├── Python 3.12
   ├── pip install -r backend/requirements.txt
-  └── pytest backend/tests/ -v   (124 tests)
+  └── pytest backend/tests/ -v   (133 tests)
 
 Frontend (oxlint + vitest)
   ├── Node 22
