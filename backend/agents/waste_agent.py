@@ -1,9 +1,9 @@
-# OpenAI is used ONLY to generate the following narrative field: ai_recommendation.
+# Gemini is used ONLY to generate the following narrative field: ai_recommendation.
 # All other fields (hidden_value_score, estimated_recovery, hazard_warning, reasoning_trace)
-# are computed by deterministic Python above the OpenAI call.
+# are computed by deterministic Python above the Gemini call.
 from core.simulation import load_waste_kb
 from core.guardrails import apply_hazard_guardrail, validate_quantity, get_disclaimer, sanitize_prompt_input
-from core.openai_client import call_openai
+from core.ai_client import call_ai
 
 _kb = None
 
@@ -478,7 +478,7 @@ Rules:
 - Be actionable: tell the officer exactly what to do this week
 - Do not use: revolutionary, powerful AI, next-generation"""
 
-        ai_recommendation, ai_used = call_openai(prompt, fallback_rec)
+        ai_recommendation, ai_used = call_ai(prompt, fallback_rec)
 
     meta = _kb_meta()
     return {

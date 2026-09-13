@@ -1,9 +1,9 @@
-# OpenAI is used ONLY to generate the following narrative field: executive_summary.
+# Gemini is used ONLY to generate the following narrative field: executive_summary.
 # All numeric fields (silent_losses, campus_health_index, building_risk_ranking, action_plan
 # thresholds, sdg_alignment, data_notice) are computed by deterministic Python above the call.
 from datetime import datetime
 from core.guardrails import get_disclaimer, get_simulated_notice, sanitize_prompt_input
-from core.openai_client import call_openai, openai_status
+from core.ai_client import call_ai, ai_status
 
 
 def _fallback_summary(water, energy, impact, regen, ranked,
@@ -141,7 +141,7 @@ Rules:
 - Reference the data source accurately: {data_source}
 - End with one sentence stating this is a prototype decision-support system"""
 
-    executive_summary, ai_used = call_openai(prompt, fallback)
+    executive_summary, ai_used = call_ai(prompt, fallback)
 
     # SDG summary narrative
     sdg_items = impact_result.get("sdg_alignment", [])
@@ -188,7 +188,7 @@ Rules:
         "executive_summary":  executive_summary,
         "ai_enhanced":        ai_used,
         "computation_type":   "deterministic",
-        "ai_layer":           openai_status(),
+        "ai_layer":           ai_status(),
         "action_plan":        action_plan,
         "silent_losses":      silent_losses,
         "sdg_alignment":      sdg_items,

@@ -29,11 +29,11 @@ Seven specialised agents work in a coordinated pipeline:
 - **Energy Optimization Agent** identifies after-hours energy waste across zones and estimates kWh lost and CO2 impact.
 - **Waste-to-Wealth Agent** accepts a waste material and quantity, looks it up in a 97-material knowledge base (18 categories), applies hazard guardrails, and maps it to a recovery pathway with an estimated value range.
 - **Pollution & Impact Agent** aggregates water CO2, energy CO2, and fuel CO2 (each passed directly — no cross-domain conversion). Expresses impact in relatable terms and aligns to SDGs 6, 7, 12, and 13. **Carbon is always derived automatically — never uploaded.**
-- **Decision Engine** scores and ranks interventions using a weighted composite formula, then calls OpenAI `gpt-4o-mini` to explain the top-priority action in plain, actionable language.
+- **Decision Engine** scores and ranks interventions using a weighted composite formula, then calls Gemini `gemini-2.5-flash` to explain the top-priority action in plain, actionable language.
 - **RE:GEN Score Agent** produces a sustainability health index (0–100) with a before/after projection showing estimated improvement if all recommendations are implemented.
-- **Report Agent** assembles all findings into an executive brief. Skipped agents are documented — not treated as complete. OpenAI generates the narrative summary; a deterministic fallback is used if unavailable.
+- **Report Agent** assembles all findings into an executive brief. Skipped agents are documented — not treated as complete. Gemini generates the narrative summary; a deterministic fallback is used if unavailable.
 
-**All numerical analysis is deterministic Python. OpenAI adds only language and reasoning layers.**
+**All numerical analysis is deterministic Python. Gemini adds only language and reasoning layers.**
 
 ---
 
@@ -57,7 +57,7 @@ Data Intelligence Layer (validate / normalise uploaded CSV/Excel)
         ├── Water Agent ──────┐
         ├── Energy Agent ─────┼──► Impact Agent ──► Decision Engine ──► Score Agent
         ├── Waste Agent ──────┘              │
-        └── Fuel CO2 (automatic)            └──► Report Agent + OpenAI
+        └── Fuel CO2 (automatic)            └──► Report Agent + Gemini
 ```
 
 Each agent returns a structured dictionary with:
@@ -72,19 +72,19 @@ This structure makes agent outputs composable and the pipeline fully auditable.
 
 ---
 
-## 5. How OpenAI Is Used
+## 5. How Gemini Is Used
 
-`gpt-4o-mini` is used via the `openai` SDK (≥ 1.0.0) in three places only:
+`gemini-2.5-flash` is used via the `google-genai` SDK (≥ 1.0.0) in three places only:
 
-**Waste recommendation:** When a non-hazardous material is analysed, OpenAI generates a 2-sentence recommendation for the sustainability officer. The prompt embeds guardrails: say "estimated" for all financial figures, do not claim exact profit, name one specific recovery product, be actionable. Hazardous materials never call OpenAI.
+**Waste recommendation:** When a non-hazardous material is analysed, Gemini generates a 2-sentence recommendation for the sustainability officer. The prompt embeds guardrails: say "estimated" for all financial figures, do not claim exact profit, name one specific recovery product, be actionable. Hazardous materials never call Gemini.
 
-**Decision explanation:** After the Decision Engine ranks interventions, OpenAI explains why the top-ranked action must be prioritised. The prompt provides specific numbers from the deterministic agents so the explanation is grounded in real analysis rather than generic advice.
+**Decision explanation:** After the Decision Engine ranks interventions, Gemini explains why the top-ranked action must be prioritised. The prompt provides specific numbers from the deterministic agents so the explanation is grounded in real analysis rather than generic advice.
 
-**Executive report narrative:** The Report Agent calls OpenAI to write a full executive summary of all agent findings. The prompt embeds guardrails, a list of forbidden phrases, and a requirement to reference the data source accurately.
+**Executive report narrative:** The Report Agent calls Gemini to write a full executive summary of all agent findings. The prompt embeds guardrails, a list of forbidden phrases, and a requirement to reference the data source accurately.
 
-If `OPENAI_API_KEY` is absent or the API call fails, every call site falls back to a deterministic rule-based string. The application is fully functional without OpenAI.
+If `GEMINI_API_KEY` is absent or the API call fails, every call site falls back to a deterministic rule-based string. The application is fully functional without Gemini.
 
-**What OpenAI does not do:** All numerical analysis — anomaly detection, severity classification, cost estimates, CO2 calculations, coverage/confidence/readiness scoring — is deterministic Python code that does not involve OpenAI.
+**What Gemini does not do:** All numerical analysis — anomaly detection, severity classification, cost estimates, CO2 calculations, coverage/confidence/readiness scoring — is deterministic Python code that does not involve Gemini.
 
 ---
 
@@ -100,7 +100,7 @@ If `OPENAI_API_KEY` is absent or the API call fails, every call site falls back 
 
 **State and memory:** Frontend React state holds all agent outputs after an analysis run. Downstream components (Action Plan, Dashboard, Report) read from this shared state.
 
-**Safety guardrails:** `core/guardrails.py` injects disclaimers, applies the hazard guardrail, and validates input quantities. Every OpenAI prompt embeds rules against misleading claims.
+**Safety guardrails:** `core/guardrails.py` injects disclaimers, applies the hazard guardrail, and validates input quantities. Every Gemini prompt embeds rules against misleading claims.
 
 **Evaluation and scoring:** RE:GEN Score is a weighted composite across six sub-dimensions. Before-action and after-action scores are computed separately to show the projected impact of implementing recommendations. Coverage, confidence, and mission readiness are computed from which datasets are present.
 
@@ -116,11 +116,11 @@ RE:GEN AI has explicit safety design for a domain where misleading claims could 
 
 **Financial figures:** Exact profit is never claimed. All financial outputs use "estimated" qualifiers. The Waste-to-Wealth agent explicitly states that market prices vary.
 
-**Hazardous waste:** If a waste material exceeds the hazard threshold, the agent suppresses recovery value calculations entirely, shows a clear regulatory warning, and does not call OpenAI. The officer is directed to engage a licensed hazardous waste handler.
+**Hazardous waste:** If a waste material exceeds the hazard threshold, the agent suppresses recovery value calculations entirely, shows a clear regulatory warning, and does not call Gemini. The officer is directed to engage a licensed hazardous waste handler.
 
 **Data transparency:** Every API response includes a `data_notice` field stating the data source (uploaded vs. simulated). The report begins with a DATA SUMMARY section disclosing coverage, confidence, available datasets, and skipped analyses.
 
-**OpenAI prompt guardrails:** All OpenAI prompts embed a Rules block forbidding specific phrases and requiring qualifiers on financial estimates.
+**Gemini prompt guardrails:** All Gemini prompts embed a Rules block forbidding specific phrases and requiring qualifiers on financial estimates.
 
 **Negative value guard:** Wasted liters and wasted kWh are both clamped to `max(0, ...)` — they can never go negative even with sparse or unusual uploaded data.
 
@@ -149,7 +149,7 @@ Mission Readiness uses: `coverage × 0.6 + confidence × 0.4` where coverage and
 
 ## 9. Technical Implementation
 
-**Backend:** Python 3.12, FastAPI, Uvicorn. Agent functions are pure Python. Data loading uses Pandas; file parsing supports CSV and Excel (`.xlsx`, `.xls`) with multi-encoding fallback. OpenAI calls use the official `openai` SDK (≥ 1.0.0). Orchestration is explicit FastAPI code — no LLM framework, making the pipeline fully auditable.
+**Backend:** Python 3.12, FastAPI, Uvicorn. Agent functions are pure Python. Data loading uses Pandas; file parsing supports CSV and Excel (`.xlsx`, `.xls`) with multi-encoding fallback. Gemini calls use the official `google-genai` SDK (≥ 1.0.0). Orchestration is explicit FastAPI code — no LLM framework, making the pipeline fully auditable.
 
 **Frontend:** React 19 with Vite 8. Framer Motion for animations. Recharts for data visualisation. Lucide React for icons. Dark theme. The Agent War Room renders a live SVG node graph showing the AI Core connected to all 7 agents, with animated dots travelling along connection paths during analysis.
 
@@ -161,7 +161,7 @@ Mission Readiness uses: `coverage × 0.6 + confidence × 0.4` where coverage and
 
 ## 10. Challenges Faced
 
-**AI provider selection.** The `core/openai_client.py` module uses the stable `openai` SDK with a deterministic fallback pattern. All numerical analysis is deterministic Python — the AI layer is isolated so it can be swapped without touching any agent logic.
+**AI provider selection.** The `core/ai_client.py` module uses the stable `google-genai` SDK with a deterministic fallback pattern. All numerical analysis is deterministic Python — the AI layer is isolated so it can be swapped without touching any agent logic.
 
 **Fuel CO2 architecture.** An early implementation converted fuel CO2 to a kWh-equivalent using the electricity grid factor (fuel_co2_kg / 0.82) to feed it into the Impact Agent. This was semantically wrong — fuel and electricity have different emission sources. Fixed by adding `fuel_co2_kg` as a direct parameter to `analyze_impact()`, so each CO2 source is summed directly.
 
@@ -169,17 +169,17 @@ Mission Readiness uses: `coverage × 0.6 + confidence × 0.4` where coverage and
 
 **Agent War Room layout.** Getting 7 agent nodes at equal radial distances from a central AI Core, with animated connection lines, in a responsive layout required careful SVG coordinate math and a zero-size anchor div pattern for pixel-perfect alignment.
 
-**Guardrail design.** Deciding what OpenAI should and should not do required explicit upfront constraints: OpenAI touches only language and reasoning; all numbers come from deterministic Python.
+**Guardrail design.** Deciding what Gemini should and should not do required explicit upfront constraints: Gemini touches only language and reasoning; all numbers come from deterministic Python.
 
 ---
 
 ## 11. Development Insights
 
-The most effective discipline was defining explicit constraints before building each component — what this agent is responsible for, what it is not, and what its output contract is. When those boundaries were clear (e.g., OpenAI never called for hazardous waste, exact profit never claimed, negative values never allowed), the code stayed clean and consistent.
+The most effective discipline was defining explicit constraints before building each component — what this agent is responsible for, what it is not, and what its output contract is. When those boundaries were clear (e.g., Gemini never called for hazardous waste, exact profit never claimed, negative values never allowed), the code stayed clean and consistent.
 
 Visual components require human judgment that tooling cannot fully replace: the War Room layout went through many iterations because the desired visual feel was difficult to specify and required seeing the actual rendered result.
 
-The key architectural decision — keeping all numerical analysis in deterministic Python and using OpenAI only for language and reasoning — proved stable throughout development. No agent logic changed when the language model was swapped; only the language layer changed.
+The key architectural decision — keeping all numerical analysis in deterministic Python and using Gemini only for language and reasoning — proved stable throughout development. No agent logic changed when the language model was swapped; only the language layer changed.
 
 ---
 

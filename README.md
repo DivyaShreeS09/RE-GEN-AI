@@ -8,7 +8,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)
-![OpenAI](https://img.shields.io/badge/OpenAI-gpt--4o--mini-412991?style=flat-square&logo=openai&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini-2.5--flash-4285F4?style=flat-square&logo=googlegemini&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-deployed-000000?style=flat-square&logo=vercel&logoColor=white)
 ![Render](https://img.shields.io/badge/Render-deployed-46E3B7?style=flat-square&logo=render&logoColor=white)
 
@@ -28,7 +28,7 @@ Night-time pipe leaks run undetected until the bill arrives. Lab equipment left 
 
 ## Solution
 
-RE:GEN AI runs a coordinated network of seven specialised AI agents against your uploaded resource data. Each agent independently detects anomalies in its domain, calculates sustainability impact, and contributes findings to a shared decision pipeline. The Decision Engine ranks interventions by urgency, estimated cost savings, and environmental impact. OpenAI `gpt-4o-mini` adds a narrative reasoning layer — explaining priority decisions in plain language — while all numerical analysis remains fully deterministic and auditable.
+RE:GEN AI runs a coordinated network of seven specialised AI agents against your uploaded resource data. Each agent independently detects anomalies in its domain, calculates sustainability impact, and contributes findings to a shared decision pipeline. The Decision Engine ranks interventions by urgency, estimated cost savings, and environmental impact. Gemini `gemini-2.5-flash` adds a narrative reasoning layer — explaining priority decisions in plain language — while all numerical analysis remains fully deterministic and auditable.
 
 **Two modes.** Demo mode runs instantly on bundled sensor data. Upload mode accepts your organisation's CSV, Excel, or manually entered figures for any combination of water, energy, fuel, and waste datasets.
 
@@ -42,7 +42,7 @@ RE:GEN AI runs a coordinated network of seven specialised AI agents against your
 | **Digital Twin** — Facility visualisation at the correct analysis level: resource nodes (L1), zone archetypes (L2), or anomaly-driven map (L3) | **Agent War Room** — Live agent reasoning, findings, skip reasons, and confidence levels — all from real backend data in upload mode | **97-Material Waste KB** — Production knowledge base: 18 categories, 120+ alias normalisations, Indian regulatory compliance notes |
 | **RE:GEN Score** — Weighted sustainability health index before and after interventions | **Action Plan + PDF** — Ranked intervention stack with estimated savings, exported via browser print API | **Carbon Calculator** — Scope 1+2 CO₂ formula using IPCC 2006 and BEE India emission factors, shown inline with sources |
 | **IsolationForest Anomaly Detection** — scikit-learn ML model replaces static Z-score thresholds; degrades gracefully when data is insufficient | **Peer Benchmarking** — Per-occupant consumption scored against sector reference baselines (hospital, university, hotel, factory) | **Slack Alerting** — Webhook notification dispatched automatically for every critical or high-severity finding |
-| **Device Control Simulation** — Execute Now button dispatches mock commands to valve, HVAC, and sensor systems; no false "live" claims | **Run History** — Every analysis persisted to SQLite via SQLAlchemy; full history retrievable per organisation | **OpenAI Integration** — Narrative layer with deterministic fallback; no analysis fails without a key |
+| **Device Control Simulation** — Execute Now button dispatches mock commands to valve, HVAC, and sensor systems; no false "live" claims | **Run History** — Every analysis persisted to SQLite via SQLAlchemy; full history retrievable per organisation | **Gemini Integration** — Narrative layer with deterministic fallback; no analysis fails without a key |
 
 ---
 
@@ -70,7 +70,7 @@ RE:GEN AI runs a coordinated network of seven specialised AI agents against your
               └───────┘  └────────┘  └────────┘
                            │
            ┌───────────────▼───────────────┐
-           │        OpenAI gpt-4o-mini      │
+           │        Gemini 2.5 Flash        │
            │   Narrative  ·  Explanations   │
            │  (deterministic KB fallback)   │
            └───────────────┬───────────────┘
@@ -240,9 +240,9 @@ Seven agents are visualised as an animated node network. In upload mode:
 
 ---
 
-## OpenAI Integration
+## Gemini Integration
 
-`gpt-4o-mini` is integrated at three points in the pipeline, each with a deterministic fallback:
+`gemini-2.5-flash` is integrated at three points in the pipeline, each with a deterministic fallback:
 
 | Point | GPT contribution | Fallback |
 |---|---|---|
@@ -250,7 +250,7 @@ Seven agents are visualised as an animated node network. In upload mode:
 | War Room reasoning | Plain-language explanation of each agent's finding and priority | Rule-based template from agent output |
 | Executive summary | 3-paragraph report calibrated to analysis level; discloses if anomaly detection was unavailable | Deterministic template using actual numbers |
 
-Every financial figure is prefixed with *estimated*. No exact profit is claimed. No data is invented. If OpenAI is unavailable or rate-limited, the system degrades gracefully — no analysis fails.
+Every financial figure is prefixed with *estimated*. No exact profit is claimed. No data is invented. If Gemini is unavailable or rate-limited, the system degrades gracefully — no analysis fails.
 
 ---
 
@@ -262,9 +262,9 @@ RE:GEN AI is built for a domain — sustainability and waste decisions — where
 
 **Transparency.** Every agent response includes a `reasoning_trace` (a step-by-step account of how the result was reached), a `status` (`analyzed` / `skipped` / `error` / `unknown_material`), and a `confidence` score. Responses distinguish AI-generated language from deterministic output via an `ai_enhanced` flag, and every response carries a `data_notice` stating whether the analysis ran on uploaded or simulated data. Every CO₂ and emission-factor formula shown in this README cites its public source (UK Water Industry Research, BEE India, IPCC 2006) rather than presenting an unexplained number.
 
-**Ethics.** OpenAI prompts (`backend/agents/*.py`) explicitly forbid claiming exact profit, require the word "estimated" on every financial figure, and forbid hype language ("revolutionary", "powerful AI", "next-generation"). The hazard guardrail (`backend/core/guardrails.py`) suppresses recovery-value estimates entirely for hazardous materials and instead shows a compliance warning directing the user to a licensed handler — the system never nudges a user toward unsafe or non-compliant disposal for the sake of a better-looking number. The Device Control Simulation always returns `mode: "mock"` and never claims to have actuated real hardware.
+**Ethics.** The Gemini prompts (`backend/agents/*.py`) explicitly forbid claiming exact profit, require the word "estimated" on every financial figure, and forbid hype language ("revolutionary", "powerful AI", "next-generation"). The hazard guardrail (`backend/core/guardrails.py`) suppresses recovery-value estimates entirely for hazardous materials and instead shows a compliance warning directing the user to a licensed handler — the system never nudges a user toward unsafe or non-compliant disposal for the sake of a better-looking number. The Device Control Simulation always returns `mode: "mock"` and never claims to have actuated real hardware.
 
-**Privacy.** The application collects only aggregate operational data — water/energy/fuel meter readings and a free-text organisation name/type — never personal, biometric, or individually identifiable information, and has no login or user-tracking system. Uploaded files are parsed in memory for the request and only aggregate analysis results (not raw uploaded rows) are persisted, in a local SQLite run history. Any user-supplied text that reaches an OpenAI prompt is passed through `sanitize_prompt_input()` first, which strips prompt-injection patterns and control characters before it is sent.
+**Privacy.** The application collects only aggregate operational data — water/energy/fuel meter readings and a free-text organisation name/type — never personal, biometric, or individually identifiable information, and has no login or user-tracking system. Uploaded files are parsed in memory for the request and only aggregate analysis results (not raw uploaded rows) are persisted, in a local SQLite run history. Any user-supplied text that reaches a Gemini prompt is passed through `sanitize_prompt_input()` first, which strips prompt-injection patterns and control characters before it is sent.
 
 A disclaimer — *"RE:GEN AI is a decision-support prototype. Not professional regulatory, financial, or engineering advice."* — is attached to every agent output via `core/guardrails.py`, so the system is never presented as a substitute for a licensed professional's judgment.
 
@@ -295,7 +295,7 @@ Every displayed value originates from a single backend field. No frontend recomp
 |---|---|
 | Frontend | React 19, Vite 8, Framer Motion, Lucide React, Tailwind CSS 4 |
 | Backend | FastAPI, Python 3.11+, Pydantic v2, pandas, openpyxl, SQLAlchemy |
-| AI / ML | OpenAI gpt-4o-mini (with deterministic fallback), scikit-learn IsolationForest |
+| AI / ML | Google Gemini 2.5 Flash (with deterministic fallback), scikit-learn IsolationForest |
 | Alerting | Slack Incoming Webhooks |
 | Deployment | Vercel (frontend) + Render (backend) |
 | CI | GitHub Actions — pytest (backend) + oxlint + vitest (frontend) |
@@ -340,7 +340,7 @@ Environment variables:
 
 ```
 # backend/.env
-OPENAI_API_KEY=sk-...            # Optional — system degrades gracefully without it
+GEMINI_API_KEY=...                # Optional — system degrades gracefully without it
 SLACK_WEBHOOK_URL=https://...    # Optional — alerting silently skipped when unset
 
 # Vercel project settings

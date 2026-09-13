@@ -1,8 +1,8 @@
-# OpenAI is used ONLY to generate the following narrative field: top_action_explanation.
+# Gemini is used ONLY to generate the following narrative field: top_action_explanation.
 # All numeric fields (priority_score, roi, urgency, feasibility, cost_saving_inr) are
-# computed by deterministic Python above the OpenAI call.
+# computed by deterministic Python above the Gemini call.
 from core.guardrails import get_disclaimer
-from core.openai_client import call_openai
+from core.ai_client import call_ai
 
 # Reference base costs per action type. Scaled by consumption size in generate_decisions().
 # W1 (leak repair + sensors): base Rs. 8000, +Rs. 10 per 1000 L above 1000 L weekly baseline.
@@ -183,7 +183,7 @@ Rules:
 - Tell the officer exactly what to do within 24 hours
 - Do not use: revolutionary, powerful AI, real-time intelligence, next-generation"""
 
-        top_action_explanation, ai_used = call_openai(prompt, fallback_explanation)
+        top_action_explanation, ai_used = call_ai(prompt, fallback_explanation)
         top["ai_priority_explanation"] = top_action_explanation
         top["ai_enhanced"]             = ai_used
 
