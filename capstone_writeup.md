@@ -200,7 +200,7 @@ The key architectural decision — keeping all numerical analysis in determinist
 - **Live demo:** [https://frontend-two-rho-85.vercel.app](https://frontend-two-rho-85.vercel.app)
 - **Backend API:** [https://regen-ai-backend.onrender.com/health](https://regen-ai-backend.onrender.com/health)
 - **Demo notebook:** `regen_ai_capstone_demo.ipynb` — self-contained, runs without backend
-- **Demo video script:** `docs/demo_video_script.md` — 3-minute timestamped script
+- **Demo video:** [https://youtu.be/o9Hy4onNEkQ](https://youtu.be/o9Hy4onNEkQ)
 
 ---
 
