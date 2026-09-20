@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/screenshots/logo.png" alt="RE:GEN AI Logo" width="200"/>
+</p>
+
 # RE:GEN AI
 
 > **Multi-agent sustainability intelligence.** Seven specialised agents detect hidden resource loss, map waste streams to recovery value, and generate evidence-backed intervention plans — for any campus, hospital, hotel, or industrial facility.
