@@ -1,0 +1,514 @@
+{
+  "postal": [
+    {
+      "pin": "600082",
+      "name": "Periyar Nagar, Chennai",
+      "source": "https://www.indiapost.gov.in/VAS/DOP_PDFFiles/FunctionalPOs.pdf"
+    }
+  ],
+  "market": [
+    {
+      "material": "mixed paper",
+      "aliases": [
+        "paper",
+        "mixed waste paper",
+        "mixed dry paper"
+      ],
+      "condition": "mixed",
+      "category": "recycle",
+      "unit": "kg",
+      "scope": "regional",
+      "service_pins": [
+        "600082"
+      ],
+      "locality": "Chennai",
+      "rate_min_inr": 4,
+      "rate_max_inr": 6,
+      "observed_on": "2026-06-30",
+      "evidence_type": "published_industry_reference",
+      "source_url": "https://www.nationalrecycling.in/blog/office-paper-recycling-cost-savings-sustainability/",
+      "reviewed": true,
+      "applicability": "Q2 2026 mixed office-paper/newspaper benchmark. Assumes all weighed paper is dry and compatible. Confirm grade and eligible weight."
+    },
+    {
+      "material": "corrugated cardboard",
+      "aliases": [
+        "cardboard",
+        "carton",
+        "cardboard boxes"
+      ],
+      "condition": "used",
+      "category": "recycle",
+      "unit": "kg",
+      "scope": "regional",
+      "service_pins": [
+        "600082"
+      ],
+      "locality": "Chennai",
+      "rate_min_inr": 7,
+      "rate_max_inr": 9,
+      "observed_on": "2026-06-30",
+      "evidence_type": "published_industry_reference",
+      "source_url": "https://www.nationalrecycling.in/blog/office-paper-recycling-cost-savings-sustainability/",
+      "reviewed": true,
+      "applicability": "Q2 2026 collection-point benchmark for corrugated boxes. Assumes all weighed cardboard is clean and compatible."
+    },
+    {
+      "material": "old books",
+      "aliases": [
+        "books",
+        "book",
+        "used books"
+      ],
+      "condition": "used",
+      "category": "recycle",
+      "unit": "kg",
+      "scope": "regional",
+      "service_pins": [
+        "600082"
+      ],
+      "locality": "Chennai",
+      "rate_min_inr": 15,
+      "rate_max_inr": 15,
+      "observed_on": "2025-10-30",
+      "evidence_type": "historical_proposed_rate",
+      "source_url": "https://chennaicorporation.gov.in/council/resolution/Council%20Resolution%2030.10.2025.pdf#page=83",
+      "reviewed": true,
+      "applicability": "Historical municipal proposed urban rate. Use only as a comparison for the named grade."
+    },
+    {
+      "material": "stainless steel vessels",
+      "aliases": [
+        "old steel vessels"
+      ],
+      "condition": "used",
+      "category": "recycle",
+      "unit": "kg",
+      "scope": "regional",
+      "service_pins": [
+        "600082"
+      ],
+      "locality": "Chennai",
+      "rate_min_inr": 30,
+      "rate_max_inr": 30,
+      "observed_on": "2025-10-30",
+      "evidence_type": "historical_proposed_rate",
+      "source_url": "https://chennaicorporation.gov.in/council/resolution/Council%20Resolution%2030.10.2025.pdf#page=83",
+      "reviewed": true,
+      "applicability": "Historical municipal proposed urban rate. Use only as a comparison for the named grade."
+    },
+    {
+      "material": "polythene bags",
+      "aliases": [
+        "used polythene bags"
+      ],
+      "condition": "used",
+      "category": "recycle",
+      "unit": "kg",
+      "scope": "regional",
+      "service_pins": [
+        "600082"
+      ],
+      "locality": "Chennai",
+      "rate_min_inr": 20,
+      "rate_max_inr": 20,
+      "observed_on": "2025-10-30",
+      "evidence_type": "historical_proposed_rate",
+      "source_url": "https://chennaicorporation.gov.in/council/resolution/Council%20Resolution%2030.10.2025.pdf#page=83",
+      "reviewed": true,
+      "applicability": "Historical municipal proposed urban rate. Use only as a comparison for the named grade."
+    },
+    {
+      "material": "tin cans",
+      "aliases": [
+        "tin can",
+        "used tin cans",
+        "tin containers"
+      ],
+      "conditions": [
+        "used",
+        "good",
+        "dry"
+      ],
+      "category": "recycle",
+      "unit": "kg",
+      "scope": "regional_benchmark",
+      "service_pins": [],
+      "locality": "Chennai",
+      "rate_min_inr": 16,
+      "rate_max_inr": 18,
+      "observed_on": "2026-11-19",
+      "source_url": "https://scraptrove.com/",
+      "evidence_type": "published_buying_rate",
+      "reviewed": true,
+      "applicability": "Chennai indicative buying-rate reference. Eligible dry weight, material grade and final collection terms require confirmation."
+    },
+    {
+      "material": "aluminium cans",
+      "aliases": [
+        "aluminum cans",
+        "aluminium beverage cans",
+        "aluminum beverage cans"
+      ],
+      "conditions": [
+        "used",
+        "good",
+        "dry"
+      ],
+      "category": "recycle",
+      "unit": "kg",
+      "scope": "regional_benchmark",
+      "service_pins": [],
+      "locality": "Chennai",
+      "rate_min_inr": 40,
+      "rate_max_inr": 41,
+      "observed_on": "2026-11-19",
+      "source_url": "https://scraptrove.com/",
+      "evidence_type": "published_buying_rate",
+      "reviewed": true,
+      "applicability": "Chennai indicative buying-rate reference. Eligible dry weight, material grade and final collection terms require confirmation."
+    },
+    {
+      "material": "old books",
+      "aliases": [
+        "books",
+        "used books",
+        "book"
+      ],
+      "conditions": [
+        "used",
+        "good",
+        "dry"
+      ],
+      "category": "recycle",
+      "unit": "kg",
+      "scope": "regional_benchmark",
+      "service_pins": [],
+      "locality": "Chennai",
+      "rate_min_inr": 8,
+      "rate_max_inr": 10,
+      "observed_on": "2026-11-19",
+      "source_url": "https://scraptrove.com/",
+      "evidence_type": "published_buying_rate",
+      "reviewed": true,
+      "applicability": "Chennai indicative buying-rate reference. Eligible dry weight, material grade and final collection terms require confirmation."
+    },
+    {
+      "material": "cardboard",
+      "aliases": [
+        "carton",
+        "cartons",
+        "cardboard boxes",
+        "corrugated cardboard"
+      ],
+      "conditions": [
+        "used",
+        "good",
+        "dry"
+      ],
+      "category": "recycle",
+      "unit": "kg",
+      "scope": "regional_benchmark",
+      "service_pins": [],
+      "locality": "Chennai",
+      "rate_min_inr": 7,
+      "rate_max_inr": 8,
+      "observed_on": "2026-11-19",
+      "source_url": "https://scraptrove.com/",
+      "evidence_type": "published_buying_rate",
+      "reviewed": true,
+      "applicability": "Chennai indicative buying-rate reference. Eligible dry weight, material grade and final collection terms require confirmation."
+    },
+    {
+      "material": "newspaper",
+      "aliases": [
+        "newspapers",
+        "old newspaper",
+        "old newspapers"
+      ],
+      "conditions": [
+        "used",
+        "good",
+        "dry"
+      ],
+      "category": "recycle",
+      "unit": "kg",
+      "scope": "regional_benchmark",
+      "service_pins": [],
+      "locality": "Chennai",
+      "rate_min_inr": 12,
+      "rate_max_inr": 14,
+      "observed_on": "2026-11-19",
+      "source_url": "https://scraptrove.com/",
+      "evidence_type": "published_buying_rate",
+      "reviewed": true,
+      "applicability": "Chennai indicative buying-rate reference. Eligible dry weight, material grade and final collection terms require confirmation."
+    },
+    {
+      "material": "saree scrap",
+      "aliases": [
+        "discarded sarees",
+        "waste sarees"
+      ],
+      "conditions": [
+        "used",
+        "good",
+        "dry"
+      ],
+      "category": "recycle",
+      "unit": "kg",
+      "scope": "regional_benchmark",
+      "service_pins": [],
+      "locality": "Chennai",
+      "rate_min_inr": 8,
+      "rate_max_inr": 20,
+      "observed_on": "2026-11-19",
+      "source_url": "https://scraptrove.com/",
+      "evidence_type": "published_buying_rate",
+      "reviewed": true,
+      "applicability": "Chennai indicative buying-rate reference. Eligible dry weight, material grade and final collection terms require confirmation."
+    },
+    {
+      "material": "iron scrap",
+      "aliases": [
+        "scrap iron"
+      ],
+      "conditions": [
+        "used",
+        "good",
+        "dry"
+      ],
+      "category": "recycle",
+      "unit": "kg",
+      "scope": "regional_benchmark",
+      "service_pins": [],
+      "locality": "Chennai",
+      "rate_min_inr": 23,
+      "rate_max_inr": 24,
+      "observed_on": "2026-11-19",
+      "source_url": "https://scraptrove.com/",
+      "evidence_type": "published_buying_rate",
+      "reviewed": true,
+      "applicability": "Chennai indicative buying-rate reference. Eligible dry weight, material grade and final collection terms require confirmation."
+    },
+    {
+      "material": "copper scrap",
+      "aliases": [
+        "scrap copper"
+      ],
+      "conditions": [
+        "used",
+        "good",
+        "dry"
+      ],
+      "category": "recycle",
+      "unit": "kg",
+      "scope": "regional_benchmark",
+      "service_pins": [],
+      "locality": "Chennai",
+      "rate_min_inr": 570,
+      "rate_max_inr": 605,
+      "observed_on": "2026-11-19",
+      "source_url": "https://scraptrove.com/",
+      "evidence_type": "published_buying_rate",
+      "reviewed": true,
+      "applicability": "Chennai indicative buying-rate reference. Eligible dry weight, material grade and final collection terms require confirmation."
+    },
+    {
+      "material": "mixed plastic",
+      "aliases": [
+        "mixed plastic waste"
+      ],
+      "conditions": [
+        "used",
+        "good",
+        "dry"
+      ],
+      "category": "recycle",
+      "unit": "kg",
+      "scope": "regional_benchmark",
+      "service_pins": [],
+      "locality": "Chennai",
+      "rate_min_inr": 5,
+      "rate_max_inr": 12,
+      "observed_on": "2026-11-27",
+      "source_url": "https://scrapshift.in/scrap-rates/chennai",
+      "evidence_type": "published_buying_rate",
+      "reviewed": true,
+      "applicability": "Chennai indicative buying-rate reference. Eligible dry weight, material grade and final collection terms require confirmation."
+    },
+    {
+      "material": "pet bottles",
+      "aliases": [
+        "pet bottle",
+        "pet plastic bottles"
+      ],
+      "conditions": [
+        "used",
+        "good",
+        "dry"
+      ],
+      "category": "recycle",
+      "unit": "kg",
+      "scope": "regional_benchmark",
+      "service_pins": [],
+      "locality": "Chennai",
+      "rate_min_inr": 12,
+      "rate_max_inr": 20,
+      "observed_on": "2026-11-27",
+      "source_url": "https://scrapshift.in/scrap-rates/chennai",
+      "evidence_type": "published_buying_rate",
+      "reviewed": true,
+      "applicability": "Chennai indicative buying-rate reference. Eligible dry weight, material grade and final collection terms require confirmation."
+    }
+  ],
+  "services": [
+    {
+      "organization": "Cashify Perambur",
+      "locality": "Peravallur, Chennai",
+      "service_pins": [
+        "600082"
+      ],
+      "material_pattern": "mobiles?|smartphones?|phones?",
+      "pathways": [
+        "repair",
+        "sell"
+      ],
+      "description": "Lists repair and used-phone buyback. Eligibility and price depend on model and inspection.",
+      "source_url": "https://www.cashify.in/offline-stores/cashify-store-perambur-store-in-chennai",
+      "reviewed_on": "2026-11-27"
+    },
+    {
+      "organization": "Earth Sense Recycle",
+      "locality": "Thiruvanmiyur, Chennai",
+      "service_pins": [
+        "600082"
+      ],
+      "material_pattern": "mobiles?|smartphones?|phones?|electronics?|laptops?",
+      "pathways": [
+        "professional",
+        "recycle"
+      ],
+      "description": "Publishes end-of-life electronics collection and recycling services. Confirm current registration, device acceptance and coverage with authorized staff.",
+      "source_url": "https://www.earthsenserecycle.com/cpcb_spcb",
+      "reviewed_on": "2026-11-27"
+    },
+    {
+      "organization": "Namma Kayilan Kadai",
+      "locality": "Chennai",
+      "service_pins": [
+        "600082"
+      ],
+      "material_pattern": "paper|cardboard|newspapers?",
+      "pathways": [
+        "recycle",
+        "collective"
+      ],
+      "description": "Advertises paper and cardboard purchases and Chennai pickup. Confirm the mixed grade, minimum weight and PIN coverage.",
+      "source_url": "https://nammakailankadai.com/",
+      "reviewed_on": "2026-11-27"
+    },
+    {
+      "organization": "Recyclemart",
+      "locality": "Erukkancheri, Chennai",
+      "service_pins": [
+        "600082"
+      ],
+      "material_pattern": "books?|newspapers?|paper",
+      "pathways": [
+        "recycle"
+      ],
+      "description": "Lists purchases of old books, newspapers and office paper. Confirm the accepted grade, minimum and PIN coverage.",
+      "source_url": "https://play.google.com/store/apps/details?id=com.recyclemart.app",
+      "reviewed_on": "2026-11-27"
+    },
+    {
+      "organization": "Recyclemart",
+      "locality": "Erukkancheri, Chennai",
+      "service_pins": [
+        "600082"
+      ],
+      "material_pattern": "clothes|clothing|garments?",
+      "pathways": [
+        "sell"
+      ],
+      "description": "Lists purchases of old clothing. Confirm condition, current coverage and whether usable garments can be resold.",
+      "source_url": "https://play.google.com/store/apps/details?id=com.recyclemart.app",
+      "reviewed_on": "2026-11-27"
+    },
+    {
+      "organization": "Annai Book Centre",
+      "locality": "Tambaram East, Chennai",
+      "service_pins": [
+        "600082"
+      ],
+      "material_pattern": "books?|textbooks?|novels?",
+      "pathways": [
+        "sell",
+        "reuse"
+      ],
+      "description": "Lists buying and exchanging books at its Tambaram East store. Confirm title or edition eligibility and transfer arrangements.",
+      "source_url": "https://www.annaiusedbooks.com/",
+      "reviewed_on": "2026-11-27"
+    },
+    {
+      "organization": "Respun (Kay Gee Enterprises)",
+      "locality": "Panipat, Haryana",
+      "service_pins": [
+        "132103"
+      ],
+      "material_pattern": "fabric offcuts?|textile (?:offcuts?|waste)|fabric scraps?",
+      "pathways": [
+        "recycle"
+      ],
+      "description": "Publishes recycling enquiries for business textiles and a Panipat facility. Confirm fibre blend, offcut eligibility and the minimum lot before arranging transport.",
+      "source_url": "https://respunindia.com/contact-respun/",
+      "reviewed_on": "2026-11-27"
+    },
+    {
+      "organization": "Scrap Trove",
+      "locality": "Chennai",
+      "service_pins": [],
+      "coverage_city": "Chennai",
+      "material_pattern": "tin cans?|alumini?um cans?|aluminum cans?|plastic bottles?|pet bottles?|plastic waste|metal scrap|iron scrap|copper scrap|cardboard|cartons?|newspapers?|waste paper",
+      "pathways": [
+        "sell",
+        "recycle",
+        "collective"
+      ],
+      "description": "Advertises Chennai scrap purchasing and doorstep collection. Confirm material grade, lot size and actual PIN coverage.",
+      "source_url": "https://scraptrove.com/",
+      "reviewed_on": "2026-11-27"
+    },
+    {
+      "organization": "Loopy",
+      "locality": "Chennai",
+      "service_pins": [],
+      "coverage_city": "Chennai",
+      "material_pattern": "tin cans?|alumini?um cans?|aluminum cans?|plastic bottles?|pet bottles?|plastic waste|metal scrap|iron scrap|copper scrap|cardboard|cartons?|newspapers?|waste paper",
+      "pathways": [
+        "sell",
+        "recycle",
+        "collective"
+      ],
+      "description": "Advertises Chennai scrap purchasing and doorstep collection. Confirm material grade, lot size and actual PIN coverage.",
+      "source_url": "https://www.loopy.co.in/",
+      "reviewed_on": "2026-11-27"
+    },
+    {
+      "organization": "Disposcrap",
+      "locality": "Chennai",
+      "service_pins": [],
+      "coverage_city": "Chennai",
+      "material_pattern": "tin cans?|alumini?um cans?|aluminum cans?|plastic bottles?|pet bottles?|plastic waste|metal scrap|iron scrap|copper scrap|cardboard|cartons?|newspapers?|waste paper",
+      "pathways": [
+        "sell",
+        "recycle",
+        "collective"
+      ],
+      "description": "Advertises Chennai scrap purchasing and doorstep collection. Confirm material grade, lot size and actual PIN coverage.",
+      "source_url": "https://www.disposcrap.com/",
+      "reviewed_on": "2026-11-27"
+    }
+  ]
+}
