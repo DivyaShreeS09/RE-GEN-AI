@@ -1,0 +1,71 @@
+name: regen-release
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file:
+      - ${REGEN_RELEASE_DIR:?Set release directory}/postgres.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    security_opt:
+      - no-new-privileges:true
+
+  migrate:
+    build: ./backend
+    command: ["python", "-m", "core.schema"]
+    env_file: &backend_env
+      - ${REGEN_RELEASE_DIR:?Set release directory}/backend.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    security_opt: [no-new-privileges:true]
+
+  worker:
+    build: ./backend
+    command: ["python", "scripts/mission_worker.py"]
+    restart: unless-stopped
+    env_file: *backend_env
+    depends_on: &after_migration
+      migrate:
+        condition: service_completed_successfully
+    security_opt: [no-new-privileges:true]
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file: *backend_env
+    depends_on: *after_migration
+    expose: ["8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/ready', timeout=3).close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    security_opt: [no-new-privileges:true]
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_OIDC_CLIENT_ID: ${VITE_OIDC_CLIENT_ID:-}
+        VITE_OIDC_AUTHORIZE_URL: ${VITE_OIDC_AUTHORIZE_URL:-}
+        VITE_OIDC_TOKEN_URL: ${VITE_OIDC_TOKEN_URL:-}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:80"
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  postgres_data:
