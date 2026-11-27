@@ -23,7 +23,6 @@ frontend/.local
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
 
 # Editor
 .vscode/
@@ -45,3 +44,10 @@ test-results/
 # Backend venv (explicit)
 backend/venv/
 backend/.env
+*.db
+.pytest_cache/
+
+# Private local verification artifacts and ephemeral synthetic databases
+/.regen-verification/
+/.regen-test-*/
+/regen-demo-*/

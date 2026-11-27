@@ -34,9 +34,9 @@ def _bucket(value_per_occupant: float, ref: dict) -> str:
 
 def _bucket_label(bucket: str) -> str:
     return {
-        "top_20pct_efficient":   "top 20% most efficient",
+        "top_20pct_efficient":   "within efficient reference band",
         "typical_range":         "typical range",
-        "bottom_20pct_high_use": "bottom 20% highest use",
+        "bottom_20pct_high_use": "above typical reference band",
     }.get(bucket, bucket)
 
 

@@ -1,41 +1,51 @@
 # Gemini is used ONLY to generate the following narrative field: executive_summary.
 # All numeric fields (silent_losses, campus_health_index, building_risk_ranking, action_plan
 # thresholds, sdg_alignment, data_notice) are computed by deterministic Python above the call.
-from datetime import datetime
-from core.guardrails import get_disclaimer, get_simulated_notice, sanitize_prompt_input
+from datetime import datetime, timezone
+from core.guardrails import get_disclaimer, get_simulated_notice
 from core.ai_client import call_ai, ai_status
 
 
 def _fallback_summary(water, energy, impact, regen, ranked,
                       data_source: str = "Simulated sensor logs, January 15–21, 2024",
                       org_name: str = None) -> str:
-    total_loss = round(
-        water.get("estimated_cost_inr", 0) + energy.get("estimated_cost_inr", 0), 2
-    )
+    if impact.get("evidence_type") == "historical analysis":
+        observations = [f"{label}: {result[key]:,.2f} {unit} observed."
+                        for label, result, key, unit in (("Water", water, "total_consumption_liters", "L"),
+                                                         ("Energy", energy, "total_consumption_kwh", "kWh"))
+                        if result.get(key) is not None]
+        exposure = impact.get("anomaly_cost_exposure_inr")
+        lines = [f"Data source: {data_source}.", *observations,
+                 f"Comparable utility anomaly exposure: INR {exposure:,.2f}." if exposure is not None
+                 else "Utility anomaly exposure is unquantified.",
+                 "Baseline exceptions require inspection. Verified savings and avoided emissions are unavailable.",
+                 ranked[0]["recommended_action"] if ranked else "No intervention was prioritized."]
+        return "\n\n".join(lines)
+    total_loss = round((water.get("estimated_cost_inr") or 0) + (energy.get("estimated_cost_inr") or 0), 2)
     org_label = f"{org_name} " if org_name else ""
     water_skip = water.get("status") == "skipped"
     energy_skip = energy.get("status") == "skipped"
     water_line = (
         f"Water leakage analysis: {water.get('total_wasted_liters', 0)} L estimated wasted "
-        f"(Rs. {water.get('estimated_cost_inr', 0)}/week)."
+        f"(Rs. {water.get('estimated_cost_inr', 0)} for this period)."
         if not water_skip else "Water data not provided — water analysis skipped."
     )
     energy_line = (
         f"After-hours energy waste: {energy.get('total_wasted_kwh', 0)} kWh "
-        f"(Rs. {energy.get('estimated_cost_inr', 0)}/week)."
+        f"(Rs. {energy.get('estimated_cost_inr', 0)} for this period)."
         if not energy_skip else "Energy data not provided — energy analysis skipped."
     )
     return (
-        f"RE:GEN AI {org_label}Sustainability Analysis — {datetime.now().strftime('%B %d, %Y')}\n\n"
+        f"RE:GEN AI {org_label}Sustainability Analysis — {datetime.now(timezone.utc).strftime('%B %d, %Y')}\n\n"
         f"Data source: {data_source}.\n"
         f"{water_line} {energy_line} "
-        f"Combined estimated weekly utility loss: Rs. {total_loss}.\n\n"
+        f"Combined estimated reporting-period utility loss: Rs. {total_loss}.\n\n"
         f"Top recommended intervention: "
         f"{ranked[0]['recommended_action'] if ranked else 'No critical actions detected'}. "
         f"Recommended timeline: {ranked[0].get('timeline', 'immediately') if ranked else 'as soon as possible'}.\n\n"
         f"Implementing all agent-recommended actions is projected to raise the RE:GEN Score from "
         f"{regen.get('before_score', 'N/A')}/100 to {regen.get('after_score', 'N/A')}/100, "
-        f"with an estimated {impact.get('total_co2_saved_kg', 0)} kg CO2 reduction per week — equivalent to "
+        f"with an estimated {impact.get('total_co2_saved_kg', 0)} kg CO2 reduction for the reporting period — equivalent to "
         f"{impact.get('trees_equivalent', 0)} trees or {impact.get('vehicle_km_equivalent', 0)} km "
         f"of car travel offset.\n\n"
         "Note: RE:GEN AI is a prototype decision-support system. "
@@ -57,7 +67,7 @@ def generate_report(
     analysis_metadata: dict = None,
 ) -> dict:
     ranked    = decision_result.get("ranked_actions", [])
-    immediate = [a for a in ranked if a.get("timeline") == "Immediate"]
+    immediate = [a for a in ranked if a.get("timeline") in {"Immediate", "Within 24 hours"}]
     week      = [a for a in ranked if "7" in str(a.get("timeline", ""))]
 
     action_plan = {
@@ -68,6 +78,8 @@ def generate_report(
                 "estimated_saving_inr": a["cost_saving_inr"],
                 "priority_score":       a["priority_score"],
                 "roi":                  a.get("roi"),
+                **{field: a.get(field) for field in ("id", "status", "responsible_role", "supporting_evidence",
+                                                     "verification_method", "prerequisites", "approval_required", "zones", "depends_on")},
             }
             for a in immediate
         ],
@@ -78,6 +90,8 @@ def generate_report(
                 "estimated_saving_inr": a["cost_saving_inr"],
                 "priority_score":       a["priority_score"],
                 "roi":                  a.get("roi"),
+                **{field: a.get(field) for field in ("id", "status", "responsible_role", "supporting_evidence",
+                                                     "verification_method", "prerequisites", "approval_required", "zones", "depends_on")},
             }
             for a in week
         ],
@@ -100,28 +114,27 @@ def generate_report(
         data_source=data_source, org_name=org_name,
     )
     total_loss = round(
-        water_result.get("estimated_cost_inr", 0) + energy_result.get("estimated_cost_inr", 0), 2
+        (water_result.get("estimated_cost_inr") or 0) + (energy_result.get("estimated_cost_inr") or 0), 2
     )
     level_label  = analysis_metadata.get("overall_label", "Advanced AI Analysis") if analysis_metadata else "Advanced AI Analysis"
-    conf_pct     = analysis_metadata.get("confidence_pct", 89) if analysis_metadata else 89
+    coverage_pct = coverage.get("data_coverage_pct") if coverage else None
     skipped_mods = ", ".join(m["module"] for m in (analysis_metadata or {}).get("skipped_modules", [])) or "None"
     anomaly_note = (
         f"Note: Anomaly detection was unavailable at this data resolution (analysis level: {level_label}). "
         f"Figures reflect consumption estimates only, not confirmed leakage or waste events. "
-        f"Confidence: {conf_pct}%."
+        f"Dataset coverage: {coverage_pct}."
         if analysis_metadata and not analysis_metadata.get("anomaly_detection_available", True)
         else ""
     )
-    safe_data_source = sanitize_prompt_input(data_source, max_length=300)
     prompt = f"""You are a sustainability analyst. Write a professional 3-paragraph executive summary (max 180 words) for a sustainability officer.
 
-Scan source: {safe_data_source}.
-Analysis level: {level_label}. Confidence: {conf_pct}%. Skipped modules: {skipped_mods}.
+Use the recorded analysis metrics.
+Analysis level: {level_label}. Dataset coverage: {coverage_pct}. Skipped modules: {skipped_mods}.
 
 Key findings:
-- Water leakage: {water_result.get('total_wasted_liters', 0)} L wasted (severity: {water_result.get('severity','').upper()}, estimated Rs. {water_result.get('estimated_cost_inr', 0)}/week)
-- Energy waste: {energy_result.get('total_wasted_kwh', 0)} kWh after-hours (severity: {energy_result.get('severity','').upper()}, estimated Rs. {energy_result.get('estimated_cost_inr', 0)}/week)
-- Combined weekly utility loss: estimated Rs. {total_loss}
+- Water leakage: {water_result.get('total_wasted_liters', 0)} L wasted (severity: {water_result.get('severity','').upper()}, estimated Rs. {water_result.get('estimated_cost_inr', 0)} for this period)
+- Energy waste: {energy_result.get('total_wasted_kwh', 0)} kWh after-hours (severity: {energy_result.get('severity','').upper()}, estimated Rs. {energy_result.get('estimated_cost_inr', 0)} for this period)
+- Combined reporting-period utility loss: estimated Rs. {total_loss}
 - CO2 reduction potential: {impact_result.get('total_co2_saved_kg', 0)} kg/week ({impact_result.get('vehicle_km_equivalent', 0)} km of car travel)
 - RE:GEN Score: {regen_score_result.get('before_score','N/A')}/100 now -> {regen_score_result.get('after_score','N/A')}/100 post-action
 - Top priority action: {ranked[0]['recommended_action'] if ranked else 'None'}
@@ -138,10 +151,12 @@ Rules:
 - If analysis level is not Level 3, explicitly acknowledge findings are based on consumption estimates, not confirmed anomalies
 - Do NOT infer or describe operational behavior (pipe leaks, equipment faults, after-hours usage patterns, zone-specific events) that was not present in the provided data above
 - Only describe findings that appear in the Key findings section; do not add additional problems or losses
-- Reference the data source accurately: {data_source}
 - End with one sentence stating this is a prototype decision-support system"""
 
-    executive_summary, ai_used = call_ai(prompt, fallback)
+    historical = impact_result.get("evidence_type") == "historical analysis"
+    executive_summary, ai_used = (fallback, False) if historical else call_ai(prompt, fallback)
+    if historical:
+        action_plan.update(next_30_days=[], long_term=[])
 
     # SDG summary narrative
     sdg_items = impact_result.get("sdg_alignment", [])
@@ -158,8 +173,8 @@ Rules:
         "co2_equivalent_kg":      impact_result.get("total_co2_saved_kg", 0),
         "total_recoverable_inr":  decision_result.get("total_potential_saving_inr", 0),
         "waste_hidden_value_inr": (
-            waste_result.get("estimated_recovery", {}).get("max_inr", 0)
-            if waste_result and waste_result.get("estimated_recovery") else 0
+            waste_result.get("estimated_recovery", {}).get("max_inr")
+            if waste_result and waste_result.get("estimated_recovery") else None
         ),
         "vehicle_km_equivalent":      impact_result.get("vehicle_km_equivalent", 0),
         "household_days_equivalent":  impact_result.get("household_days_equivalent", 0),
@@ -179,7 +194,7 @@ Rules:
     return {
         "agent":              "Report Agent",
         "status":             "generated",
-        "generated_at":       datetime.now().isoformat(),
+        "generated_at":       datetime.now(timezone.utc).isoformat(),
         "org_name":           org_name or "Demo Organisation",
         "org_type":           org_type or "University",
         "data_source":        data_source,
@@ -190,6 +205,14 @@ Rules:
         "computation_type":   "deterministic",
         "ai_layer":           ai_status(),
         "action_plan":        action_plan,
+        "cross_resource_relationships": decision_result.get("cross_resource_relationships", []),
+        "resource_evidence": {domain: {
+            "profile": result.get("resource_profile"),
+            "intensity": result.get("intensity"),
+            "input_quality": result.get("input_quality"),
+            "loss_assessment": result.get("loss_assessment"),
+            "findings": result.get("anomaly_events", []),
+        } for domain, result in (("water", water_result), ("energy", energy_result)) if result.get("status") != "skipped"},
         "silent_losses":      silent_losses,
         "sdg_alignment":      sdg_items,
         "campus_health_index":   campus_health,

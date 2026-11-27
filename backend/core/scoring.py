@@ -1,19 +1,21 @@
+REGEN_SCORE_WEIGHTS = {
+    "waste": 0.20,
+    "water": 0.20,
+    "energy": 0.20,
+    "co2": 0.15,
+    "urgency": 0.15,
+    "feasibility": 0.10,
+}
+
+
 def calculate_regen_score(waste_score, water_score, energy_score, co2_score, urgency_score, feasibility_score):
-    weights = {
-        "waste": 0.20,
-        "water": 0.20,
-        "energy": 0.20,
-        "co2": 0.15,
-        "urgency": 0.15,
-        "feasibility": 0.10,
-    }
     raw = (
-        waste_score * weights["waste"]
-        + water_score * weights["water"]
-        + energy_score * weights["energy"]
-        + co2_score * weights["co2"]
-        + urgency_score * weights["urgency"]
-        + feasibility_score * weights["feasibility"]
+        waste_score * REGEN_SCORE_WEIGHTS["waste"]
+        + water_score * REGEN_SCORE_WEIGHTS["water"]
+        + energy_score * REGEN_SCORE_WEIGHTS["energy"]
+        + co2_score * REGEN_SCORE_WEIGHTS["co2"]
+        + urgency_score * REGEN_SCORE_WEIGHTS["urgency"]
+        + feasibility_score * REGEN_SCORE_WEIGHTS["feasibility"]
     )
     return round(min(max(raw, 0), 100), 1)
 

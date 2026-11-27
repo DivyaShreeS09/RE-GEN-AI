@@ -86,6 +86,7 @@ export default function EnergyPanel({ data, uploadResult }) {
     (anomaly_events || []).flatMap(ev => ev.anomaly_hours || [])
   )
 
+  const historical = Boolean(uploadResult)
   return (
     <section className="px-6 py-16 max-w-7xl mx-auto" id="energy">
       <div className="mb-8">
@@ -113,17 +114,17 @@ export default function EnergyPanel({ data, uploadResult }) {
               </div>
               <div className="space-y-4">
                 <div>
-                  <p className="text-xs text-slate-500 mb-1">After-Hours kWh Wasted</p>
+                  <p className="text-xs text-slate-500 mb-1">{historical ? 'Estimated excess above baseline (kWh)' : 'After-Hours kWh Wasted'}</p>
                   <p className="text-4xl font-black text-yellow-400">{total_wasted_kwh?.toFixed(1)}</p>
                   <p className="text-xs text-slate-400">detected anomalous consumption</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 mb-1">Cost Impact</p>
-                  <p className="text-2xl font-bold text-red-400">₹{estimated_cost_inr?.toFixed(0)}</p>
+                  <p className="text-2xl font-bold text-red-400">{estimated_cost_inr == null ? 'Unavailable' : `₹${estimated_cost_inr.toFixed(0)}`}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 mb-1">CO₂ Equivalent</p>
-                  <p className="text-xl font-bold text-orange-400">{co2_equivalent_kg} kg</p>
+                  <p className="text-xl font-bold text-orange-400">{co2_equivalent_kg == null ? 'Unavailable' : `${co2_equivalent_kg} kg`}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 mb-1">Severity</p>
@@ -197,7 +198,7 @@ export default function EnergyPanel({ data, uploadResult }) {
                         <td className="py-2 pr-4 text-slate-400">{ev.date}</td>
                         <td className="py-2 pr-4 text-orange-400 font-medium">{ev.zone}</td>
                         <td className="py-2 pr-4 text-xs text-slate-400">{ev.equipment?.join(', ')}</td>
-                        <td className="py-2 pr-4">{ev.anomaly_hours?.join(', ')}:00</td>
+                        <td className="py-2 pr-4">{ev.anomaly_hours?.length ? `${ev.anomaly_hours.join(', ')}:00` : 'Daily'}</td>
                         <td className="py-2 pr-4 text-yellow-400">{ev.total_kwh} kWh</td>
                         <td className="py-2 text-red-400">{ev.wasted_kwh} kWh</td>
                       </tr>

@@ -29,7 +29,7 @@ class TestCallAiFinishReasonGuardrail:
         mock_client.models.generate_content.return_value = response
 
         with patch.object(ai_client, "_client", mock_client), \
-             patch.object(ai_client, "AI_AVAILABLE", True):
+             patch.object(ai_client, "cloud_enabled", return_value=True):
             text, ai_was_used = ai_client.call_ai("any prompt", fallback="safe fallback")
 
         assert text == "safe fallback"
@@ -44,7 +44,7 @@ class TestCallAiFinishReasonGuardrail:
         mock_client.models.generate_content.return_value = response
 
         with patch.object(ai_client, "_client", mock_client), \
-             patch.object(ai_client, "AI_AVAILABLE", True):
+             patch.object(ai_client, "cloud_enabled", return_value=True):
             text, ai_was_used = ai_client.call_ai("any prompt", fallback="safe fallback")
 
         assert text == "safe fallback"
@@ -57,7 +57,7 @@ class TestCallAiFinishReasonGuardrail:
         mock_client.models.generate_content.return_value = response
 
         with patch.object(ai_client, "_client", mock_client), \
-             patch.object(ai_client, "AI_AVAILABLE", True):
+             patch.object(ai_client, "cloud_enabled", return_value=True):
             text, ai_was_used = ai_client.call_ai("any prompt", fallback="safe fallback")
 
         assert text == "safe fallback"
@@ -70,7 +70,7 @@ class TestCallAiFinishReasonGuardrail:
         mock_client.models.generate_content.return_value = response
 
         with patch.object(ai_client, "_client", mock_client), \
-             patch.object(ai_client, "AI_AVAILABLE", True):
+             patch.object(ai_client, "cloud_enabled", return_value=True):
             text, ai_was_used = ai_client.call_ai("any prompt", fallback="safe fallback")
 
         assert text == "Clean completed answer."
@@ -85,7 +85,7 @@ class TestCallAiFinishReasonGuardrail:
         mock_client.models.generate_content.return_value = response
 
         with patch.object(ai_client, "_client", mock_client), \
-             patch.object(ai_client, "AI_AVAILABLE", True):
+             patch.object(ai_client, "cloud_enabled", return_value=True):
             text, ai_was_used = ai_client.call_ai("any prompt", fallback="safe fallback")
 
         assert text == "Clean completed answer."
@@ -95,7 +95,7 @@ class TestCallAiFinishReasonGuardrail:
 class TestCallAiFallbackPaths:
     """call_ai must fall back whenever the usable response is absent or empty."""
 
-    def test_no_candidates_returns_fallback(self):
+    def test_nonempty_text_without_candidates_is_accepted(self):
         """Empty candidates list → finish_reason is None → falls through to text check."""
         response = MagicMock()
         response.candidates = []
@@ -104,7 +104,7 @@ class TestCallAiFallbackPaths:
         mock_client.models.generate_content.return_value = response
 
         with patch.object(ai_client, "_client", mock_client), \
-             patch.object(ai_client, "AI_AVAILABLE", True):
+             patch.object(ai_client, "cloud_enabled", return_value=True):
             text, ai_was_used = ai_client.call_ai("any prompt", fallback="safe fallback")
 
         # finish_reason is None → skips the non-STOP check; text is non-empty → serves it
@@ -118,7 +118,7 @@ class TestCallAiFallbackPaths:
         mock_client.models.generate_content.return_value = response
 
         with patch.object(ai_client, "_client", mock_client), \
-             patch.object(ai_client, "AI_AVAILABLE", True):
+             patch.object(ai_client, "cloud_enabled", return_value=True):
             text, ai_was_used = ai_client.call_ai("any prompt", fallback="safe fallback")
 
         assert text == "safe fallback"
@@ -129,7 +129,7 @@ class TestCallAiFallbackPaths:
         mock_client = MagicMock()
 
         with patch.object(ai_client, "_client", mock_client), \
-             patch.object(ai_client, "AI_AVAILABLE", False):
+             patch.object(ai_client, "cloud_enabled", return_value=False):
             text, ai_was_used = ai_client.call_ai("any prompt", fallback="safe fallback")
 
         mock_client.models.generate_content.assert_not_called()
@@ -142,8 +142,56 @@ class TestCallAiFallbackPaths:
         mock_client.models.generate_content.side_effect = RuntimeError("network error")
 
         with patch.object(ai_client, "_client", mock_client), \
-             patch.object(ai_client, "AI_AVAILABLE", True):
+             patch.object(ai_client, "cloud_enabled", return_value=True):
             text, ai_was_used = ai_client.call_ai("any prompt", fallback="safe fallback")
 
         assert text == "safe fallback"
         assert ai_was_used is False
+
+
+def test_offline_even_with_key(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "synthetic-fixture")
+    with patch.object(ai_client, "_provider") as provider:
+        assert ai_client.call_ai("fixture", "offline") == ("offline", False)
+        provider.assert_not_called()
+    assert ai_client.ai_status()["provider"] is None
+
+
+def test_cache_scoped_to_tenant_and_provider_budget(monkeypatch):
+    monkeypatch.setattr(ai_client, "cloud_enabled", lambda: True)
+    fake = MagicMock()
+    fake.models.generate_content.return_value = _make_response("STOP", "Fixture narrative")
+    monkeypatch.setattr(ai_client, "_provider", lambda: fake)
+    original = ai_client._tenant.set("cache-a")
+    try:
+        assert ai_client.call_ai("cache fixture")[1]
+        assert ai_client.call_ai("cache fixture")[1]
+        assert fake.models.generate_content.call_count == 1
+        ai_client._tenant.set("cache-b")
+        assert ai_client.call_ai("cache fixture")[1]
+        assert fake.models.generate_content.call_count == 2
+        fake.models.generate_content.side_effect = RuntimeError("fixture failure")
+        assert ai_client.call_ai("other", "fallback") == ("fallback", False)
+        assert ai_client.call_ai("another", "fallback") == ("fallback", False)
+        assert fake.models.generate_content.call_count == 3
+    finally:
+        ai_client._tenant.reset(original)
+
+def test_startup_never_imports_generative_sdk(monkeypatch):
+    import subprocess
+    from pathlib import Path
+    monkeypatch.setenv("REGEN_ENV", "development")
+    monkeypatch.setenv("REGEN_AI_PROVIDER", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "synthetic-test-only")
+    # No configuration or SDK is read during startup, even with a synthetic key.
+    check = """
+import sys
+def audit(event, args):
+    if event in ("socket.connect", "socket.getaddrinfo"):
+        raise AssertionError("Network attempt at startup")
+sys.addaudithook(audit)
+import core.ai_client as ai
+assert ai.call_ai("fixture", "offline") == ("offline", False)
+assert "google.genai" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", check], cwd=Path(__file__).resolve().parents[1], check=True, timeout=20)

@@ -130,8 +130,8 @@ function SilentLossCard({ losses, isUploadMode, orgType, anomalyAvailable, water
             <p className="text-xs mt-2" style={{ color: '#f59e0b' }}>After-hours detection: unavailable</p>
           </div>
           <div className="text-center p-3 rounded-lg" style={{ background: 'rgba(0,255,136,0.06)', border: '1px solid rgba(0,255,136,0.15)' }}>
-            <p className="text-slate-500 text-xs mb-1">Recoverable Waste Value</p>
-            <p className="text-2xl font-bold text-green-400">₹{(losses?.waste_hidden_value_inr || losses?.total_recoverable_inr || 0).toFixed(0)}</p>
+            <p className="text-slate-500 text-xs mb-1">Indicative Waste Recovery</p>
+            <p className="text-2xl font-bold text-green-400">{losses?.waste_hidden_value_inr == null ? "Unavailable" : `₹${losses.waste_hidden_value_inr.toFixed(0)}`}</p>
             <p className="text-xs text-slate-500">est. potential</p>
             <p className="text-xs text-green-400 mt-2">Waste streams only</p>
           </div>
@@ -149,7 +149,7 @@ function SilentLossCard({ losses, isUploadMode, orgType, anomalyAvailable, water
         </div>
         <span className="text-xs px-2 py-1 rounded-full"
           style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}>
-          ₹{totalCost.toFixed(0)} estimated weekly loss
+          ₹{totalCost.toFixed(0)} estimated reporting-period loss
         </span>
       </div>
       <p className="text-xs text-slate-500 mb-4 leading-relaxed">
@@ -174,8 +174,8 @@ function SilentLossCard({ losses, isUploadMode, orgType, anomalyAvailable, water
         </div>
         <div className="text-center p-3 rounded-lg"
           style={{ background: 'rgba(0,255,136,0.06)', border: '1px solid rgba(0,255,136,0.15)' }}>
-          <p className="text-slate-500 text-xs mb-1">Recoverable Waste Value</p>
-          <p className="text-2xl font-bold text-green-400">₹{(losses?.total_recoverable_inr || 0).toFixed(0)}</p>
+          <p className="text-slate-500 text-xs mb-1">Indicative Waste Recovery</p>
+          <p className="text-2xl font-bold text-green-400">{losses?.waste_hidden_value_inr == null ? "Unavailable" : `₹${losses.waste_hidden_value_inr.toFixed(0)}`}</p>
           <p className="text-xs text-slate-500">est. potential</p>
           <p className="text-xs text-green-400 mt-2">Waste streams only</p>
         </div>
@@ -272,7 +272,7 @@ function CO2EquivalencesCard({ impact }) {
         <span className="ml-auto text-xs text-slate-600">Estimated sustainability impact</span>
       </div>
       <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-        If all agent-recommended interventions are applied, the estimated weekly CO2 reduction is
+        If all agent-recommended interventions are applied, the estimated reporting-period CO2 reduction is
         equivalent to the following real-world analogies. These are estimates for educational context.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -425,7 +425,7 @@ function AnalysisLevelBadge({ metadata }) {
   const code  = metadata.overall_code || 'level1'
   const color = LEVEL_COLORS[code] || '#f59e0b'
   const label = LEVEL_LABELS[code] || 'Basic Assessment'
-  const conf  = metadata.confidence_pct || 0
+  const conf  = metadata.coverage_pct ?? 0
 
   return (
     <div style={{
@@ -446,7 +446,7 @@ function AnalysisLevelBadge({ metadata }) {
         <div>
           <span style={{ fontSize: 12, fontWeight: 700, color }}>{label}</span>
           <span style={{ fontSize: 11, color: 'rgba(148,163,184,0.55)', marginLeft: 8 }}>
-            Confidence: {conf}%
+            Dataset coverage: {conf}%
           </span>
         </div>
       </div>
@@ -491,7 +491,7 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
   const energy_summary = data?.energy_summary
   const impact_summary = data?.impact_summary
 
-  const totalSavings     = anomalyAvailable
+  const totalSavings     = isUploadMode ? uploadResult?.impact?.anomaly_cost_exposure_inr : anomalyAvailable
     ? ((silent_losses?.water_cost_inr || 0) + (silent_losses?.energy_cost_inr || 0))
     : 0
   const waterLiters      = water_summary?.total_wasted_liters || 0
@@ -502,7 +502,7 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
   const animWater   = useCountUp(Math.round(anomalyAvailable ? waterLiters : waterConsumption))
   const animEnergy  = useCountUp(Math.round(anomalyAvailable ? energyKwh : energyConsumption))
   const animCO2     = useCountUp(Math.round((planData?.impact || data?.impact_summary)?.total_co2_saved_kg || 0))
-  const animSavings = useCountUp(Math.round(totalSavings))
+  const animSavings = useCountUp(Math.round(totalSavings ?? 0))
 
   if (!data) return null
 
@@ -532,10 +532,13 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
 
       {isUploadMode && <AnalysisLevelBadge metadata={analysisMeta} />}
 
-      <ScanTimeline anomalyAvailable={anomalyAvailable} />
+      {!isUploadMode && <ScanTimeline anomalyAvailable={anomalyAvailable} />}
 
       {/* RE:GEN Score */}
-      <div className="mb-8">
+      {isUploadMode ? <div className="glass-card p-5 mb-8">
+        <p className="font-semibold text-white">Indicative RE:GEN Score · {regen_score?.before_score ?? 'Unavailable'} / 100</p>
+        <p className="text-sm text-slate-400">Post-action score requires comparable follow-up observations.</p>
+      </div> : <div className="mb-8">
         <RegenScoreGauge
           before={regen_score?.before_score || 0}
           after={regen_score?.after_score   || 0}
@@ -544,10 +547,9 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
           analysisMeta={analysisMeta}
           history={historyRuns}
         />
-      </div>
+      </div>}
 
-      {/* Silent Loss / Hidden Resource Loss */}
-      <div className="mb-8">
+      {!isUploadMode && <div className="mb-8">
         <SilentLossCard
           losses={silent_losses}
           isUploadMode={isUploadMode}
@@ -556,7 +558,7 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
           waterConsumption={waterConsumption}
           energyConsumption={energyConsumption}
         />
-      </div>
+      </div>}
 
       {/* Peer Benchmarking */}
       {data?.benchmark?.available && (
@@ -617,6 +619,20 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
 
       {/* Stat grid with storytelling */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        {isUploadMode ? <>
+          <StatCard icon={<Droplets />} label="Water consumption" value={uploadResult.water?.total_consumption_liters?.toLocaleString() ?? 'Unavailable'} unit="L"
+            color="#00e5ff" sublabel={uploadResult.water?.resource_profile?.daily_basis || 'Reporting-period total'} />
+          <StatCard icon={<Zap />} label="Electricity consumption" value={uploadResult.energy?.total_consumption_kwh?.toLocaleString() ?? 'Unavailable'} unit="kWh"
+            color="#eab308" sublabel={uploadResult.energy?.resource_profile?.daily_basis || 'Reporting-period total'} />
+          <StatCard icon={<AlertTriangle />} label="Baseline exceptions" value={anomalyAvailable ? anomalyTotal : 'Unavailable'}
+            color="#f59e0b" sublabel="Observed deviations requiring context or inspection" />
+          <StatCard icon={<DollarSign />} label="Utility anomaly exposure" value={totalSavings == null ? 'Unavailable' : `₹${totalSavings.toLocaleString()}`}
+            color="#22c55e" sublabel="Requires a documented tariff and compatible reporting windows" />
+          <StatCard icon={<Leaf />} label="Avoided emissions" value="Unavailable"
+            color="#22c55e" sublabel="Requires applicable, documented emissions factors and an estimated reduction" />
+          <StatCard icon={<TrendingUp />} label="Proposed actions" value={uploadResult.decision?.total_actions ?? 0}
+            color="#a78bfa" sublabel="See the action plan for evidence and approval requirements" />
+        </> : <>
         {anomalyAvailable ? (
           <StatCard
             icon={<DollarSign className="w-5 h-5" />}
@@ -735,6 +751,8 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
             trend={null}
           />
         )}
+        </>}
+
       </div>
 
       {/* Fuel section — shown only when fuel data is available */}
@@ -750,12 +768,12 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
           anomalyCount={anomalyTotal}
           anomalyAvailable={anomalyAvailable}
         />
-        <BeforeAfterCard
-          before={regen_score?.before_score || 0}
-          after={regen_score?.after_score   || 0}
-          improvement={regen_score?.improvement || 0}
+        {Number.isFinite(regen_score?.after_score) && <BeforeAfterCard
+          before={regen_score?.before_score}
+          after={regen_score.after_score}
+          improvement={regen_score?.improvement}
           targetRating={regen_score?.target_rating}
-        />
+        />}
       </div>
 
       {/* CO2 Equivalences */}
@@ -778,7 +796,8 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {Object.entries(regen_score.score_breakdown).map(([key, val]) => {
-              const color = val >= 70 ? '#00ff88' : val >= 50 ? '#eab308' : '#ef4444'
+              const available = Number.isFinite(val)
+              const color = !available ? '#64748b' : val >= 70 ? '#00ff88' : val >= 50 ? '#eab308' : '#ef4444'
               return (
                 <div key={key} className="text-center">
                   <p className="text-xs text-slate-500 mb-2 capitalize">{key.replace(/_/g, ' ')}</p>
@@ -786,11 +805,11 @@ export default function CommandCenterDashboard({ data, planData, uploadResult })
                     <svg viewBox="0 0 36 36" className="w-12 h-12 -rotate-90">
                       <circle cx="18" cy="18" r="14" fill="none" stroke="#1e293b" strokeWidth="3" />
                       <circle cx="18" cy="18" r="14" fill="none" stroke={color} strokeWidth="3"
-                        strokeDasharray={`${(val / 100) * 88} 88`} strokeLinecap="round"
+                        strokeDasharray={`${available ? (val / 100) * 88 : 0} 88`} strokeLinecap="round"
                         style={{ transition: 'stroke-dasharray 1.5s ease-out' }} />
                     </svg>
                     <span className="absolute inset-0 flex items-center justify-center text-xs font-bold"
-                      style={{ color }}>{val.toFixed(0)}</span>
+                      style={{ color }}>{available ? val.toFixed(0) : '—'}</span>
                   </div>
                 </div>
               )

@@ -71,6 +71,7 @@ export default function WaterPanel({ data, uploadResult }) {
     (anomaly_events || []).flatMap(ev => ev.anomaly_hours || [])
   )
 
+  const historical = Boolean(uploadResult)
   return (
     <section className="px-6 py-16 max-w-7xl mx-auto" id="water">
       <div className="mb-8">
@@ -79,7 +80,7 @@ export default function WaterPanel({ data, uploadResult }) {
           <span className="text-gradient-blue">{anomalyAvailable ? 'Loss Panel' : 'Consumption Panel'}</span>
         </h2>
         <p className="text-slate-400">
-          {anomalyAvailable
+          {historical ? 'Uploaded observations and comparable meter baselines. Investigate deviations with facility staff.' : anomalyAvailable
             ? 'Detecting invisible water leakage from hourly time-series data'
             : 'Water consumption summary — upgrade to hourly data for leak detection'}
         </p>
@@ -99,13 +100,13 @@ export default function WaterPanel({ data, uploadResult }) {
 
               <div className="space-y-4">
                 <div>
-                  <p className="text-xs text-slate-500 mb-1">Total Wasted (Detected)</p>
+                  <p className="text-xs text-slate-500 mb-1">{historical ? 'Estimated excess above baseline' : 'Total Wasted (Detected)'}</p>
                   <p className="text-4xl font-black text-cyan-400">{total_wasted_liters?.toLocaleString()}</p>
                   <p className="text-xs text-slate-400">liters (analysis window)</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 mb-1">Estimated Loss</p>
-                  <p className="text-2xl font-bold text-red-400">₹{estimated_cost_inr?.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-red-400">{estimated_cost_inr == null ? 'Unavailable' : `₹${estimated_cost_inr.toFixed(2)}`}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 mb-1">Severity</p>
@@ -184,8 +185,8 @@ export default function WaterPanel({ data, uploadResult }) {
                       <tr key={i} className="text-slate-300">
                         <td className="py-2 pr-4 text-slate-400">{ev.date}</td>
                         <td className="py-2 pr-4 text-red-400 font-medium">{ev.location}</td>
-                        <td className="py-2 pr-4">{ev.anomaly_hours?.join(', ')}:00</td>
-                        <td className="py-2 pr-4">{ev.duration_hours}h</td>
+                        <td className="py-2 pr-4">{ev.anomaly_hours?.length ? `${ev.anomaly_hours.join(', ')}:00` : 'Daily'}</td>
+                        <td className="py-2 pr-4">{ev.duration_hours == null ? 'Unavailable' : `${ev.duration_hours} h`}</td>
                         <td className="py-2 pr-4 text-cyan-400">{ev.total_flow_liters} L</td>
                         <td className="py-2 text-red-400">{ev.estimated_waste_liters} L</td>
                       </tr>

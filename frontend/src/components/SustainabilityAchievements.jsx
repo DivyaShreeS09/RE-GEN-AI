@@ -1,5 +1,12 @@
 export default function SustainabilityAchievements({ dashData, waterData, energyData, uploadResult }) {
-  const isUploadMode = !!uploadResult
+  if (uploadResult) {
+    const flagged = (uploadResult.water?.anomaly_events?.length ?? 0) + (uploadResult.energy?.anomaly_events?.length ?? 0)
+    return <section id="achievements" className="px-6 py-16 max-w-7xl mx-auto">
+      <h2 className="text-3xl font-black text-white mb-2">Analysis findings</h2>
+      <p>{flagged} flagged resource events in this analysis.</p>
+      <p>{uploadResult.waste?.analyzed_items ?? 0} material entries matched the reference catalogue.</p>
+    </section>
+  }
   const regenAfter  = dashData?.regen_score?.after_score    || 0
   const co2Saved    = dashData?.impact_summary?.total_co2_saved_kg || 0
   const waterSev    = dashData?.water_summary?.severity     || 'none'
@@ -172,7 +179,7 @@ export default function SustainabilityAchievements({ dashData, waterData, energy
       </div>
 
       <p className="text-xs text-slate-700 text-center mt-6">
-        Achievement progress derived from {isUploadMode ? 'uploaded data analysis' : 'simulated sensor analysis'} · Not a regulatory certification
+        Achievement progress derived from simulated sensor analysis · Not a regulatory certification
       </p>
     </section>
   )

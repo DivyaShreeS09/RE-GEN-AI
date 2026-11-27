@@ -1,11 +1,12 @@
+import { DEMO_WATER_RATE, DEMO_ENERGY_RATE, DEMO_GRID_FACTOR } from '../projectionRates'
 import { useState, useMemo } from 'react'
 import { Sliders, Droplets, Zap, Leaf, DollarSign, Sun, Flame, Database } from 'lucide-react'
 
-const WATER_COST  = 0.05  // ₹/litre (standard municipal rate)
-const ENERGY_COST = 8.0   // ₹/kWh  (standard commercial rate)
-const CO2_KWH     = 0.82  // kg CO2/kWh (India grid factor)
 
 export default function InterventionSimulator({ waterData, energyData, dashData, uploadResult }) {
+  const WATER_COST = waterData?.tariff?.inr_per_unit ?? DEMO_WATER_RATE
+  const ENERGY_COST = energyData?.tariff?.inr_per_unit ?? DEMO_ENERGY_RATE
+  const CO2_KWH = (uploadResult?.impact || dashData?.impact_summary)?.factor_metadata?.energy?.factor ?? DEMO_GRID_FACTOR
   const isUploadMode     = !!uploadResult
   const analysisMeta     = uploadResult?.analysis_metadata || null
   const anomalyAvailable = !isUploadMode || (analysisMeta?.anomaly_detection_available !== false)
@@ -19,7 +20,7 @@ export default function InterventionSimulator({ waterData, energyData, dashData,
   const energyAnomalies  = energyData?.anomaly_events || []
   const waterSeverity    = waterData?.severity || 'none'
   const energySeverity   = energyData?.severity || 'none'
-  const baseScore        = dashData?.regen_score?.before_score || 30
+  const baseScore        = dashData?.regen_score?.before_score ?? (isUploadMode ? null : 30)
 
   // Evidence strings for each intervention
   const waterEvidence = waterAnomalies.length > 0
@@ -97,7 +98,7 @@ export default function InterventionSimulator({ waterData, energyData, dashData,
     }
 
     // Waste Segregation — available if waste data or as best-practice
-    list.push({
+    if (!isUploadMode) list.push({
       key: 'segregation',
       icon: <Leaf className="w-4 h-4" />,
       label: 'Waste Segregation Programme',
@@ -112,8 +113,8 @@ export default function InterventionSimulator({ waterData, energyData, dashData,
     })
 
     // Solar — always a strategic recommendation, not anomaly-based
-    const solarBase = isUploadMode ? (totalConsumptionKwh || 200) : 228.98
-    list.push({
+    const solarBase = isUploadMode ? totalConsumptionKwh : 228.98
+    if (solarBase > 0) list.push({
       key: 'solar',
       icon: <Sun className="w-4 h-4" />,
       label: 'Install Rooftop Solar',
@@ -130,7 +131,7 @@ export default function InterventionSimulator({ waterData, energyData, dashData,
     })
 
     // Compost — always a best-practice recommendation
-    list.push({
+    if (!isUploadMode) list.push({
       key: 'compost',
       icon: <Flame className="w-4 h-4" />,
       label: 'Compost Organic Waste',
@@ -162,7 +163,7 @@ export default function InterventionSimulator({ waterData, energyData, dashData,
     }
 
     return list
-  }, [isUploadMode, anomalyAvailable, wastedLiters, wastedKwh, totalConsumptionKwh, waterEvidence, energyEvidence, analysisMeta])
+  }, [isUploadMode, anomalyAvailable, wastedLiters, wastedKwh, totalConsumptionKwh, waterEvidence, energyEvidence, analysisMeta, WATER_COST, ENERGY_COST])
 
   const initialToggles = useMemo(() =>
     Object.fromEntries(INTERVENTIONS.map(i => [i.key, false])),
@@ -176,8 +177,8 @@ export default function InterventionSimulator({ waterData, energyData, dashData,
   const co2Saved       = energySaved * CO2_KWH
   const totalFinancial = INTERVENTIONS.filter(i => toggles[i.key]).reduce((s, i) => s + (i.financialGain || 0), 0)
   const scoreGain      = INTERVENTIONS.filter(i => toggles[i.key]).reduce((s, i) => s + (i.scoreGain || 0), 0)
-  const projectedScore = Math.min(100, baseScore + scoreGain)
-  const activeCount    = Object.values(toggles).filter(Boolean).length
+  const projectedScore = baseScore === null ? null : Math.min(100, baseScore + scoreGain)
+  const activeCount    = INTERVENTIONS.filter(i => toggles[i.key]).length
 
   return (
     <section className="px-6 py-16 max-w-7xl mx-auto" id="simulator">
@@ -260,11 +261,11 @@ export default function InterventionSimulator({ waterData, energyData, dashData,
             }}>
               <p className="text-xs text-slate-500 mb-1">RE:GEN Score</p>
               <div className="flex items-baseline justify-center gap-2">
-                <span className="text-2xl font-black text-red-400">{baseScore}</span>
+                <span className="text-2xl font-black text-red-400">{baseScore ?? 'Unavailable'}</span>
                 <span className="text-slate-500">→</span>
                 <span className={`text-3xl font-black transition-all duration-500 ${
                   projectedScore > baseScore ? 'text-green-400' : 'text-slate-400'
-                }`}>{projectedScore}</span>
+                }`}>{projectedScore ?? 'Unavailable'}</span>
               </div>
               {scoreGain > 0 && (
                 <span className="text-xs text-green-400 font-bold mt-1 inline-block">

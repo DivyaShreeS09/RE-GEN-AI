@@ -354,3 +354,168 @@ class TestIsolationForestAnomalyDetection:
         result = analyze_energy(df=self._make_energy_df(), is_uploaded=True, analysis_level_info=_LEVEL3)
         trace = " ".join(result["reasoning_trace"])
         assert "IsolationForest" in trace or "detection" in trace.lower()
+
+
+def test_reporting_window_roi_and_unpriced_inventory():
+    from agents.decision_agent import _roi
+    assert _roi(600, "reference", 100, 10)["payback_months"] == 2
+    assert _roi(600, "reference", 100, None)["monthly_saving_inr"] is None
+
+
+def test_canonical_weighted_mass():
+    from agents.waste_agent import analyze_waste_batch
+    result = analyze_waste_batch([{"type": "cartons", "quantity_kg": 9000, "unit": "g"},
+                                  {"type": "PET bottles", "quantity_kg": 1}])
+    assert result["composition"]["paper_pct"] == 90
+    scores = [r["hidden_value_score"] for r in result["items"]]
+    assert result["circularity_score"] == round((9*scores[0]+scores[1])/10, 1)
+
+
+def test_fuel_is_emitted_carbon():
+    result = analyze_impact(0, 0, 0, fuel_co2_kg=120)
+    assert result["fuel_emissions_kg"] == 120
+    assert result["total_co2_saved_kg"] == 0
+
+
+def test_mass_cannot_price_count_or_volume_rates():
+    from agents.waste_agent import analyze_waste, _get_kb
+    samples = [name for name, record in _get_kb()["waste_materials"].items()
+               if record["estimated_value_range"]["unit"] != "INR/kg"]
+    assert samples
+    for name in samples:
+        assert analyze_waste(name, 10, narrative=False)["estimated_recovery"] is None
+
+
+def test_normalize_counter_by_meter_and_skip_reset_missing_and_duplicates():
+    from core.data_processor import validate_water_df
+
+    columns = ["timestamp", "meter_id", "cumulative_m3", "zone"]
+    rows = [
+        ("2026-11-01T03:00:00+05:30", "W1", 1.8, "Annex"),
+        ("2026-11-01T00:00:00+05:30", "W1", 5, "Annex"),
+        ("2026-11-01T01:00:00+05:30", "W1", 6, "Annex"),
+        ("2026-11-01T02:00:00+05:30", "W1", 1, "Annex"),
+        ("2026-11-01T04:00:00+05:30", "W1", None, "Annex"),
+        ("2026-11-01T05:00:00+05:30", "W1", 2, "Annex"),
+        ("2026-10-31T18:30:00Z", "W2", 20, "Annex"),
+        ("2026-11-01T01:00:00+05:30", "W2", 22, "Annex"),
+    ]
+    frame, quality = validate_water_df(pd.DataFrame(rows + [rows[2]], columns=columns))
+    assert quality["valid"] and quality["duplicates_removed"] == quality["counter_resets"] == quality["missing_values"] == 1
+    assert quality["intervals_excluded"] == 3
+    assert frame.groupby("device_id")["usage_liters"].sum().to_dict() == {"W1": 1800.0, "W2": 2000.0}
+
+
+def test_mixed_resource_rates_need_endpoints_and_use_elapsed_time():
+    from core.data_processor import validate_energy_df, validate_water_df
+
+    raw = pd.DataFrame([
+        ["water", "2026-11-01 00:00", "instantaneous", "L/min", 10],
+        ["water", "2026-11-01 00:10", "instantaneous", "L/min", 10],
+        ["energy", "2026-11-01 00:00", "power", "W", 2000],
+        ["energy", "2026-11-01 00:30", "power", "W", 2000],
+        ["energy", "2026-11-01 01:15", "power", "W", 4000],
+        ["energy", "2026-11-02 12:00", "power", "W", 2000],
+    ], columns=["resource", "timestamp", "reading_type", "unit", "value"])
+    water, wq = validate_water_df(raw)
+    energy, eq = validate_energy_df(raw)
+    assert wq["valid"] and eq["valid"]
+    assert water["usage_liters"].sum() == 100
+    assert energy["usage_kwh"].sum() == pytest.approx(3.25)
+    assert eq["intervals_excluded"] == 1 and eq["peak_observed_demand_kw"] == 4
+    result = analyze_energy(energy, is_uploaded=True, rate=None)
+    assert result["resource_profile"]["estimated_quantity"] == pytest.approx(3.25)
+    assert result["estimated_cost_inr"] is None and result["co2_equivalent_kg"] is None
+    _, invalid = validate_energy_df(pd.DataFrame({"date": ["2026-11-01"], "power_kw": [4]}))
+    assert not invalid["valid"]
+    _, ambiguous = validate_water_df(pd.DataFrame({"date": ["01/02/2026"], "meter_reading": [5], "unit": ["L"]}))
+    assert not ambiguous["valid"] and "reading_type" in ambiguous["errors"][0]
+
+
+def test_daily_forecast_uses_only_prior_values_and_rejects_missing_coverage():
+    from core.data_processor import validate_water_df
+    dates = pd.date_range("2026-10-01", periods=21)
+    raw = pd.DataFrame({"date": dates, "usage_liters": [10 + i % 7 for i in range(21)], "reading_type": "daily"})
+    frame, info = validate_water_df(raw)
+    assert info["valid"]
+    result = analyze_water(frame, is_uploaded=True, rate=None)
+    forecast = result["resource_profile"]["forecast"]
+    assert forecast["model"] == "weekly_seasonal" and forecast["estimate"] == 10
+    assert forecast["validation_mae"]["weekly_seasonal"] == 0 < forecast["validation_mae"]["previous_day"]
+    assert result["resource_profile"]["average_daily"] == 13
+    short, _ = validate_water_df(raw.drop(index=10))
+    assert analyze_water(short, is_uploaded=True, rate=None)["resource_profile"]["forecast"]["status"] == "insufficient_data"
+
+
+def test_upload_integrates_flags_tariff_provenance_and_shared_zone_without_confirming_cause(token_for):
+    from fastapi.testclient import TestClient
+    from main import app
+
+    def file(metric):
+        rows = [f"timestamp,meter_id,zone,{metric},scheduled,occupied"]
+        for day in (2, 3, 4, 5, 6):
+            for hour in range(6):
+                value = 30 if day == 6 and hour < 3 else 10
+                rows.append(f"2026-11-{day:02}T{hour:02}:00:00+05:30,{metric},North Annex,{value},no,no")
+        return "\n".join(rows)
+
+    client = TestClient(app, headers={"Authorization": token_for("integrated-resource-regression")})
+    response = client.post("/analyze/upload",
+                           files={"water_file": ("water.csv", file("usage_liters")), "energy_file": ("electricity.csv", file("usage_kwh"))},
+                           data={"water_inr_per_litre": "0.1", "tariff_reference": "fixture invoice",
+                                 "waste_type": "paper", "waste_quantity_kg": "5"})
+    assert response.status_code == 200, response.text
+    result = response.json()
+    water = result["water"]
+    assert water["total_consumption_liters"] == result["energy"]["total_consumption_kwh"] == 360
+    assert water["anomaly_events"][-1]["evidence_status"] == "possible_leakage"
+    assert result["energy"]["anomaly_events"][-1]["evidence_status"] == "persistent_off_hours_load"
+    assert water["estimated_cost_inr"] == 6 and result["energy"]["estimated_cost_inr"] is None
+    assert water["loss_assessment"]["verified_savings"] is None
+    assert result["impact"]["total_co2_saved_kg"] is None and result["impact"]["total_financial_benefit_inr"] is None
+    assert result["decision"]["cross_resource_relationships"][0]["status"] == "co_occurrence"
+    assert result["report"]["resource_evidence"]["water"]["findings"] == water["anomaly_events"]
+    assert result["report"]["silent_losses"]["water_cost_inr"] == 6
+    planned = result["decision"]["ranked_actions"]
+    assert all(item["approval_required"] for item in planned)
+    assert next(item for item in planned if item["id"] == "R1")["zones"] == ["North Annex"]
+    assert all(item["depends_on"] == ["R1"] for item in planned if item["domain"] in ("Water", "Energy"))
+    from core.database import get_run_by_id
+    stored = get_run_by_id(result["analysis_id"], tenant="integrated-resource-regression")
+    assert result["regen_score"]["after_score"] is None and stored["regen_score_after"] is None
+    assert stored["total_co2_saved_kg"] is None
+    pdf = client.get(f"/report/{result['analysis_id']}/audit-record.pdf")
+    assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
+
+
+def test_documented_meter_rollover_reconciles_only_near_the_boundary():
+    from core.data_processor import validate_energy_df
+
+    raw = pd.DataFrame({
+        "timestamp": pd.date_range("2026-10-01", periods=4, freq="h"),
+        "cumulative_kwh": [990, 10, 300, 20],
+        "rollover_value": [1000] * 4,
+        "rollover_reference": ["fixture meter manual"] * 4,
+    })
+    result, info = validate_energy_df(raw)
+    assert info["valid"] and info["counter_rollovers"] == 1 and info["counter_resets"] == 1
+    assert result["usage_kwh"].sum() == 310
+    _, missing = validate_energy_df(raw.drop(columns="rollover_reference"))
+    assert not missing["valid"]
+
+
+def test_historical_decision_rejects_unstructured_or_ineligible_narrative(monkeypatch):
+    from agents import decision_agent
+
+    water = {"status": "analyzed", "is_uploaded": True, "severity": "medium",
+             "total_wasted_liters": 20, "estimated_cost_inr": None,
+             "recommendations": ["Inspect with authorized staff."]}
+    for response in ("Confirmed water leak. Implement immediately.", '{"focus":"review_shared_observations"}'):
+        monkeypatch.setattr(decision_agent, "call_ai", lambda *args, **kwargs: (response, True))
+        result = decision_agent.generate_decisions(water, {"status": "skipped"})
+        assert not result["ai_enhanced"]
+        assert result["top_action_explanation"] == "Inspect with authorized staff."
+    monkeypatch.setattr(decision_agent, "call_ai", lambda *args, **kwargs: ('{"focus":"check_operating_context"}', True))
+    result = decision_agent.generate_decisions(water, {"status": "skipped"})
+    assert result["ai_enhanced"]
+    assert "before selecting" in result["top_action_explanation"]

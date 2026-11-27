@@ -4,6 +4,7 @@ import { describe, it, expect, vi } from 'vitest'
 vi.mock('axios', () => ({
   default: {
     create: () => ({
+      interceptors: { response: { use: vi.fn() } },
       get: vi.fn(),
       post: vi.fn(),
     }),

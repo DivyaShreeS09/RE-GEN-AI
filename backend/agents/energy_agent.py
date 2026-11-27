@@ -1,6 +1,6 @@
 from core.simulation import load_energy_data
 from core.guardrails import get_disclaimer, get_simulated_notice
-from core.data_processor import auto_detect_anomalies_energy
+import pandas as pd
 from core.anomaly_detection import detect_anomalies_energy_if
 
 AFTER_HOURS = list(range(0, 6)) + [22, 23]
@@ -14,7 +14,12 @@ _DEMO_LEVEL = {
 }
 
 
-def analyze_energy(df=None, is_uploaded: bool = False, analysis_level_info: dict = None) -> dict:
+def analyze_energy(df=None, is_uploaded: bool = False, analysis_level_info: dict = None, *, rate=ELECTRICITY_COST_PER_KWH,
+                  tariff_source="Reference estimate; replace with facility invoice.") -> dict:
+    if df is not None and is_uploaded and "reading_type" in df:
+        from core.anomaly_detection import uploaded_resource_result
+        return uploaded_resource_result(df, analysis_level_info or _DEMO_LEVEL, water=False,
+                                        rate=rate, tariff_source=tariff_source)
     _if_meta = None
     if df is None:
         df = load_energy_data()
@@ -66,8 +71,8 @@ def analyze_energy(df=None, is_uploaded: bool = False, analysis_level_info: dict
     else:
         severity = "none";     severity_score = 92
 
-    estimated_cost_inr = round(wasted_kwh * ELECTRICITY_COST_PER_KWH, 2)
-    co2_equivalent_kg  = round(wasted_kwh * 0.82, 2)
+    estimated_cost_inr = None if rate is None else round(wasted_kwh * rate, 2)
+    co2_equivalent_kg  = None if is_uploaded and rate is None else round(wasted_kwh * 0.82, 2)
     total_kwh_consumed = round(float(df["usage_kwh"].sum()), 2)
 
     # Recommendations
@@ -117,7 +122,7 @@ def analyze_energy(df=None, is_uploaded: bool = False, analysis_level_info: dict
             f"Step 3 — Found {len(anomaly_rows)} anomalous readings across {len(anomaly_events)} event(s).",
             f"Step 4 — Normal after-hours baseline: {round(baseline, 2)} kWh/hr.",
             f"Step 5 — Estimated wasted kWh: {wasted_kwh} kWh.",
-            f"Step 6 — Cost impact: Rs. {estimated_cost_inr} at Rs. {ELECTRICITY_COST_PER_KWH}/kWh.",
+            f"Step 6 — Cost impact: Rs. {estimated_cost_inr} at Rs. {rate}/kWh.",
             f"Step 7 — CO2 impact: {co2_equivalent_kg} kg (India grid factor 0.82 kg/kWh).",
             f"Step 8 — Severity: {severity.upper()}.",
         ]
@@ -144,7 +149,7 @@ def analyze_energy(df=None, is_uploaded: bool = False, analysis_level_info: dict
             f"Excess above baseline in {len(anomaly_events)} event(s): {wasted_kwh} kWh."
         )
         war_room_impact = (
-            f"Estimated weekly electricity loss: Rs. {estimated_cost_inr:.0f}. "
+            f"Estimated reporting-period electricity loss: Rs. {estimated_cost_inr if estimated_cost_inr is not None else "unavailable"}. "
             f"CO2 equivalent: {co2_equivalent_kg} kg."
         )
     else:
@@ -158,9 +163,10 @@ def analyze_energy(df=None, is_uploaded: bool = False, analysis_level_info: dict
             "Exact after-hours waste cannot be quantified at this data resolution."
         )
 
-    confidence = 0.91 if _run_anomaly else (0.42 if level_info["level"] == 1 else 0.65)
 
     return {
+        "tariff": {"inr_per_unit": rate, "unit": "kWh", "basis": tariff_source},
+        "reporting_days": int(pd.to_datetime(df["date"], errors="coerce", utc=True).dt.normalize().nunique()) or None,
         "agent":                              "Energy Optimization Agent",
         "status":                             "analyzed",
         "analysis_level":                     level_info.get("code", "level3"),
@@ -186,7 +192,7 @@ def analyze_energy(df=None, is_uploaded: bool = False, analysis_level_info: dict
         "war_room_reasoning":                 war_room_reasoning,
         "war_room_impact":                    war_room_impact,
         "is_uploaded":                        is_uploaded,
-        "confidence":                         confidence,
+        "confidence":                         None,
         "disclaimer":                         get_disclaimer(),
         "data_notice":                        "Uploaded dataset." if is_uploaded else get_simulated_notice(),
     }

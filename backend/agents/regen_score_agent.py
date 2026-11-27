@@ -1,4 +1,4 @@
-from core.scoring import calculate_regen_score, severity_label
+from core.scoring import REGEN_SCORE_WEIGHTS, calculate_regen_score, severity_label
 from core.guardrails import get_disclaimer
 
 
@@ -80,18 +80,15 @@ def compute_regen_score(water_result: dict, energy_result: dict,
     # potential scores computed by waste_agent. 60 is the neutral baseline when no waste
     # data is submitted (mid-point, representing "unknown" rather than good or bad).
     if waste_result and waste_result.get("status") == "analyzed":
-        waste_recovery = float(
-            waste_result.get("circularity_score")
-            or waste_result.get("hidden_value_score")
-            or 60
-        )
+        measured = waste_result.get("circularity_score", waste_result.get("hidden_value_score"))
+        waste_recovery = float(measured) if measured is not None else 60
     else:
         waste_recovery = 60  # ponytail: neutral when no waste submitted
 
     # Average feasibility from actual ranked actions (each action stores feasibility as int 0-10).
     actions = decision_result.get("ranked_actions", [])
     feasibility_avg = (
-        sum(a.get("feasibility", 0) for a in actions) / len(actions)
+        10 * sum(a.get("feasibility", 0) for a in actions) / len(actions)
         if actions else 80  # neutral fallback when no actions present
     )
     urgency_reduction = 100 - (
@@ -184,19 +181,32 @@ def compute_regen_score(water_result: dict, energy_result: dict,
         f"Step 7 — Building risk ranking computed across {len(building_risk_ranking)} location(s).",
     ]
 
+    historical = impact_result.get("evidence_type") == "historical analysis"
+    if historical:
+        campus_health_index["target"] = None
+        campus_health_index["interpretation"] = (
+            "Indicative score from the submitted evidence and legacy scoring weights. "
+            "A post-action score requires follow-up observations."
+        )
+        explanation = [campus_health_index["interpretation"]]
+        reasoning_trace = [reasoning_trace[0], reasoning_trace[1], explanation[0], reasoning_trace[-1]]
+
     return {
         "agent":                  "RE:GEN Score Agent",
         "status":                 "computed",
         "before_score":           before_score,
-        "after_score":            after_score,
-        "improvement":            improvement,
+        "after_score":            None if historical else after_score,
+        "improvement":            None if historical else improvement,
         "current_rating":         severity_label(before_score),
-        "target_rating":          severity_label(after_score),
+        "target_rating":          None if historical else severity_label(after_score),
+        "methodology": {"weights": REGEN_SCORE_WEIGHTS, "scale": "0 to 100", "missing_waste_baseline": 60,
+                             "interpretation": "Modeled intervention potential; no measured diversion or savings."},
         "score_breakdown":        score_breakdown,
         "campus_health_index":    campus_health_index,
         "building_risk_ranking":  building_risk_ranking,
         "explanation":            explanation,
         "reasoning_trace":        reasoning_trace,
-        "confidence":             0.88,
+        "evidence_type": "indicative historical score" if historical else "projected",
+        "confidence":             None,
         "disclaimer":             get_disclaimer(),
     }

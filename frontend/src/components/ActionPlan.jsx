@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Clock, Calendar, CalendarDays, TrendingUp, CheckCircle, Download, User, Printer, Award, Building2, Globe, ShieldCheck } from 'lucide-react'
-import { BASE_URL } from '../api'
+import { BASE_URL, downloadAudit } from '../api'
 
 const PRIORITY_CONFIG = {
   immediate:    { label: 'CRITICAL',  color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.3)' },
@@ -91,6 +91,13 @@ function PlanSection({ sectionKey, icon, title, color, items, timeline, highligh
               <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: isHighlighted ? '#00e5ff' : color }} />
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-slate-200 leading-relaxed">{item.action}</p>
+                {item.approval_required && <details className="text-xs mt-2 text-slate-400">
+                  <summary className="cursor-pointer">Proposed · approval required · {item.responsible_role}</summary>
+                  <p className="mt-1">{item.prerequisites?.join(' ')}</p>
+                  <p>{item.verification_method}</p>
+                  {!!item.supporting_evidence?.length && <p>{item.supporting_evidence.length} supporting observations listed in the report and Loss Map.</p>}
+                </details>}
+
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
                   <span className="text-xs text-slate-500 uppercase tracking-wide">
                     {item.domain || 'General'}
@@ -129,7 +136,7 @@ function PlanSection({ sectionKey, icon, title, color, items, timeline, highligh
                 <div className="flex items-center gap-3 mt-2">
                   <div className="flex items-center gap-1.5">
                     <User className="w-3 h-3 text-slate-500" />
-                    <span className="text-xs text-slate-500">{ownerInfo.icon} {ownerInfo.owner}</span>
+                    <span className="text-xs text-slate-500">{ownerInfo.icon} {item.responsible_role || ownerInfo.owner}</span>
                   </div>
                   {item.timeline && (
                     <span className="text-xs px-2 py-0.5 rounded" style={{
@@ -144,15 +151,18 @@ function PlanSection({ sectionKey, icon, title, color, items, timeline, highligh
                     {item.ai_priority_explanation}
                   </div>
                 )}
-                {item.id && (
+                {item.id && !item.approval_required && (
                   <div className="mt-2 flex items-center gap-2">
                     <button
                       disabled={!!execState[item.id]}
                       onClick={() => {
                         setExecState(s => ({ ...s, [item.id]: 'pending' }))
                         fetch(`${BASE_URL}/actions/${item.id}/execute`, { method: 'POST' })
-                          .then(r => r.json())
-                          .then(() => setExecState(s => ({ ...s, [item.id]: 'done' })))
+                          .then(async r => {
+                            const result = await r.json()
+                            if (!r.ok || result.status !== 'executed' || result.mode !== 'mock') throw new Error()
+                            setExecState(s => ({ ...s, [item.id]: 'done' }))
+                          })
                           .catch(() => setExecState(s => ({ ...s, [item.id]: 'error' })))
                       }}
                       className="text-xs px-2.5 py-1 rounded font-semibold"
@@ -163,7 +173,7 @@ function PlanSection({ sectionKey, icon, title, color, items, timeline, highligh
                         cursor: execState[item.id] ? 'default' : 'pointer',
                         opacity: execState[item.id] === 'pending' ? 0.6 : 1,
                       }}>
-                      {execState[item.id] === 'done' ? '✓ Executed' : execState[item.id] === 'error' ? '✗ Failed' : execState[item.id] === 'pending' ? 'Executing…' : 'Execute Now'}
+                      {execState[item.id] === 'done' ? '✓ Simulation complete' : execState[item.id] === 'error' ? '✗ Failed' : execState[item.id] === 'pending' ? 'Executing…' : 'Run simulation'}
                     </button>
                     <span className="text-xs text-slate-600">MOCK simulation — no real hardware</span>
                   </div>
@@ -357,7 +367,33 @@ function BuildingRankingSection({ ranking }) {
   )
 }
 
-export default function ActionPlan({ data, selectedBuilding, analysisId }) {
+function recoveryFinancialNote(value = {}) {
+  value = value || {}
+    const format = n => Number.isFinite(n)
+      ? n.toLocaleString('en-IN', { maximumFractionDigits: 2 })
+      : null
+
+    const low = format(value.minimum_inr)
+    const high = format(value.maximum_inr)
+    const amount = value.status === 'estimated' && low !== null && high !== null
+      ? low === high ? `INR ${low}` : `INR ${low}-${high}`
+      : null
+
+    const basis = value.value_type === 'avoided_purchase'
+      ? 'Potential avoided purchase'
+      : ['treatment_cost', 'refurbishment_cost'].includes(value.value_type)
+        ? 'Indicative cost'
+        : 'Indicative recovery value'
+
+
+    return amount
+      ? `${basis}: ${amount}. ${value.applicability || 'Subject to confirmation.'}`
+      : value.status === 'non_commercial'
+        ? 'Non-commercial recovery - no sale income.'
+        : 'Financial value not established.'
+}
+
+export default function ActionPlan({ data, selectedBuilding, analysisId, inventory, uploadedRecovery }) {
   if (!data) return null
 
   const plan           = data?.report?.action_plan       || data?.action_plan
@@ -371,14 +407,52 @@ export default function ActionPlan({ data, selectedBuilding, analysisId }) {
 
   if (!plan) return null
 
+  const inventoryActions = (inventory?.items || []).flatMap(item => {
+    const route = item.intelligence?.pathways?.[0]
+    if (!route) return []
+
+    const value = route.valuation || {}
+
+    return [{
+      material: item.material,
+      quantity: item.quantity,
+      unit: item.unit,
+      action: route.action,
+      pathway: route.category,
+      preparation: route.preparation,
+      limitation: route.limitation,
+      provider: item.intelligence.provider,
+      evidence: value.status,
+      valuation: value,
+      financial_note: recoveryFinancialNote(value),
+      sdg_target: '12.5',
+      outcome_status: 'proposed',
+      realized_value_inr: null,
+    }]
+  })
+
+  if (!inventoryActions.length && Array.isArray(uploadedRecovery)) {
+    inventoryActions.push(...uploadedRecovery.map(item => ({
+      ...item,
+      quantity: item.quantity_kg,
+      unit: 'kg',
+      financial_note: recoveryFinancialNote(item.valuation),
+      outcome_status: 'proposed',
+    })))
+  }
+
   const handleExportJSON = () => {
     const exportData = {
       generated:  new Date().toISOString(),
       system:     'RE:GEN AI — Sustainability Intelligence OS',
       disclaimer: orgName
         ? `Prototype decision-support system. Analysis derived from uploaded ${orgName} data. Not professional advice.`
-        : 'Prototype decision-support system. All data simulated. Not professional advice.',
+        : 'Prototype decision-support system. Campus utility analysis uses simulated data. Separate recovery priorities may use live public evidence.',
       action_plan:       plan,
+      resource_evidence: data?.resource_evidence || {},
+      cross_resource_relationships: data?.cross_resource_relationships || [],
+      resource_accounting: data?.silent_losses || {},
+      recovery_priorities: inventoryActions,
       executive_summary: summary || '',
       campus_health_index:   campusHealth || null,
       sdg_alignment:         sdgAlignment || [],
@@ -405,11 +479,29 @@ export default function ActionPlan({ data, selectedBuilding, analysisId }) {
       ...(plan.long_term    || []).map(a => ({ ...a, _priority: 'STRATEGIC', _color: '#15803d', _timeline: '12+ months'       })),
     ]
 
+    const escapeText = value => String(value).replace(/[&<>"']/g, ch => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[ch])
+    const inventorySection = inventoryActions.length ? '<h2>Material recovery priorities</h2><ul>' +
+      inventoryActions.map(item => `<li><strong>${escapeText(item.material)}</strong> · ${escapeText(item.action)}<p>${escapeText(item.financial_note)}</p><p>${escapeText(item.preparation || "")}</p></li>`).join('') +
+      '</ul><p>Proposed recovery actions. Financial and environmental outcomes require separate evidence.</p>' : ''
+    const historicalEvidence = Object.entries(data?.resource_evidence || {})
+    const evidenceSection = historicalEvidence.length ? '<h2>Resource evidence</h2>' + historicalEvidence.map(([domain, resource]) => {
+      const forecast = resource.profile?.forecast
+      const findings = (resource.findings || []).slice(0, 5).map(finding =>
+        `${finding.location || finding.zone || 'Unattributed facility observations'} · ${finding.meter_id || 'meter unspecified'} · ${finding.timestamp || finding.date} · ${finding.evidence_status?.replaceAll('_',' ') || 'baseline exception'}`)
+      const evidence = [resource.loss_assessment?.status?.replaceAll('_', ' '),
+        ...(resource.input_quality?.warnings || []),
+        forecast?.status === 'available' ? `Forecast for ${forecast.next_date}: ${forecast.estimate} ${forecast.unit} (validation error range ${forecast.range.join('–')})` : forecast?.basis,
+      ].filter(Boolean)
+      return `<h3>${escapeText(domain)}</h3><p>${escapeText(evidence.join(' · '))}</p>`
+        + (findings.length ? `<ul>${findings.map(finding => `<li>${escapeText(finding)}</li>`).join('')}</ul>` : '')
+    }).join('') : ''
     const actionRows = allActions.map(a => `
       <tr>
         <td><span style="color:${a._color};font-weight:700;">${a._priority}</span></td>
-        <td>${a.action || '—'}</td>
-        <td>${a.domain || 'General'}</td>
+        <td>${escapeText(a.action || '—')}</td>
+        <td>${escapeText(a.domain || 'General')}</td>
         <td>${a._timeline}</td>
         <td>${a.estimated_saving_inr > 0 ? '≈ ₹' + Number(a.estimated_saving_inr).toFixed(0) : '—'}</td>
       </tr>`).join('')
@@ -417,21 +509,21 @@ export default function ActionPlan({ data, selectedBuilding, analysisId }) {
     const buildingRows = (buildingRanking || []).map((b, i) => {
       const rc = i === 0 ? '#b91c1c' : i === 1 ? '#c2410c' : i === 2 ? '#92400e' : '#374151'
       return `<tr>
-        <td style="color:${rc};font-weight:700;">#${b.rank || i+1}</td>
-        <td style="font-weight:600;">${b.building || '—'}</td>
-        <td>${(b.water_loss_liters || 0).toLocaleString()} L</td>
+        <td style="color:${rc};font-weight:700;">#${escapeText(b.rank || i+1)}</td>
+        <td style="font-weight:600;">${escapeText(b.building || '—')}</td>
+        <td>${escapeText((b.water_loss_liters || 0).toLocaleString())} L</td>
         <td>${(b.energy_loss_kwh || 0).toFixed(1)} kWh</td>
         <td>${b.risk_score?.toFixed(0) ?? '—'}</td>
-        <td>${(b.water_severity || 'none').toUpperCase()}</td>
-        <td>${(b.energy_severity || 'none').toUpperCase()}</td>
+        <td>${escapeText((b.water_severity || 'none').toUpperCase())}</td>
+        <td>${escapeText((b.energy_severity || 'none').toUpperCase())}</td>
       </tr>`}).join('')
 
     const sdgCards = (sdgAlignment || []).map(sdg => {
       const color = { 6:'#26bde2',7:'#fcc30b',9:'#fd6925',11:'#fd9d24',12:'#bf8b2e',13:'#3f7e44' }[sdg.goal] || '#3b82f6'
       return `<div class="sdg-item">
-        <div class="sdg-badge" style="background:${color};">SDG ${sdg.goal.replace(/^SDG\s*/i, '')}</div>
-        <div class="sdg-title">${sdg.title || ''}</div>
-        <div class="sdg-text">${sdg.relevance || ''}</div>
+        <div class="sdg-badge" style="background:${color};">SDG ${escapeText(sdg.goal.replace(/^SDG\s*/i, ''))}</div>
+        <div class="sdg-title">${escapeText(sdg.title || '')}</div>
+        <div class="sdg-text">${escapeText(sdg.relevance || '')}</div>
       </div>`}).join('')
 
     const curGrade = campusHealth?.current?.grade || '—'
@@ -441,13 +533,15 @@ export default function ActionPlan({ data, selectedBuilding, analysisId }) {
 
     const html = `<!DOCTYPE html>
 <html lang="en">
-<head>
+<head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 <meta charset="UTF-8">
 <title>RE:GEN AI — Sustainability Report</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
   @page{size:A4;margin:18mm 16mm 14mm 16mm;}
   @page:first{margin-top:0;}
+  td,p,li{overflow-wrap:anywhere;}
+  tr{break-inside:avoid;}
   body{font-family:'Segoe UI',Arial,sans-serif;color:#111827;background:#fff;font-size:9.5pt;line-height:1.6;}
 
   /* ── Cover ── */
@@ -525,20 +619,20 @@ export default function ActionPlan({ data, selectedBuilding, analysisId }) {
 <div class="cover">
   <div class="cover-tag">${aiUsed ? 'AI-Enhanced Analysis' : 'Rule-Based Analysis'} · ${new Date().getFullYear()}</div>
   <div class="cover-title">RE:GEN AI<br>Sustainability<br>Intelligence Report</div>
-  <div class="cover-sub">${orgName ? orgName + ' — Sustainability Analysis' : 'Agent-Prioritized Resource Analysis'}<br>Multi-Domain Decision Support · 7 AI Agents</div>
+  <div class="cover-sub">${escapeText(orgName ? orgName + ' — Sustainability Analysis' : 'Agent-Prioritized Resource Analysis')}<br>Multi-Domain Decision Support · 7 AI Agents</div>
   <div class="cover-chips">
     ${anomalyOk ? '<span class="cover-chip">💧 Water Leakage Detection</span>' : '<span class="cover-chip">💧 Water Consumption Analysis</span>'}
     ${anomalyOk ? '<span class="cover-chip">⚡ Energy Anomaly Audit</span>' : '<span class="cover-chip">⚡ Energy Consumption Analysis</span>'}
     <span class="cover-chip">♻ Waste-to-Wealth Pathways</span>
     <span class="cover-chip">📊 Impact Analysis</span>
     <span class="cover-chip">🤖 AI Reasoning</span>
-    ${reportMeta ? `<span class="cover-chip">📈 ${reportMeta.overall_label || 'Analysis'} · ${reportMeta.confidence_pct || '—'}% confidence</span>` : ''}
+    ${reportMeta ? `<span class="cover-chip">📈 ${escapeText(reportMeta.overall_label || 'Analysis')} · ${escapeText(reportMeta.coverage_pct || '—')}% coverage</span>` : ''}
   </div>
   <div class="cover-meta">
     Report generated: ${now}<br>
     Multi-Agent Sustainability Intelligence Platform<br>
-    Data source: ${dataSource}.<br>
-    ${reportMeta ? `Analysis level: ${reportMeta.overall_label || 'N/A'} · Confidence: ${reportMeta.confidence_pct ?? '—'}%${reportMeta.anomaly_detection_available === false ? ' · Anomaly detection: unavailable at this data resolution' : ''}<br>` : ''}
+    Data source: ${escapeText(dataSource)}.<br>
+    ${reportMeta ? `Analysis level: ${escapeText(reportMeta.overall_label || 'N/A')} · Coverage: ${escapeText(reportMeta.coverage_pct ?? '—')}%${reportMeta.anomaly_detection_available === false ? ' · Anomaly detection: unavailable at this data resolution' : ''}<br>` : ''}
     RE:GEN AI is a decision-support prototype — not professional regulatory, financial, or engineering advice.
   </div>
 </div>
@@ -554,14 +648,14 @@ ${campusHealth?.current ? `
   <div class="section-title">Sustainability Health Index</div>
   <div class="section-rule"></div>
   <div class="score-row">
-    <div class="score-num">${curScore}</div>
+    <div class="score-num">${escapeText(curScore)}</div>
     <div class="score-info">
-      <div class="score-grade">${curGrade}</div>
-      <div class="score-label">${curLabel}</div>
-      <div class="score-target">Target: ${tgtGrade} &nbsp;·&nbsp; Composite of 6 sustainability dimensions</div>
+      <div class="score-grade">${escapeText(curGrade)}</div>
+      <div class="score-label">${escapeText(curLabel)}</div>
+      <div class="score-target">${campusHealth?.target ? `Target: ${escapeText(tgtGrade)} · Composite of 6 sustainability dimensions` : 'Indicative historical score'}</div>
     </div>
   </div>
-  ${campusHealth.interpretation ? `<div class="summary-box">${campusHealth.interpretation}</div>` : ''}
+  ${campusHealth.interpretation ? `<div class="summary-box">${escapeText(campusHealth.interpretation)}</div>` : ''}
 </div>` : ''}
 
 ${reportMeta && (reportMeta.skipped_modules?.length > 0 || reportMeta.anomaly_detection_available === false) ? `
@@ -569,9 +663,9 @@ ${reportMeta && (reportMeta.skipped_modules?.length > 0 || reportMeta.anomaly_de
   <div class="section-title">Analysis Limitations</div>
   <div class="section-rule"></div>
   <div style="background:#fffbeb;border:1pt solid #fde68a;border-radius:6pt;padding:10pt 12pt;font-size:8.5pt;color:#92400e;line-height:1.7;">
-    ${reportMeta.anomaly_detection_available === false ? `<strong>Anomaly detection unavailable</strong> — ${reportMeta.overall_label || 'Current'} data does not include hourly time-series. Leak detection, after-hours energy waste, and zone-level risk mapping require Level 3 (hourly) data.<br>` : ''}
-    ${reportMeta.skipped_modules?.length > 0 ? `<strong>Skipped modules:</strong> ${reportMeta.skipped_modules.map(m => m.module).join(', ')}.<br>` : ''}
-    <strong>Confidence:</strong> ${reportMeta.confidence_pct ?? '—'}% · <strong>Analysis level:</strong> ${reportMeta.overall_label || 'N/A'}
+    ${reportMeta.anomaly_detection_available === false ? `<strong>Anomaly detection unavailable</strong> — ${escapeText(reportMeta.overall_label || 'Current')} data does not include hourly time-series. Leak detection, after-hours energy waste, and zone-level risk mapping require Level 3 (hourly) data.<br>` : ''}
+    ${reportMeta.skipped_modules?.length > 0 ? `<strong>Skipped modules:</strong> ${escapeText(reportMeta.skipped_modules.map(m => m.module).join(', '))}.<br>` : ''}
+    <strong>Coverage:</strong> ${escapeText(reportMeta.coverage_pct ?? '—')}% · <strong>Analysis level:</strong> ${escapeText(reportMeta.overall_label || 'N/A')}
   </div>
 </div>` : ''}
 
@@ -580,7 +674,7 @@ ${summary ? `
   <div class="section-title">Executive Summary</div>
   <div class="section-rule"></div>
   <div class="section-sub">${aiUsed ? 'Generated by AI Core · Multi-agent synthesis' : 'Rule-based analysis summary'}</div>
-  <div class="summary-box">${summary}</div>
+  <div class="summary-box">${escapeText(summary)}</div>
 </div>` : ''}
 
 <!-- ─── Page 3: Action Plan ─── -->
@@ -598,6 +692,9 @@ ${summary ? `
     <thead><tr><th>Priority</th><th>Action</th><th>Domain</th><th>Timeline</th><th>Est. Saving</th></tr></thead>
     <tbody>${actionRows || '<tr><td colspan="5" style="color:#9ca3af;font-style:italic;">No actions generated.</td></tr>'}</tbody>
   </table>
+${evidenceSection}
+  ${inventorySection}
+
 </div>
 </div>
 
@@ -648,16 +745,16 @@ ${sdgAlignment?.length ? `
       <tr><td style="font-weight:700;width:160pt;">System</td><td>RE:GEN AI — Sustainability Intelligence OS</td></tr>
       <tr><td style="font-weight:700;">Version</td><td>RE:GEN AI v2.0 · Multi-Agent Sustainability Intelligence Platform</td></tr>
       <tr><td style="font-weight:700;">Agents</td><td>Water Leakage · Energy Optimizer · Waste-to-Wealth · Impact Analyzer · Sustainability Score · Decision Priority · Report Narrative</td></tr>
-      <tr><td style="font-weight:700;">AI Layer</td><td>${aiUsed ? 'Gemini 3.6 Flash · Multi-agent coordination (graceful fallback to rule-based engine)' : 'Rule-based Analysis · Deterministic multi-agent pipeline (Gemini unavailable during this session)'}</td></tr>
-      <tr><td style="font-weight:700;">Data Source</td><td>${dataSource}</td></tr>
+      <tr><td style="font-weight:700;">AI Layer</td><td>${aiUsed ? 'Provider-generated narrative' : 'Rule-based Analysis · Deterministic analysis'}</td></tr>
+      <tr><td style="font-weight:700;">Data Source</td><td>${escapeText(dataSource)}</td></tr>
       <tr><td style="font-weight:700;">Generated</td><td>${new Date().toISOString()}</td></tr>
     </tbody>
   </table>
 </div>
 <div class="disclaimer">
   ⚠ Important Disclaimer: ${isUpload
-    ? `Analysis is derived from uploaded data for ${orgName}. Results are estimates based on rule-based agent analysis.`
-    : 'All data presented in this report is simulated for demonstration purposes.'
+    ? `Analysis is derived from uploaded data for ${escapeText(orgName)}. Results are estimates based on rule-based agent analysis.`
+    : 'Campus utility data is simulated. Recovery recommendations may use submitted inventory and published evidence.'
   }
   RE:GEN AI is a prototype decision-support system and not professional regulatory, financial, or engineering advice.
   Financial saving estimates are illustrative only — actual results will vary based on real infrastructure conditions,
@@ -674,6 +771,7 @@ ${sdgAlignment?.length ? `
 
     const win = window.open('', '_blank', 'width=900,height=700')
     if (!win) { alert('Please allow pop-ups to export the PDF.'); return }
+    win.opener = null
     win.document.write(html)
     win.document.close()
     win.addEventListener('load', () => {
@@ -686,6 +784,21 @@ ${sdgAlignment?.length ? `
 
   return (
     <section className="px-6 py-16 max-w-7xl mx-auto" id="action-plan">
+      {!!inventoryActions.length && <details open className="glass-card p-5 mb-6">
+        <summary className="cursor-pointer font-semibold">Waste-to-Wealth - SDG 12.5</summary>
+        <ul className="space-y-3 mt-3">{inventoryActions.map((item, index) =>
+          <li key={index} className="border-b border-slate-800 pb-3">
+            <strong className="text-green-400">{item.material}</strong>
+            <span className="text-xs text-slate-400 ml-2">
+              {item.quantity} {item.unit}
+            </span>
+            <p className="text-sm mt-1">{item.action}</p>
+            <p className="text-xs text-slate-400">{item.preparation}</p>
+            <p className="text-xs text-cyan-400">{item.financial_note}</p>
+            <p className="text-xs text-slate-500">{item.limitation}</p>
+          </li>
+        )}</ul>
+      </details>}
       <div className="flex items-start justify-between mb-8">
         <div>
           <h2 className="text-3xl font-black text-white mb-2">
@@ -713,16 +826,14 @@ ${sdgAlignment?.length ? `
             Export JSON
           </button>
           {analysisId && (
-            <a
-              href={`${BASE_URL}/report/${analysisId}/audit-record.pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => downloadAudit(analysisId).catch(() => window.alert('Audit download unavailable. Check your facility session.'))}
               className="btn-secondary flex items-center gap-1.5"
-              title="Download tamper-evident audit record (SHA-256 signed)"
+              title="Download tamper-evident audit record (payload checksum)"
             >
               <ShieldCheck className="w-4 h-4" />
               Audit Record
-            </a>
+            </button>
           )}
         </div>
       </div>

@@ -292,7 +292,7 @@ function DropZone({ datasetId: _datasetId, color, onFile, validating, validation
         <input
           ref={inputRef}
           type="file"
-          accept=".csv,.xlsx,.xls"
+          accept=".csv,.xlsx,.json"
           onChange={handleChange}
           style={{ display: 'none' }}
         />
@@ -736,6 +736,12 @@ export default function UploadCenter({ onProceed, onBack }) {
     waste:  { items: [] },
   })
 
+  const [occupancy, setOccupancy] = useState('')
+  const [floorArea, setFloorArea] = useState('')
+  const [tariff, setTariff] = useState({ water: '', energy: '', reference: '' })
+  const validTariff = [tariff.water, tariff.energy].every(value => value === '' || Number(value) >= 0 && Number(value) <= 100000)
+    && (!(tariff.water || tariff.energy) || Boolean(tariff.reference.trim()))
+
   const updateDs = (id, patch) => {
     setDatasetStates(prev => ({ ...prev, [id]: { ...prev[id], ...patch } }))
   }
@@ -743,8 +749,8 @@ export default function UploadCenter({ onProceed, onBack }) {
   const handleFile = async (dsId, file) => {
     // Basic client-side check
     const ext = file.name.split('.').pop().toLowerCase()
-    if (!['csv', 'xlsx', 'xls'].includes(ext)) {
-      updateDs(dsId, { fileError: 'Only CSV and Excel (.xlsx / .xls) files are supported.' })
+    if (!['csv', 'xlsx', 'json'].includes(ext)) {
+      updateDs(dsId, { fileError: 'Use CSV, XLSX or JSON.' })
       return
     }
     if (file.size > 20 * 1024 * 1024) {
@@ -795,6 +801,9 @@ export default function UploadCenter({ onProceed, onBack }) {
       energy:   datasetStates.energy,
       fuel:     datasetStates.fuel,
       waste:    datasetStates.waste,
+      tariff,
+      occupancy,
+      floorArea,
     })
   }
 
@@ -859,7 +868,7 @@ export default function UploadCenter({ onProceed, onBack }) {
               </label>
               <input
                 type="text"
-                placeholder="e.g. St. Joseph's University"
+                placeholder="e.g. Sathyabama University"
                 value={orgName}
                 onChange={e => setOrgName(e.target.value)}
                 style={{
@@ -908,12 +917,42 @@ export default function UploadCenter({ onProceed, onBack }) {
         }}>
           <span style={{ fontSize: 14, flexShrink: 0 }}>🌿</span>
           <div>
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#00cc77' }}>Carbon is Automatic — </span>
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#00cc77' }}>Emissions evidence — </span>
             <span style={{ fontSize: 11.5, color: 'rgba(148,163,184,0.75)' }}>
-              You never upload carbon data. CO₂ is calculated deterministically from electricity, fuel, water, and waste data using certified emission factors. No AI is used in carbon calculations.
+              Electricity and water emissions require documented factors applicable to your facility. Uploading utility consumption alone does not establish avoided emissions.
             </span>
           </div>
         </div>
+
+        <details className="glass-card p-4 mb-5">
+          <summary className="cursor-pointer text-sm">Documented utility tariffs (optional)</summary>
+          <div className="grid md:grid-cols-3 gap-3 mt-3">
+            {[['water', 'Water tariff (INR/L)'], ['energy', 'Electricity tariff (INR/kWh)']].map(([key, label]) =>
+              <label key={key} className="text-sm">{label}
+                <input className="block w-full bg-slate-900 p-2 rounded" type="number" min="0" max="100000" step="any"
+                  value={tariff[key]} onChange={event => setTariff({ ...tariff, [key]: event.target.value })} />
+              </label>)}
+            <label className="text-sm">Invoice or tariff schedule reference
+              <input className="block w-full bg-slate-900 p-2 rounded" maxLength="160" value={tariff.reference}
+                onChange={event => setTariff({ ...tariff, reference: event.target.value })} />
+            </label>
+            {!validTariff && <p className="text-amber-400">Supply a valid nonnegative rate and its documented reference.</p>}
+          </div>
+        </details>
+
+        <details className="glass-card p-4 mb-5">
+          <summary className="cursor-pointer text-sm">Facility denominators (optional)</summary>
+          <div className="grid md:grid-cols-2 gap-3 mt-3">
+            <label className="text-sm">Documented occupancy for this period
+              <input className="block w-full bg-slate-900 p-2 rounded" type="number" min="1" max="10000000" value={occupancy}
+                onChange={event => setOccupancy(event.target.value)} />
+            </label>
+            <label className="text-sm">Measured floor area covered (m²)
+              <input className="block w-full bg-slate-900 p-2 rounded" type="number" min="1" max="1000000000" step="any" value={floorArea}
+                onChange={event => setFloorArea(event.target.value)} />
+            </label>
+          </div>
+        </details>
 
         {/* Dataset cards — 2 column grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16, marginBottom: 24 }}>
@@ -957,7 +996,9 @@ export default function UploadCenter({ onProceed, onBack }) {
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <button
             onClick={handleProceed}
-            disabled={!anyData}
+            disabled={!anyData || !validTariff ||
+              (occupancy !== '' && (!Number.isInteger(Number(occupancy)) || Number(occupancy) < 1 || Number(occupancy) > 10000000)) ||
+              (floorArea !== '' && (!Number.isFinite(Number(floorArea)) || Number(floorArea) < 1 || Number(floorArea) > 1000000000))}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 10,
               padding: '14px 36px',

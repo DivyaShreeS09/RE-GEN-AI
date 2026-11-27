@@ -55,7 +55,7 @@ class TestFeasibilityDerived:
         r = compute_regen_score(_base_water(), _base_energy(), _base_impact(),
                                 _base_decision([9, 7]))
         expected_avg = (9 + 7) / 2
-        assert r["score_breakdown"]["feasibility_score"] == pytest.approx(expected_avg, abs=0.1)
+        assert r["score_breakdown"]["feasibility_score"] == pytest.approx(expected_avg * 10, abs=0.1)
 
     def test_high_vs_low_feasibility_affects_score(self):
         r_high = compute_regen_score(_base_water(), _base_energy(), _base_impact(),
@@ -72,7 +72,7 @@ class TestFeasibilityDerived:
     def test_single_action_feasibility(self):
         r = compute_regen_score(_base_water(), _base_energy(), _base_impact(),
                                 _base_decision([6]))
-        assert r["score_breakdown"]["feasibility_score"] == pytest.approx(6.0, abs=0.1)
+        assert r["score_breakdown"]["feasibility_score"] == pytest.approx(60.0, abs=0.1)
 
 
 class TestReturnShapeIntact:

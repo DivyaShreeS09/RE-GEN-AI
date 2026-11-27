@@ -1,6 +1,6 @@
 from core.simulation import load_water_data
 from core.guardrails import get_disclaimer, get_simulated_notice
-from core.data_processor import auto_detect_anomalies_water
+import pandas as pd
 from core.anomaly_detection import detect_anomalies_water_if
 
 NIGHT_HOURS = list(range(0, 6))
@@ -14,7 +14,12 @@ _DEMO_LEVEL = {
 }
 
 
-def analyze_water(df=None, is_uploaded: bool = False, analysis_level_info: dict = None) -> dict:
+def analyze_water(df=None, is_uploaded: bool = False, analysis_level_info: dict = None, *, rate=WATER_COST_PER_LITER,
+                  tariff_source="Reference estimate; replace with facility invoice.") -> dict:
+    if df is not None and is_uploaded and "reading_type" in df:
+        from core.anomaly_detection import uploaded_resource_result
+        return uploaded_resource_result(df, analysis_level_info or _DEMO_LEVEL, water=True,
+                                        rate=rate, tariff_source=tariff_source)
     _if_meta = None
     if df is None:
         df = load_water_data()
@@ -65,8 +70,8 @@ def analyze_water(df=None, is_uploaded: bool = False, analysis_level_info: dict 
     else:
         severity = "none";     severity_score = 95
 
-    estimated_cost_inr = round(wasted_liters * WATER_COST_PER_LITER, 2)
-    co2_equivalent_kg  = round(wasted_liters * 0.001, 2)
+    estimated_cost_inr = None if rate is None else round(wasted_liters * rate, 2)
+    co2_equivalent_kg  = None if is_uploaded and rate is None else round(wasted_liters * 0.001, 2)
     total_liters       = round(float(df["usage_liters"].sum()), 1)
 
     # Recommendations
@@ -142,7 +147,7 @@ def analyze_water(df=None, is_uploaded: bool = False, analysis_level_info: dict 
             f"Excess above baseline during anomalous periods: {wasted_liters} L."
         )
         war_room_impact = (
-            f"Estimated weekly utility loss: Rs. {estimated_cost_inr:.0f}. "
+            f"Estimated reporting-period utility loss: Rs. {estimated_cost_inr if estimated_cost_inr is not None else "unavailable"}. "
             f"CO2 equivalent: {co2_equivalent_kg} kg."
         )
     else:
@@ -157,9 +162,10 @@ def analyze_water(df=None, is_uploaded: bool = False, analysis_level_info: dict 
         )
 
     # Confidence based on level
-    confidence = 0.89 if _run_anomaly else (0.42 if level_info["level"] == 1 else 0.65)
 
     return {
+        "tariff": {"inr_per_unit": rate, "unit": "L", "basis": tariff_source},
+        "reporting_days": int(pd.to_datetime(df["date"], errors="coerce", utc=True).dt.normalize().nunique()) or None,
         "agent":                              "Water Leakage Agent",
         "status":                             "analyzed",
         "analysis_level":                     level_info.get("code", "level3"),
@@ -185,7 +191,7 @@ def analyze_water(df=None, is_uploaded: bool = False, analysis_level_info: dict 
         "war_room_reasoning":                 war_room_reasoning,
         "war_room_impact":                    war_room_impact,
         "is_uploaded":                        is_uploaded,
-        "confidence":                         confidence,
+        "confidence":                         None,
         "disclaimer":                         get_disclaimer(),
         "data_notice":                        "Uploaded dataset." if is_uploaded else get_simulated_notice(),
     }

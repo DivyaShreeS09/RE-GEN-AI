@@ -64,7 +64,7 @@ function MetricGauge({ value, label, color, description, onClick, expanded }) {
 }
 
 // ── Data Intelligence Panel (Step 3) ─────────────────────────────────────────
-function DataIntelligencePanel({ uploadState, available }) {
+function DataIntelligencePanel({ uploadState, available, onCoverage }) {
   const [result, setResult]   = useState(null)
   const [loading, setLoading] = useState(true)
   const [, setError]          = useState(false)
@@ -89,7 +89,7 @@ function DataIntelligencePanel({ uploadState, available }) {
         if (!wi.length) return ''
         return wi.length === 1 ? wi[0].type : `${wi.length} waste streams`
       })(),
-      waste_qty_kg:       (waste?.items || []).filter(r => r.type && parseFloat(r.qty) > 0).reduce((s, r) => s + parseFloat(r.qty || 0), 0),
+      waste_qty_kg:       (waste?.items || []).filter(r => r.type && parseFloat(r.qty) > 0).reduce((s, r) => s + parseFloat(r.qty || 0) * ({g: 0.001, tons: 1000, kg: 1}[r.unit || "kg"]), 0),
       manual_water_liters:  parseFloat(water?.manual) || 0,
       manual_water_period:  water?.period || 'weekly',
       manual_energy_kwh:    parseFloat(energy?.manual) || 0,
@@ -98,7 +98,7 @@ function DataIntelligencePanel({ uploadState, available }) {
     }
 
     interpretDatasets(payload)
-      .then(res => { setResult(res.data); setLoading(false) })
+      .then(res => { setResult(res.data); onCoverage(res.data.coverage); setLoading(false) })
       .catch(() => { setError(true); setLoading(false) })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -115,7 +115,7 @@ function DataIntelligencePanel({ uploadState, available }) {
   if (fuel?.file?.record_count) fallbackFacts.push(`${fuel.file.record_count.toLocaleString()} Fuel Records`)
   const wItems = (waste?.items || []).filter(r => r.type && parseFloat(r.qty) > 0)
   if (wItems.length > 0) {
-    const totalKg = wItems.reduce((s, r) => s + parseFloat(r.qty || 0), 0)
+    const totalKg = wItems.reduce((s, r) => s + parseFloat(r.qty || 0) * ({g: 0.001, tons: 1000, kg: 1}[r.unit || "kg"]), 0)
     fallbackFacts.push(`Waste: ${wItems.length} stream${wItems.length !== 1 ? 's' : ''} (${Math.round(totalKg)} kg total)`)
   }
   fallbackFacts.push(`Carbon: Automatic (from ${available.length} dataset${available.length !== 1 ? 's' : ''})`)
@@ -204,91 +204,16 @@ function DataIntelligencePanel({ uploadState, available }) {
 }
 
 // ── Coverage formula breakdown (Step 4) ─────────────────────────────────────
-function CoverageBreakdown({ available, coverage, confidence, readiness, WEIGHTS, PENALTIES }) {
-  const ALL_DS = ['water', 'energy', 'fuel', 'waste', 'occupancy']
-
-  return (
-    <motion.div
-      initial={{ height: 0, opacity: 0 }}
-      animate={{ height: 'auto', opacity: 1 }}
-      exit={{ height: 0, opacity: 0 }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
-      style={{ overflow: 'hidden' }}
-    >
-      <div style={{
-        marginTop: 12, padding: '14px 16px', borderRadius: 10,
-        background: 'rgba(0,0,0,0.25)',
-        border: '1px solid rgba(255,255,255,0.06)',
-      }}>
-        <p style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 10 }}>
-          Formula Breakdown
-        </p>
-
-        {/* Coverage */}
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ fontSize: 10, color: '#a78bfa', fontWeight: 700, marginBottom: 5 }}>
-            Data Coverage = sum of present dataset weights
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {ALL_DS.map(ds => {
-              const w = WEIGHTS[ds] || 0
-              const present = available.includes(ds)
-              return (
-                <div key={ds} style={{
-                  padding: '2px 8px', borderRadius: 4, fontSize: 10,
-                  background: present ? 'rgba(167,139,250,0.12)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${present ? 'rgba(167,139,250,0.3)' : 'rgba(255,255,255,0.06)'}`,
-                  color: present ? '#a78bfa' : '#475569',
-                  textDecoration: !present ? 'line-through' : 'none',
-                }}>
-                  {ds} {w}%
-                </div>
-              )
-            })}
-            <div style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, color: '#a78bfa' }}>= {coverage}%</div>
-          </div>
-        </div>
-
-        {/* Confidence */}
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ fontSize: 10, color: '#00e5ff', fontWeight: 700, marginBottom: 5 }}>
-            Analysis Confidence = 100% minus penalties for missing datasets
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
-            <div style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, background: 'rgba(0,229,255,0.08)', border: '1px solid rgba(0,229,255,0.18)', color: '#00e5ff' }}>100%</div>
-            {ALL_DS.map(ds => {
-              const penalty = PENALTIES[ds] || 0
-              const missing = !available.includes(ds) && penalty > 0
-              if (!missing) return null
-              return (
-                <div key={ds} style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)', color: '#f87171' }}>
-                  − {ds} {penalty}%
-                </div>
-              )
-            })}
-            <div style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, color: '#00e5ff' }}>= {confidence}%</div>
-          </div>
-        </div>
-
-        {/* Readiness */}
-        <div>
-          <div style={{ fontSize: 10, color: '#00ff88', fontWeight: 700, marginBottom: 5 }}>
-            Analysis Readiness = (Coverage × 60%) + (Confidence × 40%)
-          </div>
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.18)', color: '#a78bfa' }}>{coverage}% × 0.6</div>
-            <span style={{ fontSize: 10, color: '#475569' }}>+</span>
-            <div style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, background: 'rgba(0,229,255,0.08)', border: '1px solid rgba(0,229,255,0.18)', color: '#00e5ff' }}>{confidence}% × 0.4</div>
-            <div style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, color: '#00ff88' }}>= {readiness}%</div>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  )
+function CoverageBreakdown({ available, WEIGHTS }) {
+  return <div className="glass-card p-4">
+    {Object.entries(WEIGHTS).map(([name, weight]) =>
+      <p key={name}>{name} · {available.includes(name) ? weight : 0} of {weight} coverage points</p>)}
+  </div>
 }
 
-export default function MissionSummary({ uploadState, onLaunch, onBack, launching }) {
+export default function MissionSummary({ uploadState, onLaunch, onBack, launching, uploadEvents = [] }) {
   const { orgName, orgType, water, energy, fuel, waste } = uploadState || {}
+  const [coverageInfo, setCoverageInfo] = useState(null)
   const [coverageExpanded, setCoverageExpanded] = useState(false)
 
   // Determine which datasets are available
@@ -309,18 +234,8 @@ export default function MissionSummary({ uploadState, onLaunch, onBack, launchin
   if (wasteItems.length > 0) available.push('waste')
   else missing.push('waste')
 
-  // Coverage formula — mirrors backend compute_coverage() exactly
-  const WEIGHTS    = { water: 30, energy: 30, fuel: 15, waste: 15, occupancy: 0 }
-  const PENALTIES  = { water: 20, energy: 20, fuel: 8,  waste: 8,  occupancy: 4 }
-  const ALL_DS     = ['water', 'energy', 'fuel', 'waste', 'occupancy']
-  const coverage   = Math.round(available.reduce((s, d) => s + (WEIGHTS[d] || 0), 0))
-  const confidence = Math.round(Math.max(0,
-    100 - ALL_DS.reduce((s, d) => s + (available.includes(d) ? 0 : PENALTIES[d]), 0)
-  ))
-  const readiness  = Math.round(coverage * 0.6 + confidence * 0.4)
-
-  const readinessColor = readiness >= 70 ? '#00ff88' : readiness >= 40 ? '#eab308' : '#ef4444'
-  const confColor      = confidence >= 70 ? '#00e5ff' : confidence >= 40 ? '#eab308' : '#f97316'
+  const WEIGHTS = Object.fromEntries(Object.entries(coverageInfo?.weights || {}).map(([name, fraction]) => [name, fraction * 100]))
+  const coverage = coverageInfo?.data_coverage_pct
   const covColor       = coverage >= 60 ? '#a78bfa' : coverage >= 30 ? '#eab308' : '#94a3b8'
 
   return (
@@ -412,7 +327,7 @@ export default function MissionSummary({ uploadState, onLaunch, onBack, launchin
         </div>
 
         {/* Data Intelligence Panel (Step 3) */}
-        <DataIntelligencePanel uploadState={uploadState} available={available} />
+        <DataIntelligencePanel uploadState={uploadState} available={available} onCoverage={setCoverageInfo} />
 
         {/* Gauges row — click to expand formula */}
         <div style={{
@@ -423,9 +338,7 @@ export default function MissionSummary({ uploadState, onLaunch, onBack, launchin
           marginBottom: 16,
         }}>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'space-around', flexWrap: 'wrap' }}>
-            <MetricGauge value={readiness}   color={readinessColor} label="Analysis Readiness"   description="Click to expand formula" onClick={() => setCoverageExpanded(p => !p)} expanded={coverageExpanded} />
-            <MetricGauge value={confidence}  color={confColor}      label="Analysis Confidence"  description="Confidence given available data" />
-            <MetricGauge value={coverage}    color={covColor}       label="Data Coverage"        description="Weighted % of optimal datasets" />
+            {coverage == null ? <p>Coverage requires a facility assessment.</p> : <MetricGauge value={coverage}    color={covColor}       label="Data Coverage"        description="Click to inspect dataset weights" onClick={() => setCoverageExpanded(p => !p)} expanded={coverageExpanded} />}
           </div>
 
           {/* Expandable breakdown (Step 4) */}
@@ -434,10 +347,7 @@ export default function MissionSummary({ uploadState, onLaunch, onBack, launchin
               <CoverageBreakdown
                 available={available}
                 coverage={coverage}
-                confidence={confidence}
-                readiness={readiness}
                 WEIGHTS={WEIGHTS}
-                PENALTIES={PENALTIES}
               />
             )}
           </AnimatePresence>
@@ -530,6 +440,9 @@ export default function MissionSummary({ uploadState, onLaunch, onBack, launchin
           </div>
         </div>
 
+        {launching && <section aria-live="polite"><h3>Agent War Room</h3>
+          <ol>{uploadEvents.map((e,i) => <li key={i}>{e.agent} · {e.action}</li>)}</ol>
+        </section>}
         {/* Launch button */}
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <motion.button
