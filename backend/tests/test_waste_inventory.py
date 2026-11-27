@@ -1,5 +1,7 @@
 from datetime import date
 
+import pytest
+
 from fastapi.testclient import TestClient
 from main import app
 
@@ -276,7 +278,20 @@ def test_scale_gates_direct_industrial_path_without_documented_acceptance():
     assert "industrial_symbiosis" in {route["category"] for route in bulk["pathways"]}
 
 
-def test_reviewed_regional_coverage_requires_publisher_scope_and_compatible_material():
+@pytest.fixture
+def regional_postal_dataset(tmp_path, monkeypatch):
+    # Synthetic test-only geography; never used as production postal evidence.
+    dataset = tmp_path / "postal-fixture.csv"
+    dataset.write_text(
+        "pincode,officename,district,statename\n"
+        "600042,Velachery,Chennai,Tamil Nadu\n"
+        "641001,Coimbatore,Coimbatore,Tamil Nadu\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("REGEN_POSTAL_DATASET", str(dataset))
+
+
+def test_reviewed_regional_coverage_requires_publisher_scope_and_compatible_material(regional_postal_dataset):
     from core.recovery_discovery import published_service_leads
 
     item = {"material": "cellulose fibre packaging", "original_material": "waste paper cartons"}
@@ -290,7 +305,7 @@ def test_reviewed_regional_coverage_requires_publisher_scope_and_compatible_mate
     assert not published_service_leads({"material": "used books"}, "600042", "sell")
 
 
-def test_reviewed_services_stream_early_and_counts_deduplicate(token_for):
+def test_reviewed_services_stream_early_and_counts_deduplicate(token_for, regional_postal_dataset):
     import json
     from core.recovery_discovery import maps_search_links
 
