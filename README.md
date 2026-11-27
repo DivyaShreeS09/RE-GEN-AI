@@ -1,359 +1,69 @@
-<p align="center">
-  <img src="docs/screenshots/logo.png" alt="RE:GEN AI Logo" width="200"/>
-</p>
-
 # RE:GEN AI
 
-> **Multi-agent sustainability intelligence.** Seven specialised agents detect hidden resource loss, map waste streams to recovery value, and generate evidence-backed intervention plans — for any campus, hospital, hotel, or industrial facility.
+RE:GEN AI analyzes facility water, electricity, fuel and waste inventories. The React interface includes a synthetic campus demonstration, a private facility upload workflow and a Waste-to-Wealth recovery mission. The FastAPI application runs the existing Water Leakage, Energy Optimization, Waste-to-Wealth, Pollution & Impact, Decision Engine, RE:GEN Score, Benchmark and Report agents. See [PROGRESS.md](PROGRESS.md) for verification and acceptance status.
 
-**[Live Demo](https://frontend-two-rho-85.vercel.app)** · **[Backend API](https://regen-ai-backend.onrender.com/health)** · **[Demo Video](https://youtu.be/o9Hy4onNEkQ)** · **[GitHub](https://github.com/DivyaShreeS09/RE-GEN-AI)**
+## Local setup on Windows
 
-[![CI](https://github.com/DivyaShreeS09/RE-GEN-AI/actions/workflows/ci.yml/badge.svg)](https://github.com/DivyaShreeS09/RE-GEN-AI/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white)
-![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)
-![Gemini](https://img.shields.io/badge/Gemini-3.6--flash-4285F4?style=flat-square&logo=googlegemini&logoColor=white)
-![Vercel](https://img.shields.io/badge/Vercel-deployed-000000?style=flat-square&logo=vercel&logoColor=white)
-![Render](https://img.shields.io/badge/Render-deployed-46E3B7?style=flat-square&logo=render&logoColor=white)
+Local development and automated tests use SQLite. The test harness creates a fresh database in a temporary workspace directory. PostgreSQL, Docker and Supabase are unnecessary for these checks. Use Python 3.12 and Node 22.22.0. From the repository root:
 
----
-
-## The Problem
-
-Campuses, hospitals, hotels, and industrial facilities silently lose significant water, energy, and waste value every week — not from a lack of concern, but because the data lives in disconnected systems with no one synthesising it into action.
-
-Night-time pipe leaks run undetected until the bill arrives. Lab equipment left on overnight drains electricity budgets. Recyclable materials accumulate in general waste because no one has mapped their recovery pathway. When an analyst finally collects the data, it takes weeks of manual work to produce even a basic sustainability report — by which time the next month's losses have already compounded.
-
-**How might we use AI to turn scattered, unmonitored resource data into a ranked, evidence-backed action plan so that campuses and institutional facilities can become more water-, energy-, and waste-efficient?**
-
-**SDG alignment:** SDG 6 (Clean Water & Sanitation), SDG 7 (Affordable & Clean Energy), SDG 12 (Responsible Consumption & Production), SDG 13 (Climate Action) — the same four goals the Pollution & Impact Agent maps every analysis run to (`backend/agents/impact_agent.py`), not a marketing add-on.
-
----
-
-## Solution
-
-RE:GEN AI runs a coordinated pipeline of seven specialised agents against your uploaded resource data. Each agent runs its own domain-specific analysis — anomaly detection, impact calculation, waste lookup — and contributes structured findings to a shared decision pipeline. The Decision Engine ranks interventions by urgency, estimated cost savings, and environmental impact. Gemini `gemini-3.6-flash` adds a narrative reasoning layer — explaining priority decisions in plain language — while all numerical analysis remains fully deterministic and auditable.
-
-**Two modes.** Demo mode runs instantly on bundled sensor data. Upload mode accepts your organisation's CSV, Excel, or manually entered figures for any combination of water, energy, fuel, and waste datasets.
-
----
-
-## Key Features
-
-| | | |
-|---|---|---|
-| **Multi-Agent AI** — Seven specialised agents run in parallel, each owning a distinct resource domain | **Three Analysis Levels** — Auto-detected from data resolution; confidence calibrated honestly to what the data supports | **Upload + Demo Modes** — Upload your own CSV/Excel data or explore instantly with bundled sensor logs |
-| **Facility Visualisation** — Renders the facility at the correct analysis level: resource nodes (L1), zone archetypes (L2), or anomaly-driven map (L3) | **Agent War Room** — Per-agent findings, skip reasons, and confidence levels — all sourced from real backend data in upload mode | **97-Material Waste KB** — Production knowledge base: 18 categories, 120+ alias normalisations, Indian regulatory compliance notes |
-| **RE:GEN Score** — Weighted sustainability health index before and after interventions | **Action Plan + PDF** — Ranked intervention stack with estimated savings, exported via browser print API | **Carbon Calculator** — Scope 1+2 CO₂ formula using IPCC 2006 and BEE India emission factors, shown inline with sources |
-| **IsolationForest Anomaly Detection** — scikit-learn ML model replaces static Z-score thresholds; degrades gracefully when data is insufficient | **Peer Benchmarking** — Per-occupant consumption scored against sector reference baselines (hospital, university, hotel, industrial facility) | **Slack Alerting** — Webhook notification dispatched automatically for every critical or high-severity finding |
-| **Device Control Simulation** — Execute Now button dispatches mock commands to valve, HVAC, and sensor systems; no false "live" claims | **Run History** — Every analysis persisted to SQLite via SQLAlchemy; full history retrievable per organisation | **Gemini Integration** — Narrative layer with deterministic fallback; no analysis fails without a key |
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Data Intelligence Layer                   │
-│   Upload CSV / Excel  ·  Manual Entry  ·  Schema Validation  │
-│   Coverage %  ·  Confidence %  ·  Analysis Level (1 – 3)    │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-           ┌───────────────▼───────────────┐
-           │        Multi-Agent Core        │
-           │    FastAPI  ·  Python 3.11+    │
-           └──┬────┬────┬────┬────┬────┬───┘
-              │    │    │    │    │    │
-         ┌────▼──┐ │ ┌──▼─┐ │ ┌──▼─┐ │ ┌────▼───┐
-         │ Water │ │ │Enrg│ │ │Wste│ │ │ Impact │
-         │ Agent │ │ │ Ag │ │ │ Ag │ │ │  Agent │
-         └───────┘ │ └────┘ │ └────┘ │ └────────┘
-              ┌────▼──┐  ┌──▼─────┐  ┌─────▼──┐
-              │Decisn │  │ RE:GEN │  │ Report │
-              │Engine │  │ Score  │  │  Agent │
-              └───────┘  └────────┘  └────────┘
-                           │
-           ┌───────────────▼───────────────┐
-           │        Gemini 3.6 Flash        │
-           │   Narrative  ·  Explanations   │
-           │  (deterministic KB fallback)   │
-           └───────────────┬───────────────┘
-                           │
-           ┌───────────────▼───────────────┐
-           │          React Frontend        │
-           │  Dashboard  ·  Digital Twin    │
-           │  War Room  ·  Waste-to-Wealth  │
-           │  Action Plan  ·  PDF Export    │
-           └───────────────────────────────┘
+```powershell
+py -3.12 -m venv backend/.venv
+backend/.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
+backend/.venv/Scripts/python.exe -m pytest backend/tests -q
+cd backend
+.venv/Scripts/python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
----
+In a second PowerShell terminal:
 
-## Agent Pipeline
-
-```
-  Upload / Demo
-       │
-       ▼
-  Schema Validation ──► Analysis Level Detection (L1 / L2 / L3)
-       │
-       ├──────────────────────────────────────────────┐
-       │                                              │
-       ▼                                              ▼
-  Water Leakage Agent              Energy Optimization Agent
-  Waste-to-Wealth Agent            Pollution & Impact Agent
-       │                                              │
-       └──────────────────┬───────────────────────────┘
-                          │
-                          ▼
-                  Decision Engine Agent
-                  (ranks by urgency × impact × cost)
-                          │
-              ┌───────────┴───────────┐
-              │                       │
-              ▼                       ▼
-       RE:GEN Score Agent       Report Agent
-       (before / after)    (executive summary + action plan)
-              │                       │
-              └───────────┬───────────┘
-                          │
-                          ▼
-               React Frontend
-       Dashboard  ·  Digital Twin  ·  War Room
-       Waste-to-Wealth  ·  Action Plan  ·  PDF
+```powershell
+cd frontend
+npm ci
+npm run lint
+npm run test
+npm run build
+npm run dev
 ```
 
-All agents run in parallel. No agent blocks another. A missing dataset produces a graceful skip with an explicit reason — never a crash or a silent failure.
+Open the local Vite URL and select the simulated campus. Vite proxies `/api` to loopback. The notebook imports the same agent code and uses the bundled synthetic CSV files. Demo action controls simulate responses. Uploaded manual totals have no hourly observations. Analysis estimates and quoted recovery potential are distinct from confirmed handovers and realized receipts.
 
----
+## Facility access
 
-## Analysis Levels
+Configure a maintained OAuth/OIDC provider with an authorization-code public client, PKCE S256, an exact frontend redirect URI and HTTPS token/authorization endpoints. Set frontend build variables `VITE_OIDC_CLIENT_ID`, `VITE_OIDC_AUTHORIZE_URL`, `VITE_OIDC_TOKEN_URL` and, for separate hosting, `VITE_API_URL`. The browser keeps its access token in memory. Select facility upload to sign in.
 
-The system auto-detects data resolution from the uploaded file and adjusts every output accordingly.
+Backend settings are listed in [backend/.env.example](backend/.env.example). Supply settings through the process environment. Configure `REGEN_AUTH_ISSUER`, `REGEN_AUTH_AUDIENCE` and `REGEN_AUTH_CERT_FILE` for the provider’s public RSA signing key. Rotate the public key in coordination with the issuer. Tokens need issuer, audience, subject, issue/expiry times and issuer-controlled `app_metadata.tenant_id` and `app_metadata.regen_role`. Restrict role provisioning to the institution. Viewers can read facility records, staff submit inventories and service evidence, and authorized adult facility administrators approve reservations and confirm handovers. Never grant staff or admin roles through user-editable profile fields.
 
-| Level | Data Required | Capabilities | Confidence |
-|---|---|---|---|
-| **Level 1** — Basic Assessment | Manual entry or monthly totals | Sustainability score, carbon estimation, cost benchmarking | ≤ 55% |
-| **Level 2** — Operational Analysis | Daily or weekly meter exports (≥ 3 days) | Trend analysis, consumption hotspots, building comparison | ≤ 72% |
-| **Level 3** — Advanced AI Analysis | Hourly data, ≥ 3 days, ≥ 12 hour-slots/day | Full anomaly detection, leak detection, predictive maintenance | 85 – 95% |
+Offline deterministic narration is the default. Optional local Ollama uses `REGEN_OLLAMA_MODEL` and loopback only. Gemini requires `REGEN_ENV=production`, the Gemini provider, an explicit model, a server-managed key and per-request `X-AI-Consent: yes`. Automated tests isolate the database and deny outbound network access. No provider credentials belong in the browser.
 
-When anomaly detection is unavailable, the system explicitly discloses this in the War Room, Facility Visualisation, every generated report, and the Mission Summary — never silently claiming to detect leaks from monthly aggregates.
+## API and evidence
 
----
+FastAPI serves the route schemas under `/docs`. Facility staff can preview CSV/XLSX/JSON columns at `/upload/validate`, then submit files or manual totals at `/analyze/upload`. The optional preview parameter `column_mapping` maps input headers to canonical column names. Analysis accepts the same mappings keyed by dataset in `column_mappings`. Upload files are capped at 20 MiB each. The parser limits rows, columns and decompressed workbook size. Private history, JSON audit and PDF audit requests require a signed tenant token. Older analysis rows lack ownership and require an authorized offline review before attaching an owner.
 
-## Anomaly Detection
+Recovery missions use an idempotent request UUID, integer grams, INR paise and an Indian service PIN. The server stores decisions and typed evidence, including skipped agents, in the mission event list. Poll `GET /missions/{id}` to resume. Staff submit organization service evidence through `POST /recovery/services`. A different authorized administrator reviews it. Unreviewed, revoked, expired and incompatible services are excluded. Keep source documents and receipts in a facility-managed private store. Submit opaque evidence references only. No directory of real buyers is bundled. For locality display, an operator may import a manually reviewed, reuse-permitted postal CSV using `python -m core.schema --reviewed-postal-csv FILE`. Columns are `pin,locality,source_document,reuse_permission,reviewer,publication_date,reviewed_date`. Dates use ISO format. Missing locality evidence returns an unmapped status. Partner matching always requires explicit service PIN coverage. A public passport exposes accepted grams and handover status. Recycling requires further recipient evidence.
 
-Water and energy agents use **IsolationForest** (scikit-learn) to detect anomalous consumption events. The model is trained per-run on the uploaded time series; outliers are flagged with an isolation score, not a static threshold.
+Register calibrated devices using `POST /devices` as an administrator. Provision the returned device token securely. Send small batches to `POST /devices/{id}/telemetry` with that device's bearer token. Supported inputs are cumulative litres, cumulative kWh and instantaneous kW with timezone-aware timestamps. The authenticated meter view shows raw values, reset/gap flags and integrated intervals at the registered zone. Parent/child balance requires synchronized intervals. Qualified personnel install and inspect real equipment.
 
-When the dataset is too small to train a reliable model (< 24 rows per location/zone), the agent falls back to a simple percentile-based method and explicitly discloses the degraded detection mode in the War Room reasoning trace. This disclosure propagates to the report and Mission Summary — the system never claims ML-powered detection from a 3-row dataset.
+## Facility recovery workflow
 
----
+Submit a service PIN, material description, mass and condition. Mark composite or separate lots when a single catalogue match would be misleading. A facility administrator can answer the saved clarification, cite a supplier or inspection record, identify the intact material, or enter independently weighed lots that account for the whole inventory. Unresolved material stays in professional review. Each classified lot is scoped to this inventory. The private photo is available to authorized reviewers.
 
-## Peer Benchmarking
+A verified service can represent repair, donation, internal reuse, industrial demand, a collective or a sale. Record actual capacity, costs, expiry and acceptance evidence. For a facility-visible business mailbox, submit an organization-managed role address and opt into publication. An independent administrator must record a publication confirmation on the review. Query `GET /recovery/directory/{pin}` with facility credentials. A submitter or administrator can withdraw via `DELETE /recovery/services/{id}/publication`. The relay queues internal tasks. Operators separately verify business identity, address control and actual service acceptance.
 
-After each analysis, the platform compares the facility's per-occupant consumption against sector reference ranges sourced from BEE India (Energy Performance Index) and CPWD (Manual on Norms and Standards for Plumbing):
+Gemini remains first when configured and consented. Optional loopback Ollama and optional production Groq follow. Set `REGEN_GROQ_MODEL` and provision the server-side secret named `GROQ_API_KEY` only through authorized deployment configuration. The mission checkbox permits sending material description and prior use for that request. Upload photos, PIN, contact details and evidence references are excluded from the material interpretation prompt. Human reviewers validate proposals before matching. Leave cloud consent and configuration disabled for local work.
 
-| Sector | Water (L/occupant/day) | Energy (kWh/occupant/day) | Source |
-|---|---|---|---|
-| Hospital | 250 – 450 | 0.96 – 1.37 | CPWD norms / BEE Hospital EPI |
-| University / College | 60 – 120 | — | CPWD norms (BEE has no per-student energy norm) |
-| Hotel / Hospitality | 150 – 300 | 0.55 – 1.10 | CPWD norms / BEE Hotel EPI |
-| Office / Corporate | 30 – 60 | — | CPWD norms (BEE benchmark is per m², not per occupant) |
-| Industrial Facility | — | — | No reliable per-worker norm; process-specific |
+Facility uploads may provide water_inr_per_litre or energy_inr_per_kwh together with tariff_reference. Explicit zero rates are retained.
 
-`—` means the reference data file explicitly marks that cell as unavailable — the agent skips that dimension rather than fabricating a comparison. The benchmark score shows where the facility sits within the efficient / typical / high-use bands for its sector type, and feeds into the RE:GEN Score as an additional weighted dimension. Reference values, source notes, and the disclaimer are stored in `backend/data/benchmark_reference.json` and are updatable without code changes.
+Meters support W/kW, Wh/kWh and mL/L/m3, retain original units and timestamps, and can record an invoice-backed tariff in paise per canonical interval unit (L or kWh). A resource mission may name a registered meter; a reviewed work order from that meter can substantiate the recorded difference. Retention preview includes terminal missions and their economic outcomes. Active allocations require operator resolution before expiry.
 
----
+## Deployment and rollback
 
-## Slack Alerting
+1. Provision a private PostgreSQL database and distinct migration and application roles. Require TLS, restrict connectivity and configure backup retention with a tested restore. Set an explicit PostgreSQL SQLAlchemy `DATABASE_URL`. Production startup requires the migrated schema.
+2. From `backend`, run `python -m core.schema` with the migration role on an authorized staging copy first. Revision 1 adds tables and preserves existing analysis rows. Use the application role with only DML, sequence and schema usage permissions when serving requests. For rollback, stop traffic, restore the pre-migration backup to a separate database, verify row counts and restore the matching application version before switching connections.
+3. Serve FastAPI behind HTTPS with connection, time, body and rate limits at the proxy. Set exact `ALLOWED_ORIGINS`, prevent direct access to the origin and use shared rate enforcement for multi-worker deployments. The app rejects non-HTTPS production requests. Configure Uvicorn to trust forwarded scheme headers only from your proxy addresses. The app’s fallback limiter is process-local. Keep registration, signing keys, device credentials and backups in the facility’s access-control process.
+4. Build the frontend with `npm ci` and `npm run build`. Configure its API and identity-provider origins explicitly. Hosted tiers can sleep or enforce quotas. Measure pilot traffic and provider limits before selecting a plan.
+5. In staging, test a demo replay, signed upload, tenant-isolated audit, facility recovery mission and stale meter. Independently verify service coverage, actual receipt, calibrated hardware and restore behavior before approving a pilot. No public deployment has been authorized.
 
-When the Decision Engine produces a finding at `critical` or `high` severity, the platform dispatches a Slack webhook notification containing:
-
-- Severity level and finding summary
-- Estimated monthly impact (cost + CO₂)
-- Organisation name and analysis timestamp
-
-The Slack webhook URL is configured via the `SLACK_WEBHOOK_URL` environment variable. When unset, alerting is silently skipped — no analysis failure occurs.
-
----
-
-## Device Control Simulation
-
-The Action Plan's **Execute Now** button dispatches a simulated command to the relevant device control system. All executions are simulated — no real hardware is connected.
-
-Registered actions:
-
-| Action ID | Name | Device Type |
-|---|---|---|
-| W1 | Install pressure-reduction valve | valve_control |
-| W2 | Inspect night-flow pipes | sensor_query |
-| E1 | Schedule HVAC/lighting shutdown | building_automation |
-| E2 | Smart occupancy-based auto-shutoff | occupancy_sensor |
-
-The response always returns `mode: "mock"` and a simulation note. The API never claims live hardware execution without a real external call.
-
----
-
-## Waste-to-Wealth Intelligence
-
-The Waste-to-Wealth agent uses a production-quality knowledge base of **97 materials** across 18 categories.
-
-| Field | Description |
-|---|---|
-| `recommended_pathway` | Best recovery route: composting, recycling, certified handler, energy recovery |
-| `estimated_value_range` | Min / max INR per kg — market reference, not a guarantee |
-| `co2_savings_kg_per_tonne` | CO₂ avoidance vs landfill (LCA-sourced) |
-| `compliance_notes` | Applicable regulation: SWM Rules 2016, E-Waste Rules 2022, HWM Rules 2016 |
-| `required_handling` | PPE and segregation requirements |
-| `preparation_before_sale` | Step-by-step actions before contacting a buyer |
-| `buyer_types` | Kabadiwala, paper mill, CPCB-authorised handler, and others |
-| `hazard_level` | none / low / medium / high / critical |
-
-**Alias normalisation** — 120+ variant spellings are normalised before lookup: "PET bottles" → `pet`, "corrugated cardboard" → `cardboard`, "biomedical waste" → `medical waste`. Unknown materials receive inferred category guidance and interim handling advice — never a silent failure.
-
-The material dropdown is generated live from `/analyze/waste/materials`. Additions to the knowledge base surface automatically with no frontend edits required.
-
----
-
-## Facility Visualisation
-
-The Facility Visualisation renders the facility at the correct analysis level — never over-claiming.
-
-- **Level 1** — Five resource nodes (Water, Energy, Fuel, Waste, Carbon) showing actual uploaded totals; zone-level detection explicitly marked unavailable
-- **Level 2** — Organisation-type zone archetypes (University, Hospital, Hotel, Factory, etc.) with proportional consumption estimates; no fabricated anomaly colouring
-- **Level 3** — Full anomaly-driven zone map; risk levels derived from detected events
-
-Carbon is always calculated automatically:
-
-```
-CO₂ = (water_L × 0.001) + (energy_kWh × 0.82) + (fuel_L × emission_factor)
-```
-
-Sources: UK Water Industry Research, BEE India, IPCC 2006. The formula breakdown and emission factors are shown inline in the Carbon node tooltip.
-
----
-
-## Agent War Room
-
-Seven agents are visualised as an animated node network. In upload mode:
-
-- Every agent card shows real backend data: finding, reasoning, recommendation, confidence
-- Skipped agents show the exact reason they were skipped and which data would re-activate them
-- The Waste-to-Wealth agent shows the top recovery opportunity and estimated value range
-- The live reasoning feed is built entirely from agent outputs — no hardcoded demo text can leak through
-
----
-
-## Gemini Integration
-
-`gemini-3.6-flash` is integrated at three points in the pipeline, each with a deterministic fallback:
-
-| Point | Gemini contribution | Fallback |
-|---|---|---|
-| Waste-to-Wealth | 2-sentence actionable guidance for the sustainability officer | Constructed from KB fields |
-| War Room reasoning | Plain-language explanation of each agent's finding and priority | Rule-based template from agent output |
-| Executive summary | 3-paragraph report calibrated to analysis level; discloses if anomaly detection was unavailable | Deterministic template using actual numbers |
-
-Every financial figure is prefixed with *estimated*. No exact profit is claimed. No data is invented. If Gemini is unavailable or rate-limited, the system degrades gracefully — no analysis fails.
-
----
-
-## Responsible AI Considerations
-
-RE:GEN AI is built for a domain — sustainability and waste decisions — where a misleading or opaque recommendation can cause real financial or environmental harm. The following design choices address this directly:
-
-**Fairness.** All numerical analysis (anomaly detection, cost estimates, CO₂ calculations, scoring) is deterministic Python — the same formulas run identically regardless of who submits data or which organisation is analysed. The system collects no demographic, identity, or individual-level data, so no agent decision can be conditioned on it. Peer benchmarking compares consumption against sector-type reference bands (hospital, university, hotel, industrial facility) drawn from a fixed lookup table, not against other users' data.
-
-**Transparency.** Every agent response includes a `reasoning_trace` (a step-by-step account of how the result was reached), a `status` (`analyzed` / `skipped` / `error` / `unknown_material`), and a `confidence` score. Responses distinguish AI-generated language from deterministic output via an `ai_enhanced` flag, and every response carries a `data_notice` stating whether the analysis ran on uploaded or simulated data. Every CO₂ and emission-factor formula shown in this README cites its public source (UK Water Industry Research, BEE India, IPCC 2006) rather than presenting an unexplained number.
-
-**Ethics.** The Gemini prompts (`backend/agents/*.py`) explicitly forbid claiming exact profit, require the word "estimated" on every financial figure, and forbid hype language ("revolutionary", "powerful AI", "next-generation"). The hazard guardrail (`backend/core/guardrails.py`) suppresses recovery-value estimates entirely for hazardous materials and instead shows a compliance warning directing the user to a licensed handler — the system never nudges a user toward unsafe or non-compliant disposal for the sake of a better-looking number. The Device Control Simulation always returns `mode: "mock"` and never claims to have actuated real hardware.
-
-**Privacy.** The application collects only aggregate operational data — water/energy/fuel meter readings and a free-text organisation name/type — never personal, biometric, or individually identifiable information, and has no login or user-tracking system. Uploaded files are parsed in memory for the request and only aggregate analysis results (not raw uploaded rows) are persisted, in a local SQLite run history. Any user-supplied text that reaches a Gemini prompt is passed through `sanitize_prompt_input()` first, which strips prompt-injection patterns and control characters before it is sent.
-
-A disclaimer — *"RE:GEN AI is a decision-support prototype. Not professional regulatory, financial, or engineering advice."* — is attached to every agent output via `core/guardrails.py`, so the system is never presented as a substitute for a licensed professional's judgment.
-
----
-
-## Data Flow
-
-Every displayed value originates from a single backend field. No frontend recomputation when the backend has already computed it.
-
-| Display location | Backend source |
-|---|---|
-| Dashboard total wasted litres | `water_result.total_wasted_liters` |
-| Dashboard total wasted kWh | `energy_result.total_wasted_kwh` |
-| Dashboard total CO₂ saved | `impact_result.total_co2_saved_kg` |
-| Dashboard RE:GEN Score | `regen_score_result.before_score` |
-| Waste recovery estimate | `waste_result.total_recovery_max_inr` |
-| Carbon formula breakdown | `impact_result` + per-fuel CO₂ sub-fields |
-| War Room recommendations | `war_room[].recommendation` from `/analyze/upload` |
-| Report executive summary | `report_result.executive_summary` |
-| PDF numbers | Same `report_result` object — no re-derivation |
-| Peer benchmark score | `benchmark_result.score` from `/analyze/upload` |
-
----
-
-## Technology Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | React 19, Vite 8, Framer Motion, Lucide React, Tailwind CSS 4 |
-| Backend | FastAPI, Python 3.11+, Pydantic v2, pandas, openpyxl, SQLAlchemy |
-| AI / ML | Google Gemini 3.6 Flash (with deterministic fallback), scikit-learn IsolationForest |
-| Alerting | Slack Incoming Webhooks |
-| Deployment | Vercel (frontend) + Render (backend) |
-| CI | GitHub Actions — pytest (backend) + oxlint + vitest (frontend) |
-| Data | JSON knowledge base (97 materials) + CSV demo datasets + SQLite run history |
-| Export | Browser print API (`window.print()`) — formatted print stylesheet, no external library |
-
----
-
-## CI Pipeline
-
-GitHub Actions runs on every push and pull request to `main`:
-
-```
-Backend (pytest)
-  ├── Python 3.12
-  ├── pip install -r backend/requirements.txt
-  └── pytest backend/tests/ -v   (133 tests)
-
-Frontend (oxlint + vitest)
-  ├── Node 22
-  ├── npm install
-  ├── npm run lint   (oxlint)
-  └── npm run test   (vitest, 16 tests)
-```
-
-Both jobs must pass before a PR can merge.
-
----
-
-## Deployment
-
-**Frontend** — Vercel (auto-deployed from `main`)  
-**Backend** — Render (FastAPI, Python 3.11, auto-deployed)
-
-```bash
-# Local development
-cd backend && pip install -r requirements.txt && uvicorn main:app --reload
-cd frontend && npm install && npm run dev
-```
-
-Environment variables:
-
-```
-# backend/.env
-GEMINI_API_KEY=...                # Optional — system degrades gracefully without it
-SLACK_WEBHOOK_URL=https://...    # Optional — alerting silently skipped when unset
-
-# Vercel project settings
-VITE_API_URL=https://regen-ai-backend.onrender.com
-```
-
-> **Cold start** — Render's free tier sleeps after 15 minutes of inactivity. The first request after a sleep takes 30 – 90 seconds. The UI shows a specific message during this wait.
-
----
+Facility administrators may delete analysis runs with `DELETE /history/runs/{analysis_id}`. Audit reads and deletion record the facility subject. For approved retention periods, run `python -m core.schema --retention-days DAYS` to count expired raw observations, owned runs and access logs. The additional `--apply-retention` flag deletes those expired rows. Agree retention periods for mission evidence, receipts and backups with the facility before pilot entry.
 
 ## Screenshots
 
@@ -413,19 +123,71 @@ VITE_API_URL=https://regen-ai-backend.onrender.com
 
 ---
 
-## Formula Verification
+### Local Waste-to-Wealth development
 
-| Calculation | Formula | Source |
-|---|---|---|
-| Water CO₂ | `litres × 0.001 kg/L` | UK Water Industry Research |
-| Energy CO₂ | `kWh × 0.82 kg/kWh` | BEE India grid emission factor |
-| Diesel CO₂ | `litres × 2.68 kg/L` | IPCC 2006 |
-| Petrol CO₂ | `litres × 2.31 kg/L` | IPCC 2006 |
-| LPG CO₂ | `litres × 1.51 kg/L` | IPCC 2006 |
-| Total Carbon | `water_co2 + energy_co2 + fuel_co2` | Scope 1 + 2 |
-| RE:GEN Score | Weighted composite of water / energy / carbon / waste / coverage / benchmark | Internal |
-| Recovery value | `quantity_kg × value_range_per_kg` | KB benchmark rates |
+From the repository root, run the API and frontend in separate PowerShell terminals.
 
----
+```powershell
+$env:REGEN_ENV='development'
+$env:REGEN_DEV_IDENTITY='1'
+$env:REGEN_DEMO_AI_PROVIDER='ollama'
+$env:REGEN_OLLAMA_MODEL='qwen3:8b'
+backend/.venv/Scripts/python.exe backend/scripts/local_demo.py
+```
 
-*RE:GEN AI is a decision-support prototype. Not professional regulatory, financial, or engineering advice.*
+```powershell
+$env:Path="$HOME/dev-tools/node-v22.22.0-win-x64;$env:Path"
+$env:VITE_LOCAL_IDENTITY='1'
+Set-Location frontend
+npx.cmd npm@11.21.3 run dev -- --host 127.0.0.1 --port 15173 --strictPort
+```
+
+Open `http://127.0.0.1:15173`. The launcher creates a disposable SQLite database, starts the mission worker and uses a synthetic staff identity. Set `REGEN_DEMO_AI_PROVIDER=offline` for deterministic runs. Automated tests use independent fixtures.
+
+Set `REGEN_MARKET_EVIDENCE_FILE` to an approved catalogue or `REGEN_MARKET_FEED_URL` to an operator-approved public HTTPS endpoint serving the same reviewed JSON schema. The feed request contains no inventory, account data, PIN or credentials. A reviewed entry supplies material, condition, category, compatible unit, INR rate range, observation date, HTTPS source, India-wide scope or exact service PINs and optionally costs. Use the existing market import staging script to review incoming evidence. Market records support estimates and eligible directory quotations expire independently.
+
+Opt in to public geographic lookup with `REGEN_PUBLIC_DISCOVERY=1` and an approved organizational service contact in `REGEN_RESEARCH_CONTACT`. Confirm provider permission and deployment request volume before enabling. Public results require a material and pathway relevance signal. Use the reviewed postal table and tenant service directory when public lookup is disabled. Authorized adults or facility staff coordinate handovers.
+
+#### Market and locality research activation
+
+In the backend terminal, set `$env:REGEN_PUBLIC_MARKET_RESEARCH='1'` before running the local demo. The public ISS INDUSTRIES buying-rate page requires no account or API key. The connector fetches its dated rate block only when applicable and sends no inventory fields to ISS.
+
+For broader market and service coverage, set `$env:REGEN_MATERIAL_RESEARCH_URL='https://your-approved-provider.example/recovery-research'` to your authorized structured HTTPS service. This is a provider endpoint placeholder. RE:GEN sends a bounded GET with `materials` (comma-separated plain material labels) and optional `pin`. Configure only a provider authorized to process those labels and PINs. A response contains `rates` using the reviewed market catalogue fields and `services` with `organization`, `material`, `pathways`, `service_pins`, `description` and `source_url`. Optional `conditions`, `unit`, `minimum_quantity` and `maximum_quantity` refine suitability. The provider must research and document its rates and service claims. User details and credentials do not belong in either payload. For a public unit valuation, supported bases are `gross_reference`, `avoided_purchase`, `refurbishment_cost`, `treatment_cost` and `output_revenue`. Output revenue requires a sourced `saleable_output_per_input_unit` and `output_unit`. Supply documented total transaction costs as `costs_inr` when known.
+
+Before enabling geographic research, review the [Nominatim use policy](https://operations.osmfoundation.org/policies/nominatim/). For a single low-volume process with operator approval, set `$env:REGEN_PUBLIC_DISCOVERY='1'` and `$env:REGEN_RESEARCH_CONTACT='ops@your-organization.example'` using your authorized organizational contact. The app performs user-triggered PIN lookup only, uses a request interval and caches results. Do not use public endpoints for parallel deployments, bulk postcode processing or commercial-scale lookups. Set `REGEN_NOMINATIM_URL` and `REGEN_OVERPASS_URL` to your authorized hosted or self-managed HTTPS endpoints when applicable. Restart the backend after environment changes.
+
+#### Indexed public search
+
+For a no-key local smoke test, set `$env:REGEN_SEARCH_PROVIDER='mwmbl'` in the backend terminal before restarting the demo. Mwmbl's anonymous API is limited to one request per second and has a small index. RE:GEN does not retry rejected searches. Verify current usage limits before enabling it for a deployment. [Mwmbl API](https://developer.mwmbl.org/)
+
+For an approved private SearXNG instance, configure its `search.formats` to include `json`, enable only upstream engines you are authorized to query and bind the instance to loopback. Point the local backend at that instance.
+
+```powershell
+$env:REGEN_SEARCH_PROVIDER='searxng'
+$env:REGEN_SEARXNG_URL='http://127.0.0.1:18888/search'
+```
+
+Optional API adapters accept `REGEN_SEARCH_PROVIDER=brave` with `REGEN_BRAVE_API_KEY`, or `REGEN_SEARCH_PROVIDER=tavily` with `REGEN_TAVILY_API_KEY`. Configure the corresponding server-side key privately only after approving its plan and limits. [SearXNG JSON API](https://docs.searxng.org/dev/search_api.html) · [Brave authentication](https://api-dashboard.search.brave.com/documentation/guides/authentication) · [Tavily Search](https://docs.tavily.com/documentation/api-reference/endpoint/search)
+
+Use `$env:REGEN_SEARCH_PROVIDERS='mwmbl,searxng'` to elect multiple providers after configuring them. Each submission researches up to three distinct material-and-condition combinations, with at most two searches per combination. A second configured provider or a different material-specific query is used when compatible evidence is missing. Duplicate URLs and query results are cached. Paid adapters participate only when explicitly named and privately configured.
+
+`$env:REGEN_PUBLIC_MARKET_RESEARCH='1'` also enables Kabadify's [CC BY 4.0 Bengaluru rate feed](https://kabadify.com/rates), restricted to ordinary scrap grades and supported units in the [publisher's listed PINs](https://kabadify.com/about). The card reports indicative gross payout. Minimum quantity, fees and net value remain subject to the publisher's conditions.
+
+Search sends eligible plain material labels and purpose terms to the selected provider. SearXNG, Brave and Tavily can also receive the requested PIN. Mwmbl uses broader India queries due to its sparse index. Search result URLs are only cited. The backend never fetches those pages. For automated numerical estimates, add individually reviewed domains to `REGEN_SEARCH_RATE_HOSTS`. The indexed text must explicitly bind the date, material, condition, purchase rate, unit and PIN in a single rate entry. Review publisher reuse rules and expected evidence format before adding a domain. General search covers up to three eligible items per submission. Remaining items keep their existing recovery and catalogue guidance.
+
+Public Nominatim/Overpass lookup remains a separate opt-in using an authorized organizational contact. Search leads with an indexed business location or unknown service area never establish collection coverage, travel distance or an eligible offer.
+
+
+## Controlled hosted demonstration checkpoint
+
+GitHub publication is pending repository-local author configuration, Git HTTPS login and confirmation that pushes to `engineering-reconstruction` create previews. An existing Vercel deployment was observed for project `frontend` on main. The hosting branch settings and an authorized staging backend/database remain unverified.
+
+The frontend Vercel configuration runs `npm ci` and `npm run build`. Set build variables `VITE_API_URL`, `VITE_OIDC_CLIENT_ID`, `VITE_OIDC_AUTHORIZE_URL` and `VITE_OIDC_TOKEN_URL` for the exact preview origin and an authorized HTTPS backend. The static frontend requires an API target because its Vercel files do not supply an API proxy.
+
+For the backend, use the existing Docker image or an equivalent persistent Python service. Configure `REGEN_ENV=production`, a private PostgreSQL `DATABASE_URL`, exact `ALLOWED_ORIGINS`, `REGEN_AUTH_ISSUER`, `REGEN_AUTH_AUDIENCE` and a mounted public verification certificate at `REGEN_AUTH_CERT_FILE`. Run `python -m core.schema` with authorized migration access before API and worker startup. Run `python scripts/mission_worker.py` as a separate worker using the same database and authorization configuration. Probe `/health` and `/ready`. HTTPS proxy trust must match the hosting proxy.
+
+Use `REGEN_AI_PROVIDER=offline` for a quota-free hosted demonstration. To activate authorized production Gemini later, configure `REGEN_AI_PROVIDER=gemini`, `GEMINI_MODEL` and private `GEMINI_API_KEY`; cloud requests still require tenant authorization and consent. Laptop Ollama remains local. Keep `REGEN_DEV_IDENTITY` and `VITE_LOCAL_IDENTITY` unset for hosted environments.
+
+Existing Compose defines PostgreSQL, migration, API, worker and Nginx services for a controlled environment. It binds the frontend to localhost and needs a separately configured HTTPS ingress for hosting. Persistent database storage, worker runtime and hosting costs must be checked in the existing account before provisioning. Render deployment settings are unavailable in the repository and no Render service was verified.
+
+Production remains on HOLD pending college authorization, calibrated meters or approved gateway access, documented tariffs/factors, backup restore verification and documented intervention outcomes.

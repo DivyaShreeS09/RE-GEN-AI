@@ -1,177 +1,7 @@
-import { useState, useEffect } from 'react'
-import { analyzeWaste, getWasteMaterials } from '../api'
-import { AlertTriangle, CheckCircle, Search, Package, Star, TrendingUp, BarChart3 } from 'lucide-react'
-
-/* ── Waste Market Intelligence (static reference data) ────── */
-const MARKET_INTEL = [
-  { material: 'Organic / Food Waste',  pathway: 'Composting · Biogas',    buyer: 'Farm co-ops · Municipal plants', range: '₹2 – 8 /kg',   feasibility: 'High',   confidence: 85, risk: 'Low'  },
-  { material: 'Paper & Cardboard',     pathway: 'Recycled pulp',           buyer: 'Paper mills · Kabadiwala',       range: '₹8 – 15 /kg',  feasibility: 'High',   confidence: 90, risk: 'Low'  },
-  { material: 'PET / Plastic Bottles', pathway: 'Recycled pellets',        buyer: 'Plastic recyclers',              range: '₹5 – 20 /kg',  feasibility: 'Medium', confidence: 80, risk: 'Med'  },
-  { material: 'Metal & Aluminium',     pathway: 'Foundry scrap',           buyer: 'Scrap dealers · Foundries',      range: '₹30 – 80 /kg', feasibility: 'High',   confidence: 92, risk: 'Low'  },
-  { material: 'Coconut Shell',         pathway: 'Activated carbon / fuel', buyer: 'Industrial buyers',              range: '₹10 – 35 /kg', feasibility: 'High',   confidence: 88, risk: 'Low'  },
-  { material: 'E-waste',               pathway: 'Certified recycler',      buyer: 'CPCB-authorized vendors',        range: 'Regulated',     feasibility: 'Low',    confidence: 70, risk: 'High' },
-]
-
-const FEASIBILITY_COLOR = { High: '#00ff88', Medium: '#eab308', Low: '#ef4444' }
-
-function MarketIntelPanel() {
-  return (
-    <div className="glass-card p-5 mb-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2">
-          <BarChart3 className="w-4 h-4 text-cyan-400" />
-          <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-wider">Waste Market Intelligence</h3>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <div className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
-          Estimated market reference · Not live pricing · AI-compiled from public data
-        </div>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="text-left" style={{ color: '#475569' }}>
-              <th className="pb-2 pr-4 font-semibold uppercase tracking-wider">Material</th>
-              <th className="pb-2 pr-4 font-semibold uppercase tracking-wider hidden sm:table-cell">Recovery Pathway</th>
-              <th className="pb-2 pr-4 font-semibold uppercase tracking-wider hidden lg:table-cell">Buyer Type</th>
-              <th className="pb-2 pr-4 font-semibold uppercase tracking-wider">Est. Value Range</th>
-              <th className="pb-2 pr-4 font-semibold uppercase tracking-wider">Feasibility</th>
-              <th className="pb-2 font-semibold uppercase tracking-wider hidden sm:table-cell">Confidence</th>
-            </tr>
-          </thead>
-          <tbody>
-            {MARKET_INTEL.map((row, i) => (
-              <tr key={i} className="border-t" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
-                <td className="py-2.5 pr-4 font-medium text-slate-200">{row.material}</td>
-                <td className="py-2.5 pr-4 text-slate-400 hidden sm:table-cell">{row.pathway}</td>
-                <td className="py-2.5 pr-4 text-slate-500 hidden lg:table-cell">{row.buyer}</td>
-                <td className="py-2.5 pr-4 font-bold" style={{ color: row.risk === 'High' ? '#ef4444' : '#00ff88' }}>
-                  {row.range}
-                </td>
-                <td className="py-2.5 pr-4">
-                  <span className="px-2 py-0.5 rounded-full font-bold"
-                    style={{ background: FEASIBILITY_COLOR[row.feasibility] + '15', color: FEASIBILITY_COLOR[row.feasibility], border: `1px solid ${FEASIBILITY_COLOR[row.feasibility]}30` }}>
-                    {row.feasibility}
-                  </span>
-                </td>
-                <td className="py-2.5 hidden sm:table-cell">
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${row.confidence}%`, background: 'linear-gradient(90deg,#00ff88,#00e5ff)' }} />
-                    </div>
-                    <span className="text-slate-500">{row.confidence}%</span>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-// Fallback list used only if the KB endpoint is unavailable
-const _WASTE_TYPES_FALLBACK = [
-  'food waste','kitchen waste','vegetable waste','fruit waste','wet waste',
-  'banana peel','eggshells','fish waste','coffee grounds','tea waste',
-  'coconut shell','coconut coir','rice husk','sugarcane bagasse','corn husk',
-  'dry leaves','leaves','garden waste','grass clippings','tree branches',
-  'paper','newspaper','office paper','cardboard','mixed paper',
-  'plastic bottles','pet','hdpe','ldpe','pp','pvc','mixed plastic',
-  'aluminium cans','aluminium','steel scrap','steel','copper','brass','iron',
-  'glass bottles','glass','clear glass','colored glass',
-  'textiles','fabric','tyres','rubber',
-  'wood','sawdust','plywood','pallets',
-  'construction debris','concrete','bricks','gypsum','tiles',
-  'cooking oil','engine oil','used oil','diesel sludge','oil sludge',
-  'e-waste','computers','laptops','mobile phones','monitors','printers',
-  'battery waste','ups batteries','lead acid batteries','lithium batteries',
-  'fluorescent lamps','led bulbs','ink cartridges','toner',
-  'medical waste','chemical waste','leather','asbestos','hazardous waste',
-  'organic sludge','ash','fly ash','mixed municipal waste',
-]
-
-function ScoreBar({ score, label }) {
-  const color = score >= 70 ? '#00ff88' : score >= 50 ? '#eab308' : '#ef4444'
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-1">
-        <span className="text-xs text-slate-400">{label}</span>
-        <span className="text-sm font-bold" style={{ color }}>{score}/100</span>
-      </div>
-      <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${score}%`, background: color }} />
-      </div>
-    </div>
-  )
-}
-
-function PathwayCard({ title, emoji, description, pros, cons: _cons, valueMultiplier, feasibility, envScore, isBest, result }) {
-  const minVal = result?.estimated_recovery?.min_inr || 0
-  const maxVal = result?.estimated_recovery?.max_inr || 0
-  const adjMin = Math.round(minVal * valueMultiplier)
-  const adjMax = Math.round(maxVal * valueMultiplier)
-  const isHazard = result?.hazard_warning
-
-  return (
-    <div className={`p-4 rounded-xl relative transition-all duration-300 ${isBest ? 'glow-green' : ''}`}
-      style={{
-        background: isBest ? 'rgba(0,255,136,0.06)' : 'rgba(15,23,42,0.5)',
-        border: isBest ? '1px solid rgba(0,255,136,0.35)' : '1px solid rgba(255,255,255,0.06)',
-      }}>
-      {isBest && (
-        <div className="absolute -top-2.5 left-4 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
-          style={{ background: 'rgba(0,255,136,0.9)', color: '#030712' }}>
-          <Star className="w-3 h-3" /> Best Pathway
-        </div>
-      )}
-      <div className="flex items-center gap-2 mb-3 mt-1">
-        <span className="text-xl">{emoji}</span>
-        <h4 className="text-sm font-bold text-white">{title}</h4>
-      </div>
-      <p className="text-xs text-slate-400 leading-relaxed mb-3">{description}</p>
-
-      {!isHazard && (adjMin > 0 || adjMax > 0) ? (
-        <div className="mb-3 p-2 rounded-lg" style={{ background: 'rgba(0,255,136,0.06)', border: '1px solid rgba(0,255,136,0.12)' }}>
-          <p className="text-xs text-slate-500 mb-0.5">Estimated value range</p>
-          <p className="text-sm font-black text-green-400">
-            ₹{adjMin.toLocaleString()} – ₹{adjMax.toLocaleString()}
-          </p>
-          <p className="text-xs text-slate-600">est. only · knowledge base rates</p>
-        </div>
-      ) : isHazard ? (
-        <div className="mb-3 p-2 rounded-lg" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-          <p className="text-xs text-red-400">Financial value suppressed — hazardous material</p>
-        </div>
-      ) : null}
-
-      <div className="grid grid-cols-3 gap-2 text-center mt-2">
-        <div>
-          <p className="text-xs text-slate-600">Feasibility</p>
-          <p className="text-xs font-bold" style={{ color: feasibility === 'High' ? '#00ff88' : feasibility === 'Medium' ? '#eab308' : '#ef4444' }}>
-            {feasibility}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs text-slate-600">Env. Impact</p>
-          <div className="flex justify-center mt-0.5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <span key={i} style={{ color: i < envScore ? '#00ff88' : '#1e293b', fontSize: 10 }}>★</span>
-            ))}
-          </div>
-        </div>
-        <div>
-          <p className="text-xs text-slate-600">Risk</p>
-          <p className="text-xs font-bold text-slate-300">{pros}</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Upload mode: batch results panel ────────────────────────────────────────
+import RecoveryPathwayGrid from './RecoveryPathwayGrid'
+import { useState, useEffect, useRef } from 'react'
+import { signIn } from '../api'
+import { Trash2 } from 'lucide-react'
 
 function BatchResultPanel({ batchResult }) {
   if (!batchResult || batchResult.status === 'no_waste') {
@@ -203,6 +33,8 @@ function BatchResultPanel({ batchResult }) {
 
   const comp  = batchResult.composition || {}
   const items = batchResult.items       || []
+  const plannedItems = items.filter(item => item.recovery_intelligence?.pathways?.length)
+
 
   const compBars = [
     { label: 'Organic',      pct: comp.organic_pct      || 0, color: '#22c55e' },
@@ -231,8 +63,8 @@ function BatchResultPanel({ batchResult }) {
         {[
           { label: 'Total Inventory',  value: `${batchResult.total_kg.toLocaleString()} kg`,  color: '#00ff88' },
           { label: 'Streams Analysed', value: `${batchResult.analyzed_items} / ${batchResult.total_items}`, color: '#00e5ff' },
-          { label: 'Est. Recovery',    value: `₹${Math.round(batchResult.total_recovery_max_inr).toLocaleString()}`, color: '#eab308', sub: 'max estimate' },
-          { label: 'Circularity Score', value: `${batchResult.circularity_score}/100`, color: batchResult.circularity_score >= 70 ? '#00ff88' : batchResult.circularity_score >= 50 ? '#eab308' : '#ef4444' },
+          { label: 'Est. Recovery',    value: batchResult.total_recovery_max_inr == null ? "Unavailable" : `₹${Math.round(batchResult.total_recovery_max_inr).toLocaleString()}`, color: '#eab308', sub: 'max estimate' },
+          { label: 'Circularity Score', value: batchResult.circularity_score == null ? "Unavailable" : `${batchResult.circularity_score}/100`, color: batchResult.circularity_score >= 70 ? '#00ff88' : batchResult.circularity_score >= 50 ? '#eab308' : '#ef4444' },
         ].map(c => (
           <div key={c.label} className="glass-card p-4 text-center">
             <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">{c.label}</p>
@@ -351,6 +183,13 @@ function BatchResultPanel({ batchResult }) {
       )}
 
       {/* Enriched per-stream intelligence */}
+      {plannedItems.map((item, index) => <details key={index} className="glass-card p-4">
+        <summary className="cursor-pointer">Recovery pathways for {item.waste_type}</summary>
+        <RecoveryPathwayGrid item={{material:item.waste_type, quantity:item.quantity_kg, unit:'kg',
+          condition:item.recovery_intelligence.material_identity?.condition || 'as submitted',
+          intelligence:item.recovery_intelligence}} />
+      </details>)}
+
       {items.some(i => i.status === 'analyzed' && (i.compliance_notes || i.preparation_before_sale)) && (
         <div className="mt-6 glass-card p-5">
           <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-wider mb-4">Compliance & Handling Guidance</h3>
@@ -409,291 +248,231 @@ function BatchResultPanel({ batchResult }) {
   )
 }
 
+
+import { streamInventory } from '../api'
+
+const emptyItem = () => ({
+  material: '',
+  quantity: '',
+  unit: 'kg',
+  condition: 'used',
+  contaminated: false
+})
+
 export default function WasteAnalyzer({ onResult, uploadResult }) {
-  const isUploadMode = !!uploadResult
-  const [wasteType, setWasteType] = useState('coconut shell')
-  const [quantity, setQuantity] = useState(50)
+  const [items, setItems] = useState([emptyItem()])
+  const [pin, setPin] = useState('')
   const [result, setResult] = useState(null)
+  const [active, setActive] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [kbMaterials, setKbMaterials] = useState(null) // null = not yet loaded
+  const [error, setError] = useState('')
+  const running = useRef(null)
+  useEffect(() => () => running.current?.abort(), [])
 
-  // Fetch KB materials list on mount to build dropdown dynamically
-  useEffect(() => {
-    getWasteMaterials()
-      .then(res => setKbMaterials(res.data.materials || []))
-      .catch(() => setKbMaterials(null))
-  }, [])
+  const field = 'w-full rounded-lg bg-slate-900 border border-slate-700 p-3 text-sm text-white'
 
-  // Derive sorted alphabetical list grouped by category for the select element
-  const wasteOptions = kbMaterials
-    ? kbMaterials  // already sorted by category then name from backend
-    : _WASTE_TYPES_FALLBACK.map(name => ({ name, category: 'Material', hazard_level: 'none' }))
+  function clearResult() { setResult(null); onResult?.(null) }
 
-  // Auto-run coconut shell demo on first load — only in demo mode
-  useEffect(() => {
-    if (isUploadMode) return
-    analyzeWaste('coconut shell', 50)
-      .then(res => {
-        setResult(res.data)
-        if (onResult) onResult(res.data)
-      })
-      .catch(() => {})
-  }, [isUploadMode, onResult])
-
-  // In upload mode, show the batch results panel (or empty state) instead of the demo tool
-  if (isUploadMode) {
-    return <BatchResultPanel batchResult={uploadResult.waste} />
+  function update(index, key, value) {
+    setItems(previous => previous.map((item, i) =>
+      i === index ? { ...item, [key]: value } : item
+    ))
+    clearResult()
   }
 
-  const handleAnalyze = async () => {
+  async function analyze(evidenceOnly = false) {
+    if (running.current) return
+    const controller = new AbortController()
+    running.current = controller
     setLoading(true)
-    setError(null)
+    setError('')
+    if (!evidenceOnly) { clearResult(); setActive(0) }
     try {
-      const res = await analyzeWaste(wasteType, parseFloat(quantity))
-      setResult(res.data)
-      if (onResult) onResult(res.data)
+      if (items.some(i => !i.material.trim() || !(Number(i.quantity) > 0)))
+        throw new Error('Enter a material and valid quantity for every row.')
+      if (pin && !/^[1-9][0-9]{5}$/.test(pin))
+        throw new Error('Enter a valid six-digit PIN.')
+      if (!(await signIn()) || controller.signal.aborted) return
+      const streamStarted = performance.now()
+      let firstPathwaysMs
+      await streamInventory({
+        evidence_only: evidenceOnly,
+        items: items.map((i, index) => ({
+          ...i, material: i.material.trim(), quantity: Number(i.quantity),
+          research_pathways: evidenceOnly ? result.items[index].intelligence.pathways.filter(route => !route.conditional_completion).map(route => route.category) : [],
+          contaminated: ['contaminated', 'spoiled'].includes(i.condition),
+        })),
+        service_pin: pin || null,
+      }, snapshot => {
+        if (running.current !== controller || controller.signal.aborted) return
+        if (evidenceOnly) {
+          if (!snapshot.researched_items) return
+          snapshot.items = snapshot.items.map((row, index) => {
+            const original = result.items[index]
+            if (index >= snapshot.researched_items) return original
+            return {...row, intelligence: {...original.intelligence,
+              local_discovery: row.intelligence.local_discovery,
+              research_status: row.intelligence.research_status,
+              events: [...original.intelligence.events.filter(event => event.action !== 'public_service_discovery'),
+                ...row.intelligence.events.filter(event => event.action === 'public_service_discovery')],
+              pathways: row.intelligence.pathways.map(route => {
+                const originalRoute = original.intelligence.pathways.find(before => before.category === route.category)
+                return originalRoute ? {...route, title: originalRoute.title, action: originalRoute.action,
+                  preparation: originalRoute.preparation, benefit: originalRoute.benefit} : route
+              })}}
+          })
+          snapshot.ai_enhanced = result.ai_enhanced
+        }
+        const receivedMs = Math.round(performance.now() - streamStarted)
+        if (firstPathwaysMs == null && snapshot.items.some(row => row.intelligence.pathways.length)) firstPathwaysMs = receivedMs
+        snapshot.research_timings_ms = { ...snapshot.research_timings_ms, first_pathways_received_ms: firstPathwaysMs, received_ms: receivedMs }
+        setResult(snapshot)
+        onResult?.(snapshot)
+      }, controller.signal)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Analysis failed. Please try again.')
+      if (!controller.signal.aborted)
+        setError(err.response?.status === 422 ? 'Check material descriptions, quantities and PIN.' : err.message)
     } finally {
-      setLoading(false)
+      if (running.current === controller) {
+        running.current = null
+        setLoading(false)
+      }
     }
   }
 
-  const isMedical = wasteType === 'medical waste'
-  const score = result?.hidden_value_score || 0
-  const pathway = result?.recommended_pathway || ''
+  if (uploadResult)
+    return <BatchResultPanel batchResult={uploadResult.waste} />
 
-  /* Determine best pathway index based on recommended_pathway */
-  const bestIdx = pathway.includes('sell') ? 0 : pathway.includes('process') ? 1 : 2
+  const selected = result?.items?.[active]
 
   return (
-    <section className="px-6 py-16 max-w-7xl mx-auto" id="waste">
-      <div className="mb-8">
-        <h2 className="text-3xl font-black text-white mb-2">
-          Waste-to-<span className="text-gradient-green">Wealth</span>
-        </h2>
-        <p className="text-slate-400 text-sm max-w-2xl">
-          Recovery pathway analysis for waste material streams — estimated value ranges,
-          feasibility scoring, and circularity impact. Select a material below to run agent-based analysis.
-        </p>
+    <section id="waste" className="px-6 py-16 max-w-[1500px] mx-auto">
+      <h2 className="text-3xl font-black text-white mb-2">
+        Waste-to-<span className="text-gradient-green">Wealth</span>
+      </h2>
+
+      <p className="text-sm text-slate-400 mb-6">
+        Investigate materials, compare recovery opportunities
+        and identify practical next actions.
+      </p>
+
+      <div className="glass-card p-6 space-y-4">
+        <h3 className="text-cyan-400 font-bold uppercase text-sm">
+          Waste Stream Input
+        </h3>
+
+        <fieldset disabled={loading} className="space-y-3">
+          {items.map((item, index) => (
+            <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+              <input className={field + ' md:col-span-4'}
+                aria-label="Material description"
+                placeholder="e.g. old mobile, cotton clothes"
+                value={item.material}
+                onChange={e => update(index, 'material', e.target.value)} />
+
+              <input className={field + ' md:col-span-2'}
+                aria-label="Quantity"
+                type="number" min="0.001" step="any"
+                placeholder="Quantity"
+                value={item.quantity}
+                onChange={e => update(index, 'quantity', e.target.value)} />
+
+              <select className={field + ' md:col-span-2'}
+                aria-label="Unit" value={item.unit}
+                onChange={e => update(index, 'unit', e.target.value)}>
+                {['kg','g','pcs','L','tonnes'].map(unit =>
+                  <option key={unit}>{unit}</option>
+                )}
+              </select>
+
+              <select className={field + ' md:col-span-3'}
+                aria-label="Condition" value={item.condition}
+                onChange={e => update(index, 'condition', e.target.value)}>
+                {['good','used','working','not working','damaged','mixed','contaminated','spoiled','unsure'].map(c =>
+                  <option key={c}>{c}</option>
+                )}
+              </select>
+
+
+
+              <button type="button" disabled={loading || items.length === 1}
+                className="text-slate-400 text-xl"
+                aria-label="Remove material"
+                onClick={() => {
+                  setItems(items.filter((_, i) => i !== index))
+                  clearResult()
+                }}><Trash2 size={18} /></button>
+            </div>
+          ))}
+
+          <button type="button" disabled={loading || items.length >= 20}
+            className="text-cyan-400 text-sm font-semibold"
+            onClick={() => {
+              setItems([...items, emptyItem()])
+              clearResult()
+            }}>+ Add material</button>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <input className={field} value={pin}
+              maxLength={6} inputMode="numeric"
+              placeholder="Service PIN (optional)"
+              onChange={e => setPin(e.target.value)} />
+
+            <button className="btn-primary justify-center"
+              onClick={() => analyze()} disabled={loading}>
+              {loading ? 'Investigating recovery options...' : 'Analyze Waste Streams'}
+            </button>
+          </div>
+
+
+          {result?.completed_items === items.length && pin && <button type="button" onClick={() => analyze(true)}>
+            Refresh PIN evidence
+          </button>}
+        </fieldset>
+
+        {loading && <button type="button" onClick={() => {
+          running.current?.abort()
+          running.current = null
+          setLoading(false)
+          setError('Analysis cancelled. Completed results are available below.')
+        }}>Cancel analysis</button>}
+        {error && <p role="status" className="text-red-400 text-sm">{error}</p>}
       </div>
 
-      <MarketIntelPanel />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Input Panel */}
-        <div className="glass-card p-6">
-          <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-wider mb-6 flex items-center gap-2">
-            <Package className="w-4 h-4" /> Waste Stream Input
-          </h3>
-
-          <div className="mb-5">
-            <label className="block text-slate-300 text-sm font-medium mb-2">
-              Waste Category
-              {kbMaterials && (
-                <span className="ml-2 text-xs text-slate-500">({kbMaterials.length} materials in knowledge base)</span>
-              )}
-            </label>
-            <select
-              value={wasteType}
-              onChange={(e) => { setWasteType(e.target.value); setResult(null) }}
-              className="w-full px-4 py-3 rounded-lg text-white text-sm outline-none"
-              style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(0,229,255,0.2)', color: '#e2e8f0' }}>
-              {kbMaterials
-                ? (() => {
-                    // Group by category for optgroup rendering
-                    const grouped = {}
-                    for (const m of wasteOptions) {
-                      if (!grouped[m.category]) grouped[m.category] = []
-                      grouped[m.category].push(m)
-                    }
-                    return Object.entries(grouped).map(([cat, items]) => (
-                      <optgroup key={cat} label={cat} style={{ background: '#0f172a', color: '#94a3b8' }}>
-                        {items.map(m => (
-                          <option key={m.name} value={m.name} style={{ background: '#0f172a', color: m.hazard_level === 'high' || m.hazard_level === 'critical' ? '#fca5a5' : '#e2e8f0' }}>
-                            {m.name}{m.hazard_level === 'high' || m.hazard_level === 'critical' ? ' ⚠' : ''}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))
-                  })()
-                : wasteOptions.map(m => (
-                    <option key={m.name} value={m.name} style={{ background: '#0f172a' }}>{m.name}</option>
-                  ))
-              }
-            </select>
+      {result && (
+        <div className="space-y-5 mt-6">
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              ['Materials reviewed', `${result.completed_items} / ${result.total_items}`],
+              ['Recovery pathways', result.pathway_count]
+            ].map(([label,value]) => (
+              <div key={label} className="glass-card p-4">
+                <p className="text-xs text-slate-400">{label}</p>
+                <p className="text-xl font-bold text-white mt-2">{value}</p>
+              </div>
+            ))}
           </div>
 
-          <div className="mb-6">
-            <label className="block text-slate-300 text-sm font-medium mb-2">
-              Quantity: <span className="text-cyan-400 font-bold">{quantity} kg</span>
-            </label>
-            <input type="range" min="1" max="1000" value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              className="w-full accent-green-400" />
-            <div className="flex justify-between text-xs text-slate-600 mt-1">
-              <span>1 kg</span><span>500 kg</span><span>1000 kg</span>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {result.items.map((item,index) => (
+              <button key={index}
+                onClick={() => setActive(index)}
+                className={'px-4 py-2 rounded-lg text-sm border ' +
+                  (active === index
+                    ? 'border-cyan-400 text-cyan-400'
+                    : 'border-slate-700 text-slate-400')}>
+                {item.material} - {item.quantity} {item.unit}
+              </button>
+            ))}
           </div>
 
-          <button className="btn-primary w-full justify-center" onClick={handleAnalyze} disabled={loading}>
-            {loading ? (
-              <><div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Analyzing pathway...</>
-            ) : (
-              <><Search className="w-4 h-4" /> Analyze Waste Stream</>
-            )}
-          </button>
-
-          {error && (
-            <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">{error}</div>
+          {selected && (
+            <RecoveryPathwayGrid item={selected} />
           )}
 
-          {!result && (
-            <div className="mt-6 p-4 rounded-lg" style={{ background: 'rgba(0,229,255,0.04)', border: '1px solid rgba(0,229,255,0.1)' }}>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                The agent looks up the waste type in the knowledge base,
-                applies hazard guardrails, and maps it to a recovery pathway with estimated value.
-                Try <span className="text-cyan-400">coconut shell</span> for a clean pathway,
-                or <span className="text-red-400">e-waste</span> to see mandatory hazard warnings.
-              </p>
-            </div>
-          )}
+
         </div>
-
-        {/* Result Panel */}
-        {result ? (
-          <div className="fade-in space-y-4">
-            {/* Hazard Warning */}
-            {result.hazard_warning && (
-              <div className="glass-card-red p-4 flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-red-400 font-bold text-sm mb-1">Hazardous Material — CPCB Safety Notice</p>
-                  <p className="text-red-300/80 text-xs leading-relaxed">{result.hazard_message}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Overview */}
-            <div className="glass-card p-5">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="font-bold text-white capitalize">{result.waste_type}</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">{result.category}</p>
-                </div>
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                  result.hazard_level === 'none' ? 'badge-low' :
-                  result.hazard_level === 'low' ? 'badge-medium' :
-                  result.hazard_level === 'medium' ? 'badge-high' : 'badge-critical'
-                }`}>{result.hazard_level.toUpperCase()} RISK</span>
-              </div>
-
-              <ScoreBar score={score} label="Hidden Value Score (agent-assessed)" />
-
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">Possible Products</p>
-                  <div className="flex flex-wrap gap-1">
-                    {result.possible_products?.slice(0, 3).map((p) => (
-                      <span key={p} className="text-xs px-2 py-0.5 rounded-full badge-low">{p}</span>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">Buyer Types</p>
-                  <div className="flex flex-wrap gap-1">
-                    {result.buyer_types?.slice(0, 2).map((b) => (
-                      <span key={b} className="text-xs px-2 py-0.5 rounded-full badge-info">{b}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <p className="text-xs text-slate-500 mb-1">Sustainability Note</p>
-                <p className="text-xs text-slate-300 leading-relaxed">{result.sustainability_notes}</p>
-              </div>
-            </div>
-
-            {/* 3-Pathway Comparison */}
-            {!isMedical && (
-              <div className="glass-card p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp className="w-4 h-4 text-cyan-400" />
-                  <h4 className="text-sm font-bold text-cyan-400 uppercase tracking-wider">Recovery Pathway Comparison</h4>
-                </div>
-                <div className="grid grid-cols-1 gap-3">
-                  <PathwayCard
-                    title="Sell as Raw Material"
-                    emoji="🏷️"
-                    description="Direct sale to scrap dealers or bulk buyers. Fastest turnaround, lowest processing effort."
-                    pros="Low"
-                    feasibility={score > 40 ? 'High' : 'Medium'}
-                    envScore={3}
-                    valueMultiplier={1.0}
-                    isBest={bestIdx === 0}
-                    result={result}
-                  />
-                  <PathwayCard
-                    title="Process into Product"
-                    emoji="⚙️"
-                    description="Convert into a refined product (e.g., briquettes, compost, pellets). Higher value, requires processing setup."
-                    pros="Medium"
-                    feasibility={score > 60 ? 'Medium' : 'Low'}
-                    envScore={4}
-                    valueMultiplier={1.8}
-                    isBest={bestIdx === 1}
-                    result={result}
-                  />
-                  <PathwayCard
-                    title="Partner with Certified Recycler"
-                    emoji="🤝"
-                    description="Route to a certified waste partner. Preferred for regulatory compliance; value is moderate but risk is lowest."
-                    pros="Minimal"
-                    feasibility="Medium"
-                    envScore={5}
-                    valueMultiplier={1.3}
-                    isBest={bestIdx === 2}
-                    result={result}
-                  />
-                </div>
-                <p className="text-xs text-slate-600 mt-3">
-                  Value estimates are calculated from knowledge base benchmark ranges. Actual recovery depends on local market conditions.
-                  {result?.kb_last_verified && (
-                    <span className="ml-1 text-slate-500">
-                      Market prices last verified: {result.kb_last_verified}. Not a live feed.
-                    </span>
-                  )}
-                </p>
-              </div>
-            )}
-
-            {/* Reasoning Trace */}
-            <div className="glass-card p-4">
-              <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <CheckCircle className="w-3 h-3" /> Agent Reasoning Trace
-              </p>
-              <div className="space-y-1">
-                {result.reasoning_trace?.map((step, i) => (
-                  <p key={i} className="text-xs text-slate-400 leading-relaxed">
-                    <span className="text-purple-400 mr-1">›</span>{step}
-                  </p>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="glass-card p-10 flex flex-col items-center justify-center text-center">
-            <div className="text-5xl mb-4">♻️</div>
-            <p className="text-slate-300 text-sm font-medium mb-2">{kbMaterials ? `${kbMaterials.length} materials in the knowledge base` : 'Waste-to-Wealth knowledge base'}</p>
-            <p className="text-slate-500 text-xs leading-relaxed">
-              Select a waste type, set quantity, then run the agent to identify recovery pathways,
-              estimated value, and compliance requirements.
-            </p>
-          </div>
-        )}
-      </div>
+      )}
     </section>
   )
 }

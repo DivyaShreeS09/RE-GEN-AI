@@ -29,7 +29,7 @@ def apply_hazard_guardrail(hazard_level: str) -> dict:
 
 
 def validate_quantity(quantity_kg: float) -> dict:
-    if quantity_kg <= 0:
+    if not 0 < quantity_kg < float("inf"):
         return {"valid": False, "message": "Quantity must be greater than 0 kg."}
     if quantity_kg > 100000:
         return {"valid": False, "message": "Quantity exceeds 100,000 kg. Break into smaller batches for analysis."}

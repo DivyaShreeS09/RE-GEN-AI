@@ -1,23 +1,31 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { lazy, Suspense, useState, useEffect, useCallback, useRef } from 'react'
+import { signIn, finishSignIn } from './api'
+import AnalysisErrorBoundary from './components/AnalysisErrorBoundary'
+import MeterZones from './components/MeterZones'
 import HeroSection from './components/HeroSection'
-import CommandCenterDashboard from './components/CommandCenterDashboard'
-import WasteAnalyzer from './components/WasteAnalyzer'
-import WaterPanel from './components/WaterPanel'
-import EnergyPanel from './components/EnergyPanel'
-import AgentWarRoom from './components/AgentWarRoom'
+const WaterPanel = lazy(() => import('./components/WaterPanel'))
+const EnergyPanel = lazy(() => import('./components/EnergyPanel'))
 import ActionPlan from './components/ActionPlan'
-import ResourceLossHeatmap from './components/ResourceLossHeatmap'
-import ImpactProjection from './components/ImpactProjection'
-import InterventionSimulator from './components/InterventionSimulator'
 import WhyThisMatters from './components/WhyThisMatters'
-import DigitalTwinCampus from './components/DigitalTwinCampus'
 import SustainabilityAchievements from './components/SustainabilityAchievements'
 import IndiaGlobalSection from './components/IndiaGlobalSection'
 import AnalysisModeSelector from './components/AnalysisModeSelector'
-import UploadCenter from './components/UploadCenter'
-import MissionSummary from './components/MissionSummary'
-import { getWarRoom, generateActionPlan, analyzeUpload } from './api'
+const MissionSummary = lazy(() => import('./components/MissionSummary'))
+import { getWarRoom, generateActionPlan, analyzeUpload, readMission } from './api'
 import { CheckCircle } from 'lucide-react'
+
+const CommandCenterDashboard = lazy(() => import('./components/CommandCenterDashboard'))
+const RecoveryMission = lazy(() => import('./components/RecoveryMission'))
+const SymbiosisBoard = lazy(() => import('./components/SymbiosisBoard'))
+const CollectiveRecoveryBoard = lazy(() => import('./components/CollectiveRecoveryBoard'))
+const PartnerDirectory = lazy(() => import('./components/PartnerDirectory'))
+const DigitalTwinCampus = lazy(() => import('./components/DigitalTwinCampus'))
+const ImpactProjection = lazy(() => import('./components/ImpactProjection'))
+const InterventionSimulator = lazy(() => import('./components/InterventionSimulator'))
+const ResourceLossHeatmap = lazy(() => import('./components/ResourceLossHeatmap'))
+const UploadCenter = lazy(() => import('./components/UploadCenter'))
+const AgentWarRoom = lazy(() => import('./components/AgentWarRoom'))
+const WasteAnalyzer = lazy(() => import('./components/WasteAnalyzer'))
 
 /* ── Mission sequence ─────────────────────────────── */
 const MISSION_STEPS = [
@@ -196,6 +204,15 @@ const NAV_MODULES = [
 ]
 
 export default function App() {
+  const [recoverySelection, setRecoverySelection] = useState({})
+  function openRecovery(selection) {
+    setRecoverySelection(selection)
+    window.scrollTo(0, 0)
+  }
+  const [showRecoveryWorkspace, setShowRecoveryWorkspace] = useState(false)
+
+
+
   /* ── Data state ─────────────────────────────────── */
   const [scanDone, setScanDone]               = useState(false)
   const [loading, setLoading]                 = useState(false)
@@ -223,6 +240,7 @@ export default function App() {
   const [showUploadCenter, setShowUploadCenter] = useState(false)
   const [showMissionSummary, setShowMissionSummary] = useState(false)
   const [uploadState, setUploadState]           = useState(null)
+  const [uploadEvents, setUploadEvents] = useState([])
   const [launching, setLaunching]               = useState(false)
 
   /* ── Upload result (for Dashboard in upload mode) ─ */
@@ -317,6 +335,7 @@ export default function App() {
         disclaimer:  plan.data.report?.disclaimer || '',
         data_notice: plan.data.report?.data_notice || '',
       })
+      setSelectedBuilding(null)
       setUploadResult(null)
       setProcessingTimeSec(((Date.now() - (analysisStartRef.current || Date.now())) / 1000).toFixed(1))
 
@@ -343,44 +362,32 @@ export default function App() {
   const runUploadScan = useCallback(async () => {
     if (!uploadState) return
     setLaunching(true)
-    setShowMissionSummary(false)
-    setShowMission(true)
-    setMissionStep(0)
-    setMissionProgress(0)
-    setMissionComplete(false)
-    setMissionLabel('Organization Analysis')
     setError(null)
     analysisStartRef.current = Date.now()
 
-    // Advance through meaningful stages while the upload request is in-flight
-    const stepSeq = [[400,1,11],[1000,2,22],[1800,3,33],[2700,4,44],[3700,5,55],[5000,6,66],[7000,7,77]]
-    const stepTimers = stepSeq.map(([t, s, p]) =>
-      setTimeout(() => { setMissionStep(s); setMissionProgress(p) }, t)
-    )
-
-    // Continuous crawl after initial steps — prevents frozen bar during long upload analysis
-    const crawlRef = { id: null, startTimer: null, pct: 77 }
-    crawlRef.startTimer = setTimeout(() => {
-      crawlRef.id = setInterval(() => {
-        crawlRef.pct = Math.min(crawlRef.pct + 1, 92)
-        setMissionProgress(crawlRef.pct)
-      }, 2000)
-    }, 7500)
-
-    // Cold-start label after 8s
-    const coldTimer = setTimeout(() => setMissionLabel('Server warming up...'), 8000)
-
-    const cleanup = () => {
-      stepTimers.forEach(clearTimeout)
-      clearTimeout(crawlRef.startTimer)
-      clearInterval(crawlRef.id)
-      clearTimeout(coldTimer)
-    }
-
+    const uploadId = crypto.randomUUID()
+    let active = true
+    setUploadEvents([])
+    const poll = setInterval(async () => {
+      try {
+        const {data} = await readMission(uploadId)
+        if (active && Array.isArray(data?.events)) {
+          setUploadEvents(previous => data.events.length >= previous.length ? data.events : previous)
+        }
+      } catch { /* The upload identifier becomes readable after request validation. */ }
+    }, 1000)
     try {
       const fd = new FormData()
+      fd.append('upload_mission_id', uploadId)
       if (uploadState.orgName) fd.append('org_name', uploadState.orgName)
       if (uploadState.orgType) fd.append('org_type', uploadState.orgType)
+
+      if (uploadState.occupancy) fd.append('occupancy_count', uploadState.occupancy)
+      if (uploadState.floorArea) fd.append('floor_area_m2', uploadState.floorArea)
+      const tariff = uploadState.tariff
+      if (tariff?.water !== '' && tariff?.water != null) fd.append('water_inr_per_litre', tariff.water)
+      if (tariff?.energy !== '' && tariff?.energy != null) fd.append('energy_inr_per_kwh', tariff.energy)
+      if (tariff?.reference?.trim()) fd.append('tariff_reference', tariff.reference.trim())
 
       const w = uploadState.water
       if (w?.fileRaw)  fd.append('water_file', w.fileRaw)
@@ -415,12 +422,14 @@ export default function App() {
 
       const res = await analyzeUpload(fd)
       const result = res.data
+      const completed = await readMission(uploadId).catch(() => null)
+      if (Array.isArray(completed?.data?.events)) setUploadEvents(completed.data.events)
 
-      cleanup()
       setMissionStep(MISSION_STEPS.length - 1)
       setMissionProgress(100)
       setMissionComplete(true)
       setMissionLabel('Organization Analysis')
+      setSelectedBuilding(null)
       setUploadResult(result)
       setProcessingTimeSec(((Date.now() - (analysisStartRef.current || Date.now())) / 1000).toFixed(1))
 
@@ -433,26 +442,26 @@ export default function App() {
         regen_score:    result.regen_score,
         silent_losses:  result.report?.silent_losses || {},
         water_summary: {
-          total_wasted_liters:     result.water?.total_wasted_liters || 0,
-          total_consumption_liters: result.water?.total_consumption_liters || 0,
+          total_wasted_liters:     result.water?.total_wasted_liters ?? null,
+          total_consumption_liters: result.water?.total_consumption_liters ?? null,
           severity:                result.water?.severity || 'none',
-          estimated_cost_inr:      result.water?.estimated_cost_inr || 0,
+          estimated_cost_inr:      result.water?.estimated_cost_inr ?? null,
           anomaly_events:          result.water?.anomaly_events?.length || 0,
           anomaly_detection_available: result.water?.anomaly_detection_available,
           analysis_level:          result.water?.analysis_level,
         },
         energy_summary: {
-          total_wasted_kwh:        result.energy?.total_wasted_kwh || 0,
-          total_consumption_kwh:   result.energy?.total_consumption_kwh || 0,
+          total_wasted_kwh:        result.energy?.total_wasted_kwh ?? null,
+          total_consumption_kwh:   result.energy?.total_consumption_kwh ?? null,
           severity:                result.energy?.severity || 'none',
-          estimated_cost_inr:      result.energy?.estimated_cost_inr || 0,
+          estimated_cost_inr:      result.energy?.estimated_cost_inr ?? null,
           anomaly_events:          result.energy?.anomaly_events?.length || 0,
           anomaly_detection_available: result.energy?.anomaly_detection_available,
           analysis_level:          result.energy?.analysis_level,
         },
         impact_summary: {
-          total_co2_saved_kg:    result.impact?.total_co2_saved_kg || 0,
-          trees_equivalent:      result.impact?.trees_equivalent || 0,
+          total_co2_saved_kg:    result.impact?.total_co2_saved_kg ?? null,
+          trees_equivalent:      result.impact?.trees_equivalent ?? null,
           sustainability_score:  result.impact?.sustainability_score || 0,
           sustainability_rating: result.impact?.sustainability_rating || '',
         },
@@ -465,17 +474,12 @@ export default function App() {
         benchmark:    result.benchmark || null,
       })
 
-      setTimeout(() => {
-        setShowMission(false)
-        setShowUploadCenter(false)
-        setScanDone(true)
-        setToast(`Analysis complete — ${uploadState.orgName || 'Organization'} data processed.`)
-        setTimeout(() => {
-          document.getElementById('dashboard')?.scrollIntoView({ behavior: 'smooth' })
-        }, 300)
-      }, 2000)
+      setShowMissionSummary(false)
+      setShowUploadCenter(false)
+      setScanDone(true)
+      setToast(`Analysis complete — ${uploadState.orgName || 'Organization'} data processed.`)
+      requestAnimationFrame(() => document.getElementById('dashboard')?.scrollIntoView({ behavior: 'smooth' }))
     } catch (err) {
-      cleanup()
       setShowMission(false)
       const isTimeout = err?.code === 'ECONNABORTED' || err?.message?.includes('timeout')
       setError(
@@ -484,6 +488,8 @@ export default function App() {
           : 'Analysis failed. Please check your files and try again. If the server is warming up, wait 30–60 seconds and retry.'
       )
     } finally {
+      active = false
+      clearInterval(poll)
       setLaunching(false)
     }
   }, [uploadState])
@@ -500,9 +506,20 @@ export default function App() {
 
   /* ── Mode selector handlers ─────────────────────── */
   const handlePickDemo   = useCallback(() => runScan(), [runScan])
-  const handlePickUpload = useCallback(() => {
+  const handlePickUpload = useCallback(async () => {
     setShowModeSelector(false)
-    setShowUploadCenter(true)
+    try { if (await signIn()) setShowUploadCenter(true) }
+    catch (err) { setError(err.message) }
+  }, [])
+
+  useEffect(() => {
+    finishSignIn().then(signed => {
+      if (!signed) return
+      const destination = sessionStorage.getItem('regen-signin-destination')
+      sessionStorage.removeItem('regen-signin-destination')
+      if (destination === 'recovery') setShowRecoveryWorkspace(true)
+      else setShowUploadCenter(true)
+    }).catch(err => setError(err.message))
   }, [])
 
   /* ── UploadCenter → MissionSummary ──────────────── */
@@ -518,7 +535,7 @@ export default function App() {
   }, [])
 
   /* ── Render ─────────────────────────────────────── */
-  const inUploadFlow = showUploadCenter || showMissionSummary
+  const inUploadFlow = showUploadCenter || showMissionSummary || showRecoveryWorkspace
 
   return (
     <div className="min-h-screen" style={{ background: '#030712' }}>
@@ -537,8 +554,30 @@ export default function App() {
       />
 
       {/* Upload Center (full-page, replaces hero area) */}
+      {showRecoveryWorkspace && (
+        <main className="max-w-6xl mx-auto px-5 pt-24 pb-12">
+          <button
+            className="text-sm text-cyan-300 mb-6"
+            onClick={() => setShowRecoveryWorkspace(false)}
+          >
+            Back to RE:GEN AI
+          </button>
+          <h1 className="text-3xl font-bold text-gradient-green mb-2">
+            Waste-to-Wealth
+          </h1>
+          <p className="text-sm text-slate-400 mb-6">
+            Evidence-based material recovery and circular economy missions.
+          </p>
+          <RecoveryMission key={recoverySelection.opportunity?.id || recoverySelection.openedMission?.id || "inventory"} {...recoverySelection} />
+          <SymbiosisBoard onSelectOpportunity={opportunity => openRecovery({ opportunity })} />
+          <CollectiveRecoveryBoard onOpenMission={openedMission => openRecovery({ openedMission })} />
+          <PartnerDirectory />
+        </main>
+      )}
+
       {showUploadCenter && (
         <div style={{ paddingTop: 64 }}>
+
           <UploadCenter
             onProceed={handleUploadProceed}
             onBack={() => { setShowUploadCenter(false) }}
@@ -553,6 +592,7 @@ export default function App() {
           onLaunch={runUploadScan}
           onBack={handleSummaryBack}
           launching={launching}
+          uploadEvents={uploadEvents}
         />
       )}
 
@@ -654,16 +694,8 @@ export default function App() {
               </svg>
             </button>
 
-            {/* LIVE badge */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '5px 10px', borderRadius: 50,
-              background: 'rgba(0,255,136,0.08)',
-              border: '1px solid rgba(0,255,136,0.18)',
-            }}>
-              <div className="w-1.5 h-1.5 rounded-full status-dot-live" style={{ background: '#4ade80' }} />
-              <span style={{ color: '#00cc77', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em' }}>LIVE</span>
-            </div>
+
+
           </div>
         </div>
       </nav>
@@ -693,16 +725,23 @@ export default function App() {
         </div>
       )}
 
-      {scanDone && (
+      {scanDone && !showRecoveryWorkspace && (
+        <AnalysisErrorBoundary analysis key={uploadResult?.analysis_id ?? 'demo'}>
+          <Suspense fallback={<p role="status" className="p-6">Loading analysis results…</p>}>
         <div className="fade-in">
           <div className="section-divider" />
           <CommandCenterDashboard data={dashData} planData={actionPlanData} uploadResult={uploadResult} />
 
           <div className="section-divider" />
-          <DigitalTwinCampus onBuildingSelect={setSelectedBuilding} uploadResult={uploadResult} />
+          {uploadResult ? <><DigitalTwinCampus key={uploadResult.analysis_id} uploadResult={uploadResult} onBuildingSelect={setSelectedBuilding} /><MeterZones key={uploadResult.analysis_id} /></>
+            : <DigitalTwinCampus onBuildingSelect={setSelectedBuilding} />}
 
           <div className="section-divider" />
           <WasteAnalyzer onResult={setWasteResult} uploadResult={uploadResult} />
+
+
+
+
 
           <div className="section-divider" />
           <WaterPanel data={waterData} uploadResult={uploadResult} />
@@ -714,19 +753,41 @@ export default function App() {
           <ResourceLossHeatmap waterData={waterData} energyData={energyData} uploadResult={uploadResult} />
 
           <div className="section-divider" />
-          <ImpactProjection waterData={waterData} energyData={energyData} dashData={dashData} uploadResult={uploadResult} />
+          <ImpactProjection key={uploadResult?.analysis_id ?? 'demo'} waterData={waterData} energyData={energyData} dashData={dashData} uploadResult={uploadResult} />
 
           <div className="section-divider" />
-          <InterventionSimulator waterData={waterData} energyData={energyData} dashData={dashData} uploadResult={uploadResult} />
+          {!uploadResult && <InterventionSimulator waterData={waterData} energyData={energyData} dashData={dashData} />}
 
           <div className="section-divider" />
           <SustainabilityAchievements dashData={dashData} waterData={waterData} energyData={energyData} uploadResult={uploadResult} />
 
           <div className="section-divider" />
-          <AgentWarRoom initialData={warRoomData} wasteResult={wasteResult} uploadResult={uploadResult} />
+          {wasteResult?.items?.length > 0 && !uploadResult && <details className="glass-card p-4">
+            <summary className="cursor-pointer">Material analysis execution record</summary>
+            <ul>{wasteResult.items.flatMap((item, index) => item.intelligence.events.map((event, step) =>
+              <li key={index + ':' + step}>{item.material} · {event.action.replaceAll('_', ' ')}
+                {event.completed ? ' completed' : ' unavailable'}
+                {event.provider ? ' · ' + [event.provider, event.model].filter(Boolean).join(' / ') : ''}
+              </li>))}
+            </ul>
+          </details>}
+          {uploadResult ? <section className="max-w-7xl mx-auto px-6 py-12 space-y-4" id="warroom">
+            <h2 className="text-3xl font-black text-white">Agent War Room · analysis results</h2>
+            <p>Objective: review submitted resource observations and prioritize documented investigations.</p>
+            <ol>{uploadEvents.map((e,i) => <li key={i}>{e.agent} · {e.action}
+              {e.provider ? ` · ${e.provider} / ${e.model}` : e.action === 'ranked_actions' ? ' · deterministic rationale' : ''}
+            </li>)}</ol>
+            {Array.isArray(uploadResult.war_room) && uploadResult.war_room.length
+              ? uploadResult.war_room.map(agent => <p key={agent.agent}>{agent.agent} · {agent.status} · {agent.finding}</p>)
+              : <p>Agent findings are unavailable for this analysis.</p>}
+            {uploadResult.decision?.cross_resource_relationships?.map(link => <p key={`${link.zone}-${link.date}`}>
+              {link.zone} · {link.date} · {link.basis} {link.limitation}
+            </p>)}
+            <a href="#action-plan" className="text-cyan-400">Review investigation and approval status</a>
+            </section> : <><p>Simulated campus · demonstration replay</p><AgentWarRoom initialData={warRoomData} wasteResult={wasteResult} /></>}
 
           <div className="section-divider" />
-          <ActionPlan data={actionPlanData} selectedBuilding={selectedBuilding} analysisId={uploadResult?.analysis_id} />
+          <ActionPlan inventory={wasteResult} uploadedRecovery={uploadResult?.decision?.recovery_priorities} data={actionPlanData} selectedBuilding={selectedBuilding} analysisId={uploadResult?.analysis_id} />
 
           <div className="section-divider" />
           <WhyThisMatters />
@@ -734,6 +795,8 @@ export default function App() {
           <div className="section-divider" />
           <IndiaGlobalSection />
         </div>
+          </Suspense>
+        </AnalysisErrorBoundary>
       )}
 
       <footer

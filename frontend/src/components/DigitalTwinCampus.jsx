@@ -144,265 +144,39 @@ const BUILDINGS = [
 ]
 
 /* ─── Org-type zone archetypes ─────────────────────────────────────────────── */
-const ORG_ARCHETYPES = {
-  University:       ['Research Wing', 'Lecture Hall', 'Admin Office', 'Library', 'Student Centre', 'Lab Block'],
-  Hotel:            ['Lobby & Reception', 'Guest Rooms', 'Kitchen & F&B', 'Conference Hall', 'Utilities Plant', 'Housekeeping'],
-  Hospital:         ['ICU & Critical Care', 'OPD Block', 'Operating Theatres', 'Pharmacy', 'Admin & Records', 'Laundry & Waste'],
-  Factory:          ['Production Floor', 'Warehouse', 'Quality Control', 'Admin & HR', 'Utilities & HVAC', 'Loading Bay'],
-  Airport:          ['Terminal Building', 'Runway Operations', 'Cargo Hub', 'Air Traffic Control', 'Maintenance Hangar', 'Ground Services'],
-  Mall:             ['Retail Atrium', 'Food Court', 'Anchor Store', 'Service Corridor', 'Parking Block', 'Management Office'],
-  Office:           ['Open Plan Office', 'Meeting Rooms', 'Server Room', 'Reception & Lobby', 'Cafeteria', 'Facilities Block'],
-  'Residential Campus': ['Block A — Residential', 'Block B — Residential', 'Common Amenities', 'Community Hall', 'Sports Zone', 'Management'],
-  'Industrial Park': ['Unit 1 — Manufacturing', 'Unit 2 — Assembly', 'Central Utilities', 'Logistics Hub', 'Admin Complex', 'Waste Treatment'],
-  Warehouse:        ['Cold Storage', 'Dry Warehouse', 'Dispatch Bay', 'Security Office', 'Charging Station', 'Admin'],
-  default:          ['Zone Alpha', 'Zone Beta', 'Zone Gamma', 'Zone Delta', 'Central Utilities', 'Administration'],
-}
 
-const ZONE_ICONS = {
-  University: ['🎓','📚','🏢','📖','🏫','🔬'],
-  Hotel: ['🏨','🛏','🍽','🎪','⚙️','🧹'],
-  Hospital: ['🏥','🏥','🩺','💊','🗂','♻️'],
-  Factory: ['🏭','📦','🔬','🏢','⚙️','🚛'],
-  Airport: ['✈️','🛬','📦','🗼','🔧','🚌'],
-  Mall: ['🏬','🍕','🏪','🔧','🅿️','🏢'],
-  Office: ['💼','🤝','🖥','🏢','☕','⚙️'],
-  default: ['🏗','⚡','🔬','♻️','⚙️','🏢'],
-}
 
-const HOT_POSITIONS = [
-  { hotX: 10, hotY: 45 }, { hotX: 37, hotY: 30 }, { hotX: 62, hotY: 30 },
-  { hotX: 5,  hotY: 66 }, { hotX: 63, hotY: 52 }, { hotX: 39, hotY: 66 },
-]
-
-/* ─── Level 1: Resource overview nodes (no fake zone anomalies) ─────────── */
-function buildResourceOverviewNodes(uploadResult) {
-  const water       = uploadResult.water
-  const energy      = uploadResult.energy
-  const waste       = uploadResult.waste
-  const impact      = uploadResult.impact
-  const fuelSummary = uploadResult.fuel_summary
-  const fuelCo2Kg   = uploadResult.fuel_co2_kg || 0
-  const meta        = uploadResult.analysis_metadata
-
-  const fmtL   = v => (v != null && v > 0) ? `${Number(v.toFixed(0)).toLocaleString()} L`   : 'Not provided'
-  const fmtKwh = v => (v != null && v > 0) ? `${Number(v.toFixed(0)).toLocaleString()} kWh` : 'Not provided'
-  const fmtKg  = v => (v != null && v > 0) ? `${Number(v.toFixed(0)).toLocaleString()} kg`  : 'Not provided'
-
-  const waterTotal  = water?.total_consumption_liters || 0
-  const energyTotal = energy?.total_consumption_kwh   || 0
-  const wasteTotal  = waste?.total_kg                 || 0
-  const fuelLiters  = fuelSummary?.total_liters       || 0
-  // Total carbon = impact agent's total_co2_saved_kg (sum of water + energy + fuel CO₂)
-  const carbonKg    = impact?.total_co2_saved_kg      || 0
-  const confLabel   = `${meta?.confidence_pct || 42}% confidence`
-
-  return [
-    {
-      id: 'water-overview', isResourceNode: true,
-      name: 'Water', icon: '💧', type: 'Resource', buildingId: 'RES-01',
-      risk: 'none', occupancy: confLabel, hotX: 18, hotY: 36,
-      nodeColor: '#00e5ff',
-      totalValue: fmtL(waterTotal), unit: 'period total',
-      resources: { water: fmtL(waterTotal), waterDelta: 0, energy: '—', energyDelta: 0, waste: '—', wasteDelta: 0, carbon: '—', carbonDelta: 0 },
-      insights: waterTotal > 0
-        ? `Total water consumption: ${fmtL(waterTotal)}. Anomaly detection requires hourly time-series data (Level 3). Current data supports baseline reporting only.`
-        : 'No water data provided. Upload hourly meter readings to enable leak and anomaly detection.',
-      recommendations: (water?.recommendations || []).slice(0, 3).length > 0
-        ? (water.recommendations || []).slice(0, 3)
-        : ['Collect hourly meter readings to enable anomaly detection', 'Benchmark against industry average for your facility type', 'Install smart meters for Level 3 analysis'],
-      impact: { water: -5, energy: 0, carbon: -2 },
-    },
-    {
-      id: 'energy-overview', isResourceNode: true,
-      name: 'Energy', icon: '⚡', type: 'Resource', buildingId: 'RES-02',
-      risk: 'none', occupancy: confLabel, hotX: 55, hotY: 26,
-      nodeColor: '#eab308',
-      totalValue: fmtKwh(energyTotal), unit: 'period total',
-      resources: { water: '—', waterDelta: 0, energy: fmtKwh(energyTotal), energyDelta: 0, waste: '—', wasteDelta: 0, carbon: '—', carbonDelta: 0 },
-      insights: energyTotal > 0
-        ? `Total energy consumption: ${fmtKwh(energyTotal)}. After-hours waste detection requires hourly smart meter data (Level 3). Recommendations are best-practice benchmarks.`
-        : 'No energy data provided. Upload smart meter logs to enable after-hours detection and efficiency analysis.',
-      recommendations: (energy?.recommendations || []).slice(0, 3).length > 0
-        ? (energy.recommendations || []).slice(0, 3)
-        : ['Collect hourly smart meter data for after-hours detection', 'Compare consumption with similar-sized facilities', 'Audit HVAC and lighting schedules'],
-      impact: { water: 0, energy: -8, carbon: -5 },
-    },
-    {
-      id: 'fuel-overview', isResourceNode: true,
-      name: 'Fuel', icon: '⛽', type: 'Resource', buildingId: 'RES-03',
-      risk: 'none', occupancy: confLabel, hotX: 79, hotY: 50,
-      nodeColor: '#f97316',
-      totalValue: fuelLiters > 0 ? `${Number(fuelLiters.toFixed(0)).toLocaleString()} L` : 'Not provided',
-      unit: 'period total',
-      resources: { water: '—', waterDelta: 0, energy: '—', energyDelta: 0, waste: fuelLiters > 0 ? `${Number(fuelLiters.toFixed(0)).toLocaleString()} L` : '—', wasteDelta: 0, carbon: '—', carbonDelta: 0 },
-      insights: fuelLiters > 0
-        ? `Total fuel usage: ${Number(fuelLiters.toFixed(0)).toLocaleString()} L. Carbon impact included in overall emissions estimate.`
-        : 'No fuel data provided. Fuel consumption data improves carbon footprint accuracy.',
-      recommendations: ['Track fuel by vehicle or generator for granular reporting', 'Explore electrification of fleet vehicles', 'Set monthly fuel budgets by department'],
-      impact: { water: 0, energy: -3, carbon: -10 },
-    },
-    {
-      id: 'waste-overview', isResourceNode: true,
-      name: 'Waste', icon: '♻', type: 'Resource', buildingId: 'RES-04',
-      risk: 'none', occupancy: confLabel, hotX: 26, hotY: 70,
-      nodeColor: '#22c55e',
-      totalValue: fmtKg(wasteTotal), unit: 'period total',
-      resources: { water: '—', waterDelta: 0, energy: '—', energyDelta: 0, waste: fmtKg(wasteTotal), wasteDelta: 0, carbon: '—', carbonDelta: 0 },
-      insights: wasteTotal > 0
-        ? `Total waste generated: ${fmtKg(wasteTotal)}. Diversion and recovery analysis available from waste stream composition data.`
-        : 'No waste data provided. Waste composition data enables recycling and biogas recovery planning.',
-      recommendations: (waste?.recommendations || []).slice(0, 3).length > 0
-        ? (waste.recommendations || []).slice(0, 3)
-        : ['Separate organic from dry waste at source', 'Track recyclable recovery percentage monthly', 'Explore biogas or composting pathways'],
-      impact: { water: 0, energy: -2, carbon: -7 },
-    },
-    {
-      id: 'carbon-overview', isResourceNode: true,
-      name: 'Carbon', icon: '☁', type: 'Resource', buildingId: 'RES-05',
-      risk: 'none', occupancy: confLabel, hotX: 62, hotY: 70,
-      nodeColor: '#a78bfa',
-      totalValue: carbonKg > 0 ? `${(carbonKg / 1000).toFixed(3)} tCO₂e` : 'Auto-Calculated',
-      unit: carbonKg > 0 ? 'addressable CO₂' : 'from uploaded datasets',
-      resources: { water: '—', waterDelta: 0, energy: '—', energyDelta: 0, waste: '—', wasteDelta: 0, carbon: carbonKg > 0 ? `${(carbonKg / 1000).toFixed(3)} tCO₂e` : '—', carbonDelta: 0 },
-      insights: (function() {
-        if (!carbonKg) return 'Automatically calculated from uploaded resource data using certified emission factors. Provide water, energy, or fuel data to populate this panel.'
-        const waterCo2 = water?.co2_equivalent_kg || 0
-        const energyCo2 = energy?.co2_equivalent_kg || 0
-        const fuelCo2 = fuelCo2Kg || 0
-        const parts = []
-        if (waterCo2 > 0) parts.push(`Water treatment: ${waterCo2.toFixed(2)} kg (0.001 kg CO₂/L)`)
-        if (energyCo2 > 0) parts.push(`Electricity: ${energyCo2.toFixed(2)} kg (0.82 kg CO₂/kWh, India grid)`)
-        if (fuelCo2 > 0) parts.push(`Fuel combustion: ${fuelCo2.toFixed(2)} kg (IPCC 2006 factors)`)
-        const formula = parts.length > 0 ? ` | Components: ${parts.join(' + ')}` : ''
-        return `Total addressable CO₂: ${carbonKg.toFixed(1)} kg (${(carbonKg / 1000).toFixed(3)} tCO₂e).${formula}. Emission factors: IPCC 2006 / BEE India. Scope 3 not included.`
-      })(),
-      recommendations: ['Verify Scope 1, 2, and 3 emission boundaries', 'Set science-based reduction targets', 'Report under GHG Protocol or ISO 14064'],
-      impact: { water: 0, energy: 0, carbon: -12 },
-    },
-  ]
-}
-
-/* ─── Level 2: Org zones with real consumption — no fake anomaly colors ──── */
-function buildLevel2Zones(uploadResult) {
-  const orgType = uploadResult.org_type || 'default'
-  const names   = ORG_ARCHETYPES[orgType] || ORG_ARCHETYPES.default
-  const icons   = ZONE_ICONS[orgType]     || ZONE_ICONS.default
-  const water   = uploadResult.water
-  const energy  = uploadResult.energy
-
-  const waterTotal  = water?.total_consumption_liters || 0
-  const energyTotal = energy?.total_consumption_kwh   || 0
-  const n = names.length
-
-  return names.map((name, i) => {
-    const pos   = HOT_POSITIONS[i] || { hotX: 30 + (i * 15) % 60, hotY: 40 + (i * 12) % 40 }
-    const wEst  = waterTotal  > 0 ? `${((waterTotal  / n) * 0.9 + ((waterTotal  / n) * 0.2 * (i % 3 - 1))).toFixed(0)} L/day est.` : 'N/A'
-    const eEst  = energyTotal > 0 ? `${((energyTotal / n) * 0.9 + ((energyTotal / n) * 0.2 * (i % 3 - 1))).toFixed(1)} kWh/day est.` : 'N/A'
-
+function buildUploadBuildings(result) {
+  const zones = new Map()
+  for (const [resource, unit, field] of [['water', 'L', 'total_consumption_liters'], ['energy', 'kWh', 'total_consumption_kwh']]) {
+    const analysis = result[resource]
+    if (analysis?.status !== 'analyzed') continue
+    const samples = analysis.resource_profile?.by_zone || [{ zone: 'Unattributed facility observations', amount: analysis[field] }]
+    for (const entry of samples) {
+      const name = entry.zone === 'Unspecified' ? 'Unattributed facility observations' : entry.zone
+      const zone = zones.get(name) || { name, values: [] }
+      if (entry.amount != null) zone.values.push(`${entry.amount.toLocaleString()} ${unit}`)
+      zones.set(name, zone)
+    }
+  }
+  if (result.waste?.total_kg != null) zones.set('waste-inventory', {
+    name: 'Waste inventory', values: [`${result.waste.total_kg.toLocaleString()} kg`],
+  })
+  return [...zones.values()].slice(0, 12).map((zone, i) => {
+    const findings = [result.water, result.energy].flatMap(resource => resource?.anomaly_events || [])
+      .filter(event => (event.location || event.zone) === zone.name)
     return {
-      id:         name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-      name, icon: icons[i] || '🏢', type: orgType,
-      buildingId: `Z-${String(i + 1).padStart(2, '0')}`,
-      risk: 'none', occupancy: 'Variable',
-      hotX: pos.hotX, hotY: pos.hotY,
-      water:  { level: 'none', value: wEst, note: 'Anomaly detection not available at Level 2' },
-      energy: { level: 'none', value: eEst, note: 'After-hours detection requires hourly data' },
-      waste:  { level: 'none', value: 'N/A', note: 'Not provided' },
-      resources: { water: wEst, waterDelta: 0, energy: eEst, energyDelta: 0, waste: 'N/A', wasteDelta: 0, carbon: 'N/A', carbonDelta: 0 },
-      insights: `Operational data available for ${name}. Zone-level anomaly detection requires hourly time-series data — upgrade to Level 3 by uploading smart meter logs with ≥3 days of hourly readings.`,
-      recommendations: [
-        `Continue monitoring daily consumption trends for ${name}`,
-        'Upload hourly data to enable zone-level anomaly detection',
-        'Benchmark current usage against operational baselines',
-      ],
-      impact: { water: -3, energy: -5, carbon: -4 },
-      agent: 'Decision Engine',
+      id: `uploaded-zone-${i}`, isResourceNode: true, name: zone.name, icon: '◈', type: 'Logical zone',
+      buildingId: 'Uploaded history', occupancy: '', risk: findings.length ? 'medium' : 'none',
+      hotX: 9 + (i % 4) * 20, hotY: 31 + Math.floor(i / 4) * 21,
+      nodeColor: findings.length ? '#f59e0b' : '#22d3ee',
+      totalValue: zone.values.join(' / ') || 'Unavailable', unit: 'observed reporting-period total',
+      insights: findings.length ? `${findings.length} baseline exceptions. See Loss Map for meter evidence.` : 'See the resource analysis for coverage and measurement details.',
+      recommendations: findings.length ? ['Review associated meter evidence and operating records.'] : [],
     }
   })
 }
 
-/* ─── Level 3: Full anomaly-driven zone map (original behaviour) ─────────── */
-function buildLevel3Zones(uploadResult) {
-  const orgType = uploadResult.org_type || 'default'
-  const names   = ORG_ARCHETYPES[orgType] || ORG_ARCHETYPES.default
-  const icons   = ZONE_ICONS[orgType]     || ZONE_ICONS.default
-  const water   = uploadResult.water
-  const energy  = uploadResult.energy
-
-  const waterAnomalies = {}
-  if (water?.anomaly_events) {
-    water.anomaly_events.forEach(ev => {
-      const loc = ev.location || 'Main Zone'
-      if (!waterAnomalies[loc]) waterAnomalies[loc] = ev.severity || 'medium'
-    })
-  }
-  const energyAnomalies = {}
-  if (energy?.anomaly_events) {
-    energy.anomaly_events.forEach(ev => {
-      const zone = ev.zone || ev.location || 'Main Zone'
-      if (!energyAnomalies[zone]) energyAnomalies[zone] = ev.severity || 'medium'
-    })
-  }
-
-  const waterLocs  = Object.entries(waterAnomalies)
-  const energyLocs = Object.entries(energyAnomalies)
-  const riskMap    = { critical: 4, high: 3, medium: 2, low: 1, none: 0 }
-
-  return names.map((name, i) => {
-    const pos          = HOT_POSITIONS[i] || { hotX: 30 + (i * 15) % 60, hotY: 40 + (i * 12) % 40 }
-    const wAnomaly     = waterLocs[i]
-    const eAnomaly     = energyLocs[i]
-    const waterLevel   = wAnomaly ? (wAnomaly[1] || 'low') : 'none'
-    const energyLevel  = eAnomaly ? (eAnomaly[1] || 'low') : 'none'
-    const total        = (riskMap[waterLevel] || 0) + (riskMap[energyLevel] || 0)
-    const risk         = total >= 7 ? 'critical' : total >= 5 ? 'high' : total >= 3 ? 'medium' : total >= 1 ? 'low' : 'none'
-
-    const n     = names.length
-    const wLiters = water?.total_wasted_liters
-      ? `${(water.total_wasted_liters / Math.max(n, 1)).toFixed(0)} L/day est.`
-      : 'N/A'
-    const eKwh = energy?.total_wasted_kwh
-      ? `${(energy.total_wasted_kwh / Math.max(n, 1)).toFixed(1)} kWh/day est.`
-      : 'N/A'
-
-    return {
-      id:         name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-      name, icon: icons[i] || '🏢', type: orgType,
-      buildingId: `Z-${String(i + 1).padStart(2, '0')}`,
-      risk, occupancy: 'Variable',
-      hotX: pos.hotX, hotY: pos.hotY,
-      water:  { level: waterLevel,  value: wLiters, note: wAnomaly ? `Anomaly: ${wAnomaly[0]} — ${waterLevel} severity` : 'No anomalies detected' },
-      energy: { level: energyLevel, value: eKwh,    note: eAnomaly ? `After-hours: ${eAnomaly[0]} — ${energyLevel} severity` : 'Within normal range' },
-      waste:  { level: 'low', value: 'N/A', note: 'Not tracked at zone level' },
-      resources: {
-        water:  wLiters, waterDelta:  waterLevel  !== 'none' ? 10 : 2,
-        energy: eKwh,    energyDelta: energyLevel !== 'none' ? 12 : 2,
-        waste:  'N/A',   wasteDelta:  2,
-        carbon: 'N/A',   carbonDelta: 4,
-      },
-      insights: risk === 'none'
-        ? `${name} is operating within expected resource usage parameters.`
-        : `Resource anomalies detected in ${name}. ${waterLevel !== 'none' ? `Water: ${waterLevel} severity. ` : ''}${energyLevel !== 'none' ? `Energy: ${energyLevel} severity.` : ''}`,
-      recommendations: [
-        waterLevel  !== 'none' ? `Inspect water supply to ${name}` : `Maintain current water efficiency in ${name}`,
-        energyLevel !== 'none' ? `Review after-hours energy schedule for ${name}` : `Continue monitoring energy patterns`,
-        'Schedule quarterly resource audit',
-      ],
-      impact: { water: waterLevel !== 'none' ? -15 : -2, energy: energyLevel !== 'none' ? -18 : -2, carbon: -8 },
-      agent: 'Decision Engine',
-    }
-  })
-}
-
-function buildUploadBuildings(uploadResult) {
-  if (!uploadResult) return BUILDINGS
-  const level = uploadResult?.analysis_metadata?.overall_level ?? 3
-  if (level === 1) return buildResourceOverviewNodes(uploadResult)
-  if (level === 2) return buildLevel2Zones(uploadResult)
-  return buildLevel3Zones(uploadResult)
-}
-
-/* ─── Drone SVG ────────────────────────────────────────────────────────────── */
 function DroneSVG({ isScanning, isComplete }) {
   const beamColor = isComplete ? '#00ff88' : '#00e5ff'
   return (
@@ -666,8 +440,8 @@ function BuildingPanel({ building, onClose }) {
         </div>
         {/* Level 1 notice */}
         <div style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 8, padding: '10px 12px', marginBottom: 14, flexShrink: 0 }}>
-          <div style={{ color: '#f59e0b', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', marginBottom: 4 }}>LEVEL 1 — BASIC ASSESSMENT</div>
-          <div style={{ color: '#94a3b8', fontSize: 10, lineHeight: 1.55 }}>Anomaly and zone-level detection unavailable. Upload hourly time-series data for Level 3 analysis.</div>
+          <div style={{ color: '#f59e0b', fontSize: 9, fontWeight: 700 }}>LOGICAL RESOURCE ZONE</div>
+          <div style={{ color: '#94a3b8', fontSize: 10 }}>Uploaded historical evidence. Marker positions are schematic.</div>
         </div>
         {/* Insights */}
         <PLabel>Insights</PLabel>
@@ -683,7 +457,7 @@ function BuildingPanel({ building, onClose }) {
           ))}
         </div>
         {viewPlanBtn}
-        <p style={{ color: '#1e293b', fontSize: 8.5, textAlign: 'center', marginTop: 10, lineHeight: 1.5, flexShrink: 0 }}>RE:GEN AI · Estimates only · Level 1 data</p>
+        <p style={{ color: '#1e293b', fontSize: 8.5, textAlign: 'center', marginTop: 10, lineHeight: 1.5, flexShrink: 0 }}>RE:GEN AI · Historical evidence</p>
       </div>
     )
   }
@@ -850,9 +624,9 @@ export default function DigitalTwinCampus({ onBuildingSelect, uploadResult }) {
       `}</style>
 
       {/* Campus background */}
-      <img
+      {!isUploadMode && <img
         src="/twin-bg.jpg"
-        alt={isUploadMode ? `${uploadResult?.org_name || 'Facility'} aerial view` : 'Campus aerial view'}
+        alt="Illustrative demonstration campus"
         onError={e => { e.currentTarget.src = '/hero-campus.jpg' }}
         style={{
           position: 'absolute', inset: 0,
@@ -860,7 +634,7 @@ export default function DigitalTwinCampus({ onBuildingSelect, uploadResult }) {
           objectFit: 'cover', objectPosition: 'center 35%',
           zIndex: 0,
         }}
-      />
+      />}
 
       {/* Dark overlay */}
       <div style={{ position:'absolute', inset:0, background:'rgba(0,3,16,0.45)', zIndex:1 }}/>
@@ -892,7 +666,7 @@ export default function DigitalTwinCampus({ onBuildingSelect, uploadResult }) {
         </h2>
         <p style={{ color:'rgba(148,163,184,0.82)', fontSize:12.5, lineHeight:1.65, margin:'0 0 14px' }}>
           {isUploadMode
-            ? `AI-driven resource intelligence for ${uploadResult?.org_name || 'your organization'}.`
+            ? `Logical resource view for ${uploadResult?.org_name || 'your organization'} · uploaded historical observations.`
             : 'AI-driven campus intelligence. Every resource. Every system. One connected view.'}
         </p>
         {isUploadMode && (() => {

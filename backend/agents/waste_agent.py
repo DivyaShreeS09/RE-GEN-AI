@@ -2,7 +2,7 @@
 # All other fields (hidden_value_score, estimated_recovery, hazard_warning, reasoning_trace)
 # are computed by deterministic Python above the Gemini call.
 from core.simulation import load_waste_kb
-from core.guardrails import apply_hazard_guardrail, validate_quantity, get_disclaimer, sanitize_prompt_input
+from core.guardrails import apply_hazard_guardrail, validate_quantity, get_disclaimer
 from core.ai_client import call_ai
 
 _kb = None
@@ -17,115 +17,93 @@ def _get_kb():
 
 # ── Multi-stream batch analysis ─────────────────────────────────────────────
 
-_ORGANIC_KEYS  = {
-    "food waste", "wet waste", "garden waste", "corn husk", "eggshells",
-    "coffee grounds", "sugarcane bagasse", "rice husk", "banana peel",
-    "fish waste", "coconut shell", "coconut coir", "dry leaves",
-    "organic sludge", "sawdust", "wood waste",
-    "kitchen waste", "organic waste", "vegetable waste", "fruit waste",
-    "tea waste", "grass clippings", "tree branches", "leaves",
+_CATEGORY_GROUP = {
+    "Organic Waste": "organic", "Mixed Organic Waste": "organic",
+    "Garden Waste": "organic", "Biomass Waste": "organic", "Agricultural Waste": "organic",
+    "Metal Waste": "metal", "Plastic Waste": "plastic", "Construction Waste": "construction",
+    "Paper Waste": "paper", "Glass Waste": "glass", "Biomedical Waste": "hazardous",
+    "Hazardous Waste": "hazardous", "E-waste": "hazardous",
 }
-_PLASTIC_KEYS  = {
-    "plastic bottles", "hdpe", "ldpe", "pet", "pp", "pvc",
-    "mixed plastic", "plastic", "plastic waste",
-}
-_METAL_KEYS    = {
-    "aluminium cans", "steel scrap", "copper", "steel", "iron",
-    "brass", "aluminium", "scrap metal",
-}
-_HAZARDOUS_KEYS = {
-    "e-waste", "battery waste", "medical waste", "chemical waste",
-    "diesel sludge", "oil sludge", "used oil", "leather scraps",
-    "fluorescent lamps", "asbestos", "hazardous waste",
-    "ups batteries", "lead acid batteries", "lithium batteries",
-}
-_PAPER_KEYS = {
-    "paper waste", "paper", "cardboard", "newspaper", "office paper",
-    "mixed paper", "shredded paper",
-}
-_GLASS_KEYS = {
-    "glass bottles", "glass", "clear glass", "colored glass", "broken glass",
-}
-_CONSTRUCTION_KEYS = {
-    "construction debris", "concrete", "bricks", "gypsum", "tiles", "plywood",
-}
+_KG_PER_UNIT = {"kg": 1, "g": 0.001, "t": 1000, "tonne": 1000, "tonnes": 1000, "tons": 1000}
 
 
-def analyze_waste_batch(items: list) -> dict:
-    """
-    Analyze multiple waste streams and return aggregated results.
-    items: list of {type: str, quantity_kg: float, unit: str}
-    """
-    if not items:
-        return {
-            "agent":   "Waste-to-Wealth Agent",
-            "status":  "no_waste",
-            "message": "No waste inventory submitted.",
-            "total_kg": 0,
-            "items":   [],
-        }
-
-    results           = []
-    total_kg          = 0.0
-    total_rec_min     = 0.0
-    total_rec_max     = 0.0
-    hazardous_count   = 0
-    organic_kg        = 0.0
-    plastic_kg        = 0.0
-    metal_kg          = 0.0
-    hazardous_kg      = 0.0
-    paper_kg          = 0.0
-    glass_kg          = 0.0
-    construction_kg   = 0.0
-
+def analyze_waste_batch(items: list, *, intelligence: bool = False) -> dict:
+    results = []
+    mass = dict.fromkeys((*_CATEGORY_GROUP.values(), "other"), 0.0)
     for item in items:
-        raw_type = str(item.get("type", "")).strip()
-        unit     = str(item.get("unit", "kg")).lower()
-
-        try:
-            raw_qty = float(item.get("quantity_kg", 0) or 0)
-        except (ValueError, TypeError):
-            continue
-
-        # Unit normalisation → kg
-        if unit == "tons":
-            qty_kg = raw_qty * 1000.0
-        elif unit == "g":
-            qty_kg = raw_qty / 1000.0
-        else:
-            qty_kg = raw_qty
-
-        if not raw_type or qty_kg <= 0:
-            continue
-
-        result = analyze_waste(raw_type, qty_kg)
+        unit = item.get("unit", "kg")
+        if unit not in _KG_PER_UNIT:
+            raise ValueError("Unsupported mass unit.")
+        quantity = float(item["quantity_kg"]) * _KG_PER_UNIT[unit]
+        result = analyze_waste(item["type"], quantity, narrative=False)
+        if "error" in result:
+            raise ValueError(result["error"])
+        group = "hazardous" if result.get("hazard_warning") else _CATEGORY_GROUP.get(result.get("category"), "other")
+        mass[group] += quantity
         results.append(result)
-        total_kg += qty_kg
+    if intelligence:
+        from core.waste_intelligence import investigate_recovery, restricted_material
+        from core.material_intelligence import interpret_inventory
+        from core.ai_client import _cloud_consent
+        from core.market_evidence import inventory_market_rows, attach_market_evidence
+        from core.market_valuation import enrich_pathways
 
-        key = raw_type.lower()
-        if key in _HAZARDOUS_KEYS:
-            hazardous_kg += qty_kg
-        elif key in _ORGANIC_KEYS:
-            organic_kg += qty_kg
-        elif key in _PLASTIC_KEYS:
-            plastic_kg += qty_kg
-        elif key in _METAL_KEYS:
-            metal_kg += qty_kg
-        elif key in _PAPER_KEYS:
-            paper_kg += qty_kg
-        elif key in _GLASS_KEYS:
-            glass_kg += qty_kg
-        elif key in _CONSTRUCTION_KEYS:
-            construction_kg += qty_kg
+        evidence_rows = inventory_market_rows(remote=False)
 
-        if result.get("status") == "analyzed":
-            if result.get("hazard_warning"):
-                hazardous_count += 1
-            rec = result.get("estimated_recovery")
-            if rec:
-                total_rec_min += rec.get("min_inr", 0)
-                total_rec_max += rec.get("max_inr", 0)
+        inputs = [{"material":result["waste_type"], "quantity":result["quantity_kg"], "unit":"kg",
+                   "condition":item.get("condition") or "unspecified", "contaminated":item.get("contaminated") is True}
+                  for item, result in zip(items, results)]
+        consent = _cloud_consent.set(False)
+        try:
+            identities = interpret_inventory(inputs)
+        finally:
+            _cloud_consent.reset(consent)
 
+        for item, result, identity in zip(items, results, identities):
+            condition = item.get("condition") or "unspecified"
+            if not isinstance(condition, str):
+                condition = "unspecified"
+
+            contaminated = (
+                item.get("contaminated") is True
+                or condition.lower() in {"contaminated", "spoiled"}
+            )
+
+            candidate = identity["canonical_material"]
+            safe_identity = identity["certainty"] != "unknown" and not (
+                restricted_material(result["waste_type"], result) or restricted_material(candidate, {}))
+            recovery = investigate_recovery(
+                material=candidate if safe_identity else result["waste_type"],
+                quantity=result["quantity_kg"],
+                unit="kg",
+                condition=condition[:160],
+                reference=result,
+                contaminated=contaminated,
+                context="facility maintenance and resource recovery",
+                services=[], allow_ai=False,
+                precomputed=identity.get("recovery_plan") if safe_identity else None,
+            )
+
+            fields = {
+                "material": result["waste_type"],
+                "quantity": result["quantity_kg"],
+                "unit": "kg",
+                "condition": condition[:160],
+                "contaminated": contaminated,
+                "material_identity": identity,
+            }
+
+            recovery = enrich_pathways(fields, recovery, [])
+            recovery = attach_market_evidence(
+                fields, recovery, rows=evidence_rows
+            )
+
+            recovery["material_identity"] = identity
+            result["recovery_intelligence"] = recovery
+            result["recovery_pathways"] = recovery["pathways"]
+            result["ai_enhanced"] = recovery["ai_enhanced"]
+
+    total_kg = sum(mass.values())
     if total_kg == 0:
         return {
             "agent":   "Waste-to-Wealth Agent",
@@ -135,25 +113,42 @@ def analyze_waste_batch(items: list) -> dict:
             "items":   [],
         }
 
-    # Composition percentages
-    accounted_kg = organic_kg + plastic_kg + metal_kg + hazardous_kg + paper_kg + glass_kg + construction_kg
-    other_kg = max(0, total_kg - accounted_kg)
-    composition = {
-        "organic_pct":      round(organic_kg      / total_kg * 100, 1),
-        "plastic_pct":      round(plastic_kg      / total_kg * 100, 1),
-        "metal_pct":        round(metal_kg        / total_kg * 100, 1),
-        "hazardous_pct":    round(hazardous_kg    / total_kg * 100, 1),
-        "paper_pct":        round(paper_kg        / total_kg * 100, 1),
-        "glass_pct":        round(glass_kg        / total_kg * 100, 1),
-        "construction_pct": round(construction_kg / total_kg * 100, 1),
-        "other_pct":        round(other_kg        / total_kg * 100, 1),
-    }
+    composition = {f"{group}_pct": round(kg * 100 / total_kg, 1) for group, kg in mass.items()}
+    known = [r for r in results if r["status"] == "analyzed"]
+    known_mass = sum(r["quantity_kg"] for r in known)
+    circularity = round(sum(r["hidden_value_score"] * r["quantity_kg"] for r in known) / known_mass, 1) if known_mass else None
+    estimates = [r["estimated_recovery"] for r in known if r["estimated_recovery"] is not None]
 
-    # Circularity score = mean hidden_value_score of known materials
-    known = [r for r in results if r.get("status") == "analyzed"]
-    circularity = round(
-        sum(r.get("hidden_value_score", 0) for r in known) / len(known), 1
-    ) if known else 0
+    if intelligence:
+        estimates = []
+
+        for result in results:
+            result["estimated_recovery"] = None
+
+            routes = result.get("recovery_pathways", [])
+            if not routes:
+                continue
+
+            route = routes[0]
+            value = route.get("valuation") or {}
+
+            if (
+                value.get("status") == "estimated"
+                and value.get("value_type") == "gross_reference"
+                and value.get("minimum_inr") is not None
+                and value.get("maximum_inr") is not None
+                and not result.get("hazard_warning")
+            ):
+                estimate = {
+                    "min_inr": value["minimum_inr"],
+                    "max_inr": value["maximum_inr"],
+                    "note": "Indicative gross recovery; costs and acceptance unconfirmed.",
+                }
+
+                result["estimated_recovery"] = estimate
+
+                if result["status"] == "analyzed":
+                    estimates.append(estimate)
 
     # Top opportunity = highest max recovery value
     top_item = None
@@ -177,24 +172,34 @@ def analyze_waste_batch(items: list) -> dict:
         "total_items":             len(results),
         "analyzed_items":          len(known),
         "total_kg":                round(total_kg, 2),
-        "total_recovery_min_inr":  round(total_rec_min, 2),
-        "total_recovery_max_inr":  round(total_rec_max, 2),
-        "hazardous_count":         hazardous_count,
+        "priced_mass_kg": sum(r["quantity_kg"] for r in known if r["estimated_recovery"] is not None),
+        "valuation_basis": (
+            "Evidence-supported indicative gross recovery from one selected pathway per material. Not confirmed income or utility savings."
+            if intelligence else
+            "Partial dated knowledge-base reference, excluding unpriced mass. No confirmed quote."
+        ),
+        "total_recovery_min_inr":  round(sum(r["min_inr"] for r in estimates), 2) if estimates else None,
+        "total_recovery_max_inr":  round(sum(r["max_inr"] for r in estimates), 2) if estimates else None,
+        "hazardous_count":         sum(bool(r["hazard_warning"]) for r in known),
         "circularity_score":       circularity,
         "composition":             composition,
         "top_opportunity":         top_item.get("waste_type") if top_item else None,
-        "top_opportunity_value_max_inr": round(best_max, 2),
+        "top_opportunity_value_max_inr": round(best_max, 2) if top_item else None,
         "top_opportunity_pathway": top_item.get("recommended_pathway") if top_item else None,
         "compliance_warnings":     compliance_warnings,
         "items":                   results,
         "kb_last_verified":        meta.get("kb_last_verified", "unknown"),
         "kb_source_note":          meta.get("source_note", ""),
-        "confidence":              0.88,
+        "confidence":              None,
         "disclaimer":              get_disclaimer(),
     }
 
 
 _ALIASES: dict[str, str] = {
+    "காகிதம்": "paper",
+    "அட்டை": "cardboard",
+    "உணவுக் கழிவு": "food waste",
+    "metal / aluminium": "aluminium",
     # Paper aliases
     "paper & cardboard": "cardboard",
     "paper/cardboard": "cardboard",
@@ -334,14 +339,7 @@ _ALIASES: dict[str, str] = {
 def normalize_waste_key(raw_key: str) -> str:
     """Normalize common variant spellings to their canonical KB key."""
     k = raw_key.lower().strip()
-    # Direct alias match
-    if k in _ALIASES:
-        return _ALIASES[k]
-    # Partial alias match (e.g. "PET plastic bottles" → "pet")
-    for alias, canonical in _ALIASES.items():
-        if alias in k:
-            return canonical
-    return k
+    return _ALIASES.get(k, k)
 
 
 def _kb_meta() -> dict:
@@ -363,7 +361,7 @@ def get_kb_materials_list() -> list[dict]:
     return rows
 
 
-def analyze_waste(waste_type: str, quantity_kg: float) -> dict:
+def _reference_analysis(waste_type: str, quantity_kg: float, *, narrative: bool = True) -> dict:
     kb        = _get_kb()
     materials = kb.get("waste_materials", {})
 
@@ -374,47 +372,18 @@ def analyze_waste(waste_type: str, quantity_kg: float) -> dict:
     raw_key  = waste_type.lower().strip()
     key      = normalize_waste_key(raw_key)
     material = materials.get(key)
-    # If normalization found a match but the original was different, use the canonical name for display
-    display_type = waste_type if material else waste_type
-
     if material is None:
-        close_matches = [k for k in materials if key in k or k in key]
-        # Infer likely category from keywords
-        inferred_category = "Unknown"
-        inferred_handling = "Store separately until classified. Do not mix with other waste streams."
-        if any(w in key for w in ["plastic", "pet", "pp", "pvc", "poly"]):
-            inferred_category = "Likely Plastic Waste"
-            inferred_handling = "Keep dry. Do not compact with food waste. Contact local plastic recycler."
-        elif any(w in key for w in ["metal", "steel", "iron", "copper", "alum", "brass"]):
-            inferred_category = "Likely Metal Waste"
-            inferred_handling = "Separate ferrous from non-ferrous. Store dry. Contact scrap dealer."
-        elif any(w in key for w in ["paper", "card", "news", "office"]):
-            inferred_category = "Likely Paper Waste"
-            inferred_handling = "Keep dry. Bundle. Contact paper recycler or kabadiwala."
-        elif any(w in key for w in ["food", "organic", "veg", "fruit", "kitchen", "wet"]):
-            inferred_category = "Likely Organic Waste"
-            inferred_handling = "Process within 24 hours. Compost or route to biogas plant."
-        elif any(w in key for w in ["glass", "bottle", "jar"]):
-            inferred_category = "Likely Glass Waste"
-            inferred_handling = "Handle with gloves. Do not break further. Separate by color."
-        elif any(w in key for w in ["hazard", "chemical", "toxic", "acid", "solvent"]):
-            inferred_category = "Likely Hazardous Waste"
-            inferred_handling = "CRITICAL: Do not mix. Label containers. Contact CPCB-authorised handler."
-        elif any(w in key for w in ["wood", "timber", "plank", "log"]):
-            inferred_category = "Likely Wood/Biomass Waste"
-            inferred_handling = "Store dry. Keep treated wood separate. Contact biomass plant."
-        elif any(w in key for w in ["e-waste", "electronic", "computer", "phone", "battery"]):
-            inferred_category = "Likely E-waste"
-            inferred_handling = "CRITICAL: Do not dismantle. Route to CPCB-authorized e-waste recycler only."
         return {
             "agent":              "Waste-to-Wealth Agent",
             "status":             "unknown_material",
             "waste_type":         waste_type,
             "quantity_kg":        quantity_kg,
             "message":            f"Material '{waste_type}' is not currently in the knowledge base.",
-            "inferred_category":  inferred_category,
-            "inferred_handling":  inferred_handling,
-            "suggestions":        close_matches[:3],
+            "inferred_category":  "Unknown",
+            "inferred_handling":  "Request classification from authorized facility staff.",
+            "suggestions":        [],
+            "clarification": "What does the supplier label say, and is the material mixed or contaminated?",
+            "estimated_recovery": None,
             "next_step":          "Submit this material for manual classification. In the interim, store separately and do not dispose in general waste.",
             "disclaimer":         get_disclaimer(),
         }
@@ -428,6 +397,9 @@ def analyze_waste(waste_type: str, quantity_kg: float) -> dict:
     if hazard_result["estimated_profit_suppressed"]:
         estimated_recovery      = None
         estimated_recovery_note = hazard_result["profit_note"]
+    elif unit != "INR/kg":
+        estimated_recovery = None
+        estimated_recovery_note = f"Reference rate is per {unit.split('/')[-1]}. Mass alone cannot establish value."
     else:
         estimated_recovery = {
             "min_inr":   round(min_val * quantity_kg, 2),
@@ -453,17 +425,18 @@ def analyze_waste(waste_type: str, quantity_kg: float) -> dict:
     ai_recommendation = None
     ai_used           = False
 
-    if not hazard_result["estimated_profit_suppressed"]:
+    if narrative and estimated_recovery is not None:
         fallback_rec = (
-            f"Submit the {quantity_kg} kg of {key} via the {material['recommended_pathway']} pathway "
-            f"to maximise estimated recovery. Consider converting into "
-            f"{material['possible_products'][0] if material['possible_products'] else 'a value-added product'} "
-            "for the highest return."
+            f"The knowledge base identifies {key} as a "
+            f"candidate for {material['recommended_pathway']}. "
+            "Facility staff should compare verified recovery "
+            "options, current acceptance evidence and total "
+            "costs before selecting a pathway."
         )
-        safe_waste_type = sanitize_prompt_input(waste_type)
+
         prompt = f"""You are a waste management specialist. Write 2 actionable sentences for a sustainability officer.
 
-Material: {safe_waste_type}
+Material: {key}
 Category: {material['category']}
 Recommended pathway: {material['recommended_pathway']}
 Possible products: {', '.join(material['possible_products'][:3])}
@@ -473,9 +446,9 @@ Hidden value score: {hidden_value_score}/100
 
 Rules:
 - Say "estimated" for all financial figures
-- Do not claim exact profit
-- Name one specific product from the list
-- Be actionable: tell the officer exactly what to do this week
+- Do not claim profit, verified buyers, confirmed demand or guaranteed feasibility
+- Describe products only as potential applications
+- Recommend staff review of verified demand, acceptance and costs
 - Do not use: revolutionary, powerful AI, next-generation"""
 
         ai_recommendation, ai_used = call_ai(prompt, fallback_rec)
@@ -491,7 +464,7 @@ Rules:
         "hazard_level":             material["hazard_level"],
         "hazard_warning":           hazard_result["warning"],
         "hazard_message":           hazard_result["warning_message"],
-        "possible_products":        material["possible_products"],
+        "possible_products":        [] if hazard_result["warning"] else material["possible_products"],
         "buyer_types":              material["buyer_types"],
         "recommended_pathway":      material["recommended_pathway"],
         "sustainability_notes":     material["sustainability_notes"],
@@ -505,7 +478,7 @@ Rules:
         "reasoning_trace":          reasoning_trace,
         "kb_last_verified":         meta.get("kb_last_verified", "unknown"),
         "kb_source_note":           meta.get("source_note", ""),
-        "confidence":               0.92,
+        "confidence":               None,
         "disclaimer":               get_disclaimer(),
         # Enriched fields — present in expanded knowledge base entries
         "co2_savings_kg_per_tonne": material.get("co2_savings_kg_per_tonne"),
@@ -513,5 +486,48 @@ Rules:
         "required_handling":        material.get("required_handling"),
         "knowledge_source":         material.get("knowledge_source"),
         "collection_frequency":     material.get("collection_frequency"),
-        "preparation_before_sale":  material.get("preparation_before_sale"),
+        "preparation_before_sale":  None if hazard_result["warning"] else material.get("preparation_before_sale"),
     }
+
+
+def analyze_waste(
+    waste_type: str,
+    quantity_kg: float,
+    *,
+    narrative: bool = True,
+    condition: str = "unspecified",
+    contaminated: bool = False,
+    context: str = "general",
+    services=None
+) -> dict:
+    result = _reference_analysis(
+        waste_type, quantity_kg, narrative=False
+    )
+
+    if "error" in result or not narrative:
+        return result
+
+    from core.waste_intelligence import investigate_recovery
+
+    intelligence = investigate_recovery(
+        material=waste_type,
+        quantity=quantity_kg,
+        unit="kg",
+        condition=condition,
+        reference=result,
+        contaminated=contaminated,
+        context=context,
+        services=services
+    )
+
+    result["recovery_intelligence"] = intelligence
+    result["recovery_pathways"] = intelligence["pathways"]
+    result["ai_enhanced"] = intelligence["ai_enhanced"]
+
+    if intelligence["pathways"]:
+        top = intelligence["pathways"][0]
+        result["recommended_pathway"] = top["title"]
+        result["ai_recommendation"] = top["action"]
+        result["computation_type"] = "hybrid_ai_planning"
+
+    return result

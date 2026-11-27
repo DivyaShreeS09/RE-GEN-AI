@@ -634,7 +634,12 @@ function AgentDetailPanel({ agentId, agents, wasteResult, isUploadMode }) {
   const anomalyGated       = isUploadMode && backendData?.anomaly_detection_available === false
 
   /* Waste agent: merge live wasteResult — in upload mode never fall back to demo text */
-  const wasteOverride = agentId === 'waste' && wasteResult ? {
+  const inventory = wasteResult?.items
+  const wasteOverride = agentId === 'waste' && inventory ? {
+    observation: `${inventory.length} of ${wasteResult.total_items} materials reviewed. ${wasteResult.verified_option_count} eligible service matches.`,
+    recommendation: inventory.find(item => item.intelligence?.pathways?.length)?.intelligence.pathways[0].action,
+    metric: `${wasteResult.pathway_count} recovery alternatives`,
+  } : agentId === 'waste' && wasteResult ? {
     observation:     wasteResult.finding             || (isUploadMode ? null : meta.observation),
     recommendation:  wasteResult.recommended_pathway || (isUploadMode ? null : meta.recommendation),
     metric: wasteResult.hidden_value_score != null

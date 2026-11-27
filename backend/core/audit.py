@@ -13,20 +13,14 @@ import hashlib
 import json
 from datetime import datetime, timezone
 
-# Formula constants exposed for auditability
+from agents.impact_agent import (WATER_CO2_KG_PER_LITER, ENERGY_CO2_KG_PER_KWH,
+                                 VEHICLE_CO2_KG_PER_KM, HOUSEHOLD_CO2_KG_PER_DAY)
+from core.scoring import REGEN_SCORE_WEIGHTS
+
 FORMULA_CONSTANTS = {
-    "WATER_CO2_KG_PER_LITER": 0.001,
-    "ENERGY_CO2_KG_PER_KWH":  0.82,
-    "VEHICLE_CO2_KG_PER_KM":  0.167,
-    "HOUSEHOLD_CO2_KG_PER_DAY": 2.87,
-    "REGEN_SCORE_WEIGHTS": {
-        "waste":       0.20,
-        "water":       0.20,
-        "energy":      0.20,
-        "co2":         0.15,
-        "urgency":     0.15,
-        "feasibility": 0.10,
-    },
+    "WATER_CO2_KG_PER_LITER": WATER_CO2_KG_PER_LITER, "ENERGY_CO2_KG_PER_KWH": ENERGY_CO2_KG_PER_KWH,
+    "VEHICLE_CO2_KG_PER_KM": VEHICLE_CO2_KG_PER_KM, "HOUSEHOLD_CO2_KG_PER_DAY": HOUSEHOLD_CO2_KG_PER_DAY,
+    "REGEN_SCORE_WEIGHTS": REGEN_SCORE_WEIGHTS,
 }
 
 
@@ -91,6 +85,7 @@ def build_audit_record(run: dict) -> dict:
 
 def build_pdf(audit_record: dict) -> bytes:
     """Return a minimal PDF of the audit record using reportlab."""
+    from xml.sax.saxutils import escape
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
@@ -106,42 +101,56 @@ def build_pdf(audit_record: dict) -> bytes:
 
     def h(text, size=14):
         story.append(Paragraph(
-            f"<b>{text}</b>",
+            f"<b>{escape(str(text))}</b>",
             ParagraphStyle("h", parent=styles["Normal"], fontSize=size, spaceAfter=4),
         ))
 
     def p(text):
-        story.append(Paragraph(text, small))
+        story.append(Paragraph(escape(str(text)), small))
 
     def sp():
         story.append(Spacer(1, 8))
 
     h("RE:GEN AI — Analysis Audit Record", 16)
     sp()
-    p(f"<b>Analysis ID:</b> {audit_record['analysis_id']}")
-    p(f"<b>Organisation:</b> {audit_record['org_name']} ({audit_record['org_type']})")
-    p(f"<b>Analysis timestamp:</b> {audit_record['analysis_timestamp']}")
-    p(f"<b>Export timestamp:</b> {audit_record['export_timestamp']}")
+    p(f"Analysis ID: {audit_record['analysis_id']}")
+    p(f"Organisation: {audit_record['org_name']} ({audit_record['org_type']})")
+    p(f"Analysis timestamp: {audit_record['analysis_timestamp']}")
+    p(f"Export timestamp: {audit_record['export_timestamp']}")
     sp()
 
     h("Summary", 12)
     s = audit_record["summary"]
+    impact = audit_record["payload"].get("impact", {})
+    historical = impact.get("evidence_type") == "historical analysis"
+
+    def metric(key, unit):
+        value = s[key]
+        return "Unavailable" if value is None else f"{value:,.2f} {unit}"
     for label, val in [
         ("Coverage",              f"{s['coverage_pct']}%"),
-        ("Confidence",            f"{s['confidence_pct']}%"),
+        ("Confidence",            "Uncalibrated" if s["confidence_pct"] is None else f"{s['confidence_pct']}% (legacy)"),
         ("RE:GEN Score (before)", s["regen_score_before"]),
         ("RE:GEN Score (after)",  s["regen_score_after"]),
-        ("Water wasted",          f"{s['total_wasted_liters']:,.1f} L"),
-        ("Energy wasted",         f"{s['total_wasted_kwh']:,.1f} kWh"),
-        ("CO2 saved",             f"{s['total_co2_saved_kg']:,.2f} kg"),
+        ("Water baseline excess" if historical else "Water wasted", metric("total_wasted_liters", "L")),
+        ("Energy baseline excess" if historical else "Energy wasted", metric("total_wasted_kwh", "kWh")),
+        ("Estimated CO2 reduction potential", metric("total_co2_saved_kg", "kg")),
     ]:
-        p(f"<b>{label}:</b> {val}")
+        p(f"{label}: {val}")
     sp()
 
     h("Formula Constants", 12)
     fc = audit_record["formula_constants"]
-    p(f"WATER_CO2_KG_PER_LITER = {fc['WATER_CO2_KG_PER_LITER']}")
-    p(f"ENERGY_CO2_KG_PER_KWH = {fc['ENERGY_CO2_KG_PER_KWH']}")
+    if historical:
+        p("Historical utility emissions withheld pending applicable documented factors.")
+        for resource in ("water", "energy"):
+            profile = (audit_record["payload"].get(resource) or {}).get("resource_profile") or {}
+            forecast = profile.get("forecast", {})
+            if forecast.get("status") == "available":
+                p(f"{resource.title()} forecast: {forecast['estimate']} {forecast['unit']} for {forecast['next_date']}.")
+    else:
+        p(f"WATER_CO2_KG_PER_LITER = {fc['WATER_CO2_KG_PER_LITER']}")
+        p(f"ENERGY_CO2_KG_PER_KWH = {fc['ENERGY_CO2_KG_PER_KWH']}")
     weights = fc["REGEN_SCORE_WEIGHTS"]
     p("RE:GEN Score weights: " + ", ".join(f"{k}={v}" for k, v in weights.items()))
     sp()
@@ -154,7 +163,7 @@ def build_pdf(audit_record: dict) -> bytes:
         sp()
 
     h("Tamper Evidence", 12)
-    p("<b>SHA-256 of payload:</b>")
+    p("SHA-256 of payload:")
     story.append(Paragraph(audit_record["payload_sha256"], mono))
     sp()
     p(audit_record["tamper_evidence_note"])

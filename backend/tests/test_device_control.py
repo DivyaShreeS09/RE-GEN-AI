@@ -34,7 +34,6 @@ class TestDeviceControlEndpoint:
     @pytest.fixture
     def client(self):
         os.environ["RATELIMIT_ENABLED"] = "false"
-        os.environ["DATABASE_URL"] = "sqlite:///./test_device.db"
         from main import app
         return TestClient(app)
 

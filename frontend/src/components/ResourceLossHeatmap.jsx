@@ -52,63 +52,30 @@ const RISK_COLOR = { critical: '#ef4444', high: '#f97316', medium: '#eab308', lo
 
 /* ── Build upload-mode zones from anomaly events ─────────────────── */
 function buildUploadZones(waterData, energyData) {
-  const zoneMap = {}
-
-  const addWater = (loc, severity, note) => {
-    if (!zoneMap[loc]) zoneMap[loc] = { name: loc, water: 'none', energy: 'none', waste: 'low', waterNote: 'No anomalies', energyNote: 'No data', wasteNote: 'Not analysed' }
-    const cur = RISK_ORDER[zoneMap[loc].water] || 0
-    if ((RISK_ORDER[severity] || 0) > cur) {
-      zoneMap[loc].water = severity
-      zoneMap[loc].waterNote = note
+  const zones = new Map()
+  for (const [resource, events] of [['water', waterData?.anomaly_events], ['energy', energyData?.anomaly_events]]) {
+    for (const event of events || []) {
+      const name = event.location || event.zone
+      const key = name && name !== 'Unspecified' ? name : 'Unattributed facility observations'
+      const zone = zones.get(key) || {
+        name: key, water: 'none', energy: 'none', waste: 'none', risk: 'none',
+        waterNote: 'No finding shown', energyNote: 'No finding shown', wasteNote: 'Not analysed', findings: [],
+      }
+      const severity = event.severity || 'medium'
+      const water = resource === 'water'
+      const amount = water ? event.estimated_waste_liters : event.wasted_kwh
+      const detail = amount == null ? 'Unquantified baseline exception' : `${amount} ${water ? 'L' : 'kWh'} above baseline`
+      if (RISK_ORDER[severity] > RISK_ORDER[zone[resource]]) {
+        zone[resource] = severity
+        zone[`${resource}Note`] = detail
+      }
+      if (RISK_ORDER[severity] > RISK_ORDER[zone.risk]) zone.risk = severity
+      zone.findings.push({ resource, detail, timestamp: event.timestamp || event.date, meter: event.meter_id,
+        basis: event.basis, status: event.evidence_status?.replaceAll('_', ' ') || 'baseline exception' })
+      zones.set(key, zone)
     }
   }
-
-  const addEnergy = (zone, severity, note) => {
-    if (!zoneMap[zone]) zoneMap[zone] = { name: zone, water: 'none', energy: 'none', waste: 'low', waterNote: 'No data', energyNote: 'No anomalies', wasteNote: 'Not analysed' }
-    const cur = RISK_ORDER[zoneMap[zone].energy] || 0
-    if ((RISK_ORDER[severity] || 0) > cur) {
-      zoneMap[zone].energy = severity
-      zoneMap[zone].energyNote = note
-    }
-  }
-
-  if (waterData?.anomaly_events?.length) {
-    waterData.anomaly_events.forEach(ev => {
-      const loc = ev.location || 'Water Zone'
-      const sev = ev.severity || 'medium'
-      const note = ev.liters_wasted
-        ? `${ev.liters_wasted.toFixed(0)} L anomalous flow`
-        : 'Anomaly detected'
-      addWater(loc, sev, note)
-    })
-  } else if (waterData?.status === 'analyzed') {
-    const loc = 'Main Water Zone'
-    const sev = waterData.severity || 'medium'
-    addWater(loc, sev, `${(waterData.total_wasted_liters || 0).toFixed(0)} L wasted`)
-  }
-
-  if (energyData?.anomaly_events?.length) {
-    energyData.anomaly_events.forEach(ev => {
-      const zone = ev.zone || ev.location || 'Energy Zone'
-      const sev = ev.severity || 'medium'
-      const note = ev.kwh_wasted
-        ? `${ev.kwh_wasted.toFixed(1)} kWh after-hours waste`
-        : 'After-hours anomaly'
-      addEnergy(zone, sev, note)
-    })
-  } else if (energyData?.status === 'analyzed') {
-    const zone = 'Main Energy Zone'
-    const sev = energyData.severity || 'medium'
-    addEnergy(zone, sev, `${(energyData.total_wasted_kwh || 0).toFixed(1)} kWh wasted`)
-  }
-
-  return Object.values(zoneMap).map(z => {
-    const wRisk = RISK_ORDER[z.water] || 0
-    const eRisk = RISK_ORDER[z.energy] || 0
-    const total = wRisk + eRisk
-    z.risk = total >= 7 ? 'critical' : total >= 5 ? 'high' : total >= 3 ? 'medium' : total >= 1 ? 'low' : 'none'
-    return z
-  })
+  return [...zones.values()]
 }
 
 function RiskCell({ level, note }) {
@@ -267,7 +234,7 @@ export default function ResourceLossHeatmap({ waterData, energyData, uploadResul
 
   const headingLabel = isUploadMode ? 'Resource Zone' : 'Campus Zone'
   const dataSourceNote = isUploadMode
-    ? `Zone risk derived from detected anomaly events in uploaded data. ${zonesWithData.length} zone${zonesWithData.length !== 1 ? 's' : ''} with anomalies.`
+    ? `Logical zones from uploaded observations. Baseline exceptions require investigation. ${zonesWithData.length} zone${zonesWithData.length !== 1 ? 's' : ''} with anomalies.`
     : 'Zone-level resource risk derived from simulated sensor data. Risk levels are agent-computed from anomaly frequency, volume, and cost impact.'
 
   // Upload mode with no anomaly zones found — show honest empty state
@@ -298,6 +265,19 @@ export default function ResourceLossHeatmap({ waterData, energyData, uploadResul
         </h2>
         <p className="text-slate-400 text-sm">{dataSourceNote}</p>
       </div>
+
+      {isUploadMode && sortedZones.map(zone => (
+        <details key={zone.name} className="glass-card p-4 mb-3">
+          <summary className="cursor-pointer text-sm text-white">{zone.name} · {zone.findings.length} observations</summary>
+          <ul className="mt-3 space-y-2 text-sm text-slate-400">
+            {zone.findings.slice(0, 25).map((finding, index) => <li key={index}>
+              {finding.timestamp} · {finding.resource} · {finding.meter ? `Meter ${finding.meter} · ` : ''}{finding.detail} · {finding.status}
+              {finding.basis && <p>{finding.basis}</p>}
+            </li>)}
+          </ul>
+          <a className="mt-3 inline-block text-cyan-400 text-sm" href="#action-plan">Review proposed investigation</a>
+        </details>
+      ))}
 
       {/* Summary row */}
       <div className="flex flex-wrap gap-4 mb-6">

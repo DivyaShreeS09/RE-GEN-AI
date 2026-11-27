@@ -378,8 +378,10 @@ function PostAnalysisHero({ uploadResult, dashData, processingTimeSec, onScan: _
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
                 <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>RE:GEN Score</span>
                 <span style={{ fontSize: 12.5, color: '#00ff88', fontWeight: 800 }}>
-                  {scoreBefore} → {scoreAfter}
-                  <span style={{ fontSize: 10, color: 'rgba(0,255,136,0.55)', marginLeft: 6 }}>post-action</span>
+                  {scoreBefore}
+                  {Number.isFinite(scoreAfter) && <> → {scoreAfter}
+                    <span style={{ fontSize: 10, color: 'rgba(0,255,136,0.55)', marginLeft: 6 }}>post-action</span>
+                  </>}
                 </span>
               </div>
             )}

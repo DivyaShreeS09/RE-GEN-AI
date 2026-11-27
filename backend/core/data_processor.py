@@ -6,6 +6,9 @@ Column detection is flexible: tries canonical names, then common synonyms.
 """
 
 import io
+import json
+import csv
+import re
 import logging
 from typing import Optional, Tuple
 
@@ -15,16 +18,16 @@ import pandas as pd
 # Column synonym maps
 # ---------------------------------------------------------------------------
 
-_DATE_COLS   = {"date", "Date", "timestamp", "Timestamp", "datetime", "Datetime", "time", "Time", "day"}
+_DATE_COLS   = {"date", "Date", "timestamp", "Timestamp", "reading_timestamp", "reading_date", "datetime", "Datetime", "time", "Time", "day"}
 _HOUR_COLS   = {"hour", "Hour", "hr", "Hr", "time_hour"}
 _W_USAGE     = {"usage_liters", "usage_l", "liters", "litres", "usage", "consumption",
-                "flow", "flow_liters", "water_usage", "volume", "quantity_liters", "amount_liters"}
-_W_LOCATION  = {"location", "Location", "building", "Building", "site", "zone", "Zone", "area", "Area", "block"}
+                "flow_liters", "water_usage", "volume", "quantity_liters", "amount_liters", "water_consumption", "consumption_liters", "consumption_kl", "consumption_m3", "cumulative_liters", "cumulative_m3", "water_counter", "flow_lpm", "flow_lps", "flow_m3_h", "reading", "meter_reading", "value"}
+_W_LOCATION  = {"location", "Location", "building", "building_id", "Building", "site", "facility", "department", "zone", "Zone", "area", "Area", "block"}
 _W_ANOMALY   = {"anomaly", "Anomaly", "is_anomaly", "flag", "Flag", "leak", "Leak", "alert"}
 
 _E_USAGE     = {"usage_kwh", "kwh", "kWh", "KWH", "energy", "Energy", "consumption",
-                "electricity", "power", "usage", "amount_kwh"}
-_E_ZONE      = {"zone", "Zone", "area", "Area", "building", "Building", "location", "department", "Department"}
+                "electricity", "usage", "amount_kwh", "energy_consumption", "consumption_kwh", "cumulative_kwh", "energy_counter", "power_kw", "power_w", "reading", "meter_reading", "value"}
+_E_ZONE      = {"zone", "Zone", "area", "Area", "building", "building_id", "Building", "location", "department", "Department"}
 _E_EQUIPMENT = {"equipment", "Equipment", "device", "Device", "type", "Type", "appliance"}
 _E_ANOMALY   = _W_ANOMALY
 
@@ -52,28 +55,76 @@ FUEL_EMISSION_FACTORS = {
 # ---------------------------------------------------------------------------
 
 def _find_col(df_cols: list, candidates: set) -> Optional[str]:
-    """Return the first df column that matches any candidate name (case-insensitive)."""
-    lower_map = {c.lower(): c for c in df_cols}
-    for cand in candidates:
-        if cand in df_cols:
-            return cand
-        if cand.lower() in lower_map:
-            return lower_map[cand.lower()]
-    return None
+    names = {c.casefold() for c in candidates}
+    matches = [column for column in df_cols if str(column).casefold() in names]
+    if len(matches) > 1:
+        raise ValueError("Ambiguous columns. Map or rename columns before analysis.")
+    return matches[0] if matches else None
 
 
-def _parse_bytes(content: bytes, filename: str) -> pd.DataFrame:
-    """Parse CSV or Excel bytes into a DataFrame."""
-    fname = filename.lower()
-    if fname.endswith(".xlsx") or fname.endswith(".xls"):
-        return pd.read_excel(io.BytesIO(content))
-    # Default: CSV
-    for enc in ("utf-8", "latin-1", "cp1252"):
+def _parse_bytes(content: bytes, filename: str, mapping: dict | None = None) -> pd.DataFrame:
+    import zipfile
+
+    if len(content) > 20 * 1024 * 1024:
+        raise ValueError("File exceeds 20 MB.")
+    limit = 50000
+    if filename.lower().endswith(".xlsx"):
+        with zipfile.ZipFile(io.BytesIO(content)) as archive:
+            members = archive.infolist()
+            if len(members) > 512 or sum(m.file_size for m in members) > 32 * 1024 * 1024:
+                raise ValueError("Workbook exceeds processing limits.")
+            from defusedxml.ElementTree import iterparse
+            from openpyxl.utils.cell import column_index_from_string
+            for member in members:
+                if not re.fullmatch(r"xl/worksheets/[^/]+\.xml", member.filename):
+                    continue
+                with archive.open(member) as sheet:
+                    for _, element in iterparse(sheet, events=("end",)):
+                        tag = element.tag.rsplit("}", 1)[-1]
+                        if tag in ("c", "dimension"):
+                            ref = element.get("r" if tag == "c" else "ref", "").split(":")[-1]
+                            coord = re.fullmatch(r"([A-Z]{1,3})([1-9][0-9]{0,6})", ref)
+                            if not coord or column_index_from_string(coord[1]) > 128 or int(coord[2]) > limit+1:
+                                raise ValueError("Worksheet dimensions exceed processing limits.")
+                        element.clear()
+        frame = pd.read_excel(io.BytesIO(content), nrows=limit + 1, engine="openpyxl")
+    elif filename.lower().endswith(".csv"):
         try:
-            return pd.read_csv(io.StringIO(content.decode(enc)))
-        except Exception:
-            continue
-    raise ValueError("Could not parse file as CSV or Excel.")
+            decoded = content.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            decoded = content.decode("latin-1")
+        reader = csv.reader(io.StringIO(decoded, newline=""), strict=True)
+        columns = next(reader, [])
+        if not 1 <= len(columns) <= 128 or len(set(columns)) != len(columns):
+            raise ValueError("Invalid or duplicate CSV columns.")
+        rows = []
+        for row in reader:
+            if not row:
+                continue
+            if len(row) != len(columns) or len(rows) >= limit or (len(rows)+1)*len(columns) > 1000000:
+                raise ValueError("Inconsistent rows or CSV processing limit exceeded.")
+            rows.append(row)
+        frame = pd.DataFrame(rows, columns=columns)
+    elif filename.lower().endswith(".json"):
+        if len(content) > 2 * 1024 * 1024:
+            raise ValueError("JSON exceeds 2 MB.")
+        records = json.loads(content)
+        if (not isinstance(records, list) or len(records) > limit or any(
+                not isinstance(r, dict) or len(r) > 128 or any(isinstance(v, (dict, list)) for v in r.values()) for r in records)):
+            raise ValueError("Expected an array of flat observation records.")
+        frame = pd.DataFrame(records)
+    else:
+        raise ValueError("Expected CSV, XLSX or JSON.")
+    if frame.empty or len(frame) > limit or len(frame.columns) > 128:
+        raise ValueError("Expected 1–50000 data rows and at most 128 columns.")
+    if mapping:
+        if not isinstance(mapping, dict) or not set(mapping) <= set(frame.columns) or any(
+                not isinstance(v, str) or not 1 <= len(v) <= 100 for v in mapping.values()):
+            raise ValueError("Invalid column mapping.")
+        frame = frame.rename(columns=mapping)
+        if not frame.columns.is_unique:
+            raise ValueError("Column mapping has duplicate destinations.")
+    return frame
 
 
 def _truthy(val) -> bool:
@@ -88,11 +139,222 @@ def _truthy(val) -> bool:
 # Water data
 # ---------------------------------------------------------------------------
 
+UNIT_CONVERSION = {"L":("L",1), "mL":("L",0.001), "kL":("L",1000), "m3":("L",1000),
+                  "kWh":("kWh",1), "Wh":("kWh",0.001), "kW":("kW",1), "W":("kW",0.001)}
+
+
+_MEASUREMENT_TYPES = {
+    "interval": "interval", "interval_consumption": "interval", "consumption": "interval",
+    "cumulative": "counter", "counter": "counter", "cumulative_meter": "counter",
+    "water_counter": "counter", "energy_counter": "counter",
+    "instantaneous": "rate", "flow": "rate", "power": "rate",
+    "daily": "daily", "daily_total": "daily", "monthly": "monthly", "monthly_total": "monthly",
+}
+
+
+def _resource_rows(frame, names):
+    column = _find_col(list(frame.columns), {"resource", "resource_type"})
+    return frame[frame[column].astype(str).str.strip().str.casefold().isin(names)].copy() if column else frame.copy()
+
+
+def _observation_fields(frame, out, info, date_col, hour_col, usage_col, metric, units):
+    cols = list(frame.columns)
+    header = str(usage_col).casefold()
+    identified = "counter" if "cumulative" in header or header.endswith("_counter") else (
+        "rate" if header.startswith(("power_", "flow_lp", "flow_m3_")) else None)
+    kind_col = _find_col(cols, {"reading_type", "measurement_type"})
+    kinds = set(frame[kind_col].astype(str).str.strip().str.casefold().map(_MEASUREMENT_TYPES)) if kind_col else set()
+    if (kind_col and (len(kinds) != 1 or None in kinds or any(pd.isna(value) for value in kinds))) or (
+            identified and kinds and identified not in kinds):
+        info["errors"].append("Use one consistent measurement type per resource file.")
+    kind = next(iter(kinds), identified or "interval")
+    if not kind_col and header in {"reading", "meter_reading", "value"}:
+        info["errors"].append("Specify reading_type: interval, cumulative, instantaneous, daily or monthly.")
+    if info["errors"]:
+        info["valid"] = False
+        return
+    info["measurement_type"] = kind
+    if not kind_col and not identified:
+        info["warnings"].append("Usage columns are treated as interval quantities. Supply a reading type for cumulative, instantaneous or billing records.")
+    canonical = "L" if metric == "usage_liters" else "kWh"
+    scales = {key.casefold(): factor for key, (target, factor) in UNIT_CONVERSION.items() if target == canonical}
+    scales.update({alias: 1 for alias in units})
+    scales.update({"m³": 1000, "kilolitres": 1000, "kiloliters": 1000} if canonical == "L" else {})
+    if kind == "rate":
+        scales = {"l/min": 60, "lpm": 60, "l/s": 3600, "lps": 3600, "m3/h": 1000, "m³/h": 1000,
+                  "l/h": 1} if canonical == "L" else {"kw": 1, "w": 0.001}
+    hinted = {"flow_lpm":"lpm", "flow_lps":"lps", "flow_m3_h":"m3/h", "power_kw":"kw", "power_w":"w",
+              "consumption_m3":"m3", "cumulative_m3":"m3", "consumption_kl":"kl", "cumulative_liters":"l",
+              "cumulative_kwh":"kwh"}
+    unit_col = _find_col(cols, {"unit", "units", "measurement_unit"})
+    supplied = frame[unit_col].astype(str).str.casefold().str.strip() if unit_col else hinted.get(header, canonical.casefold())
+    factors = supplied.map(scales) if unit_col else scales.get(supplied)
+    if factors is None or unit_col and factors.isna().any():
+        info["errors"].append("Measurement unit is incompatible or missing for this reading type.")
+        info["valid"] = False
+        return
+    raw = frame[usage_col]
+    present = raw.notna() & raw.astype(str).str.strip().ne("")
+    numeric = pd.to_numeric(raw, errors="coerce")
+    if not numeric[present].between(0, 1e12).all() or not present.any():
+        info["errors"].append("Provide at least one finite, nonnegative measurement. Leave unavailable cells blank.")
+        info["valid"] = False
+        return
+    info["missing_values"] = int((~present).sum())
+    if info["missing_values"]:
+        info["warnings"].append("Blank measurements were excluded. No values were filled.")
+    out[metric] = numeric * factors
+    if not out[metric][present].between(0, 1e12).all():
+        info["errors"].append("Normalized measurement exceeds the supported range.")
+    if date_col:
+        def local_time(raw_value):
+            if isinstance(raw_value, (int, float)):
+                raise ValueError("Use a calendar timestamp")
+            if isinstance(raw_value, str):
+                ambiguous = re.match(r"^([0-9]{1,2})[/-]([0-9]{1,2})[/-][0-9]{4}(?:\D|$)", raw_value.strip())
+                if ambiguous and all(1 <= int(part) <= 12 for part in ambiguous.groups()):
+                    raise ValueError("Ambiguous calendar date")
+            value = pd.to_datetime(raw_value, errors="raise")
+            if pd.isna(value):
+                raise ValueError("Missing timestamp")
+            return value.tz_localize("Asia/Kolkata") if value.tzinfo is None else value.tz_convert("Asia/Kolkata")
+        try:
+            parsed = frame[date_col].map(local_time)
+        except (ValueError, TypeError, OverflowError):
+            info["errors"].append("Provide valid observation timestamps; use ISO dates for unambiguous day/month order.")
+            info["valid"] = False
+            return
+        has_time = frame[date_col].astype(str).str.contains(r"\d:\d")
+        out["date"] = parsed.dt.strftime("%Y-%m-%d")
+        out["hour"] = parsed.dt.hour.where(has_time) if kind not in {"daily", "monthly"} else None
+        info["timezone"] = "Asia/Kolkata"
+    else:
+        has_time = pd.Series(False, index=frame.index)
+        out["date"], out["hour"] = "Unknown", None
+        info["warnings"].append("Reporting dates unavailable.")
+    if hour_col:
+        hours = pd.to_numeric(frame[hour_col], errors="coerce")
+        if not (hours.between(0, 23) & (hours % 1 == 0)).all() or kind in {"daily", "monthly"}:
+            info["errors"].append("Use a valid 0–23 hour only for interval observations.")
+        else:
+            out["hour"] = hours.astype(int)
+            if date_col:
+                if not (parsed.dt.hour[has_time] == hours[has_time]).all():
+                    info["errors"].append("Hour conflicts with the timestamp.")
+                parsed = parsed + pd.to_timedelta(hours.where(~has_time, 0), unit="h")
+    if date_col:
+        out["timestamp"] = parsed.dt.tz_convert("UTC")
+    device_col = _find_col(cols, {"device_id", "meter_id", "meter", "meter_identifier", "sensor_id"})
+    if device_col:
+        out["device_id"] = frame[device_col].fillna("").astype(str).str.strip()
+        if out["device_id"].eq("").any():
+            info["errors"].append("Provide a meter identifier on every row when a meter column is supplied.")
+    for context in ("scheduled", "occupied", "estimated"):
+        source = _find_col(cols, {context, f"is_{context}"})
+        if source:
+            labels = frame[source].astype(str).str.strip().str.casefold()
+            out[context] = labels.map({"true":True, "1":True, "yes":True, "false":False, "0":False, "no":False})
+            if (frame[source].notna() & labels.ne("") & out[context].isna()).any():
+                info["errors"].append(f"Use yes or no for {context} when known.")
+    interval_col = _find_col(cols, {"interval_seconds", "duration_seconds"})
+    if interval_col and kind == "interval":
+        duration = pd.to_numeric(frame[interval_col], errors="coerce")
+        if not duration.between(1, 86400).all():
+            info["errors"].append("Interval duration must be 1 to 86400 seconds.")
+        out["interval_seconds"] = duration
+    rollover_col = _find_col(cols, {"counter_rollover", "rollover_value"})
+    rollover_ref = _find_col(cols, {"rollover_reference"})
+    if rollover_col or rollover_ref:
+        if kind != "counter" or not rollover_col or not rollover_ref:
+            info["errors"].append("Document counter rollover with its limit and reference.")
+        else:
+            out["counter_rollover"] = pd.to_numeric(frame[rollover_col], errors="coerce") * factors
+            out["rollover_reference"] = frame[rollover_ref].fillna("").astype(str).str.strip()
+            if not (out["counter_rollover"].between(1, 1e12).all() and out["rollover_reference"].ne("").all()
+                    and (out["counter_rollover"][present] > out[metric][present]).all()):
+                info["errors"].append("Rollover limits must exceed observed readings and have a documented reference.")
+    out["reading_type"] = kind
+    if kind in {"daily", "monthly"} and not date_col:
+        info["errors"].append("Provide the observation date for daily or monthly measurements.")
+    if kind in {"counter", "rate"} and (not date_col or not (has_time.all() or hour_col)):
+        info["errors"].append("Counter and instantaneous readings require timestamped endpoints for each meter.")
+    info["valid"] = not info["errors"]
+
+
+def _normalize_intervals(frame, out, info, metric, zone):
+    if out.empty:
+        info["valid"] = False
+        info["errors"].append("No rows match the requested resource.")
+        return out
+    kind = info["measurement_type"]
+    grouping = ["device_id"] if "device_id" in out else [zone]
+    if "device_id" in out and (out.groupby("device_id")[zone].nunique() > 1).any():
+        info["errors"].append("A meter appears in multiple zones. Split the observations by meter assignment.")
+    dedupe = [*grouping, "timestamp"]
+    if "timestamp" in out:
+        raw_duplicate = frame.duplicated()
+        info["duplicates_removed"] = int(raw_duplicate.sum())
+        out = out.loc[~raw_duplicate].sort_values("timestamp", kind="stable").copy()
+        if out.duplicated(dedupe).any():
+            info["errors"].append("Conflicting readings share a device timestamp. Supply distinct meter IDs or resolve conflicts.")
+        if info["duplicates_removed"]:
+            info["warnings"].append("Identical source rows were counted once.")
+    if kind in {"daily", "monthly"} and "timestamp" in out:
+        dates = out["date"].str.slice(stop=7) if kind == "monthly" else out["date"]
+        if out.assign(period_key=dates).duplicated([*grouping, "period_key"]).any():
+            info["errors"].append("Multiple observations for the same meter and reporting period.")
+    if kind in {"counter", "rate"} and not info["errors"]:
+        groups = out.groupby(grouping, dropna=False)
+        elapsed = groups["timestamp"].diff().dt.total_seconds()
+        nominal = elapsed.groupby(out[grouping[0]]).transform("median")
+        estimated = out.get("estimated", pd.Series(False, index=out.index)).eq(True)
+        earlier_estimated = estimated.groupby(out[grouping[0]]).shift().eq(True)
+        previous = groups[metric].shift()
+        delta = out[metric] - previous
+        maximum_gap = nominal.mul(2).clip(upper=86400)
+        valid = elapsed.gt(0) & elapsed.le(maximum_gap) & previous.notna() & out[metric].notna()
+        resets = valid & delta.lt(0) if kind == "counter" else pd.Series(False, index=out.index)
+        if "counter_rollover" in out:
+            modulus = out["counter_rollover"]
+            rollover = (resets & modulus.eq(groups["counter_rollover"].shift())
+                        & out["rollover_reference"].eq(groups["rollover_reference"].shift())
+                        & previous.ge(modulus * 0.9) & out[metric].le(modulus * 0.1))
+            delta = delta.where(~rollover, delta + modulus)
+            resets = resets & ~rollover
+            info["counter_rollovers"] = int(rollover.sum())
+            if info["counter_rollovers"]:
+                info["warnings"].append("Boundary crossings used the documented meter rollover value.")
+        if kind == "rate" and metric == "usage_kwh":
+            measured = out.loc[~estimated, metric].dropna()
+            info["peak_observed_demand_kw"] = float(measured.max()) if not measured.empty and len(groups) == 1 else None
+        for context in ("scheduled", "occupied"):
+            if context in out:
+                out[context] = out[context].where(out[context].eq(groups[context].shift()))
+        out["sample_value"] = out[metric]
+        out["interval_seconds"] = elapsed
+        out["estimated"] = estimated | earlier_estimated | (kind == "rate")
+        out[metric] = ((out[metric] + previous) / 2 * elapsed / 3600 if kind == "rate" else delta).where(valid & ~resets)
+        info["counter_resets"] = int(resets.sum())
+        info["intervals_excluded"] = int((elapsed.notna() & (~valid | resets)).sum())
+        if kind == "rate":
+            info["warnings"].append("Totals use trapezoidal integration between observed endpoints and are estimates.")
+        if info["intervals_excluded"]:
+            info["warnings"].append("Unsupported gaps, missing endpoints and counter resets were excluded from totals.")
+    out = out.dropna(subset=[metric])
+    if not out[metric].between(0, 1e12).all():
+        info["errors"].append("Computed intervals exceed the supported range.")
+    if out.empty:
+        info["errors"].append("No defensible consumption intervals. Provide additional comparable readings.")
+    info["valid"] = not info["errors"]
+    return out
+
+
 def validate_water_df(df: pd.DataFrame) -> Tuple[pd.DataFrame, dict]:
     """
     Validate and normalise an uploaded water DataFrame.
     Returns (normalised_df, validation_info).
     """
+    df = _resource_rows(df, {"water"})
     cols = list(df.columns)
     info = {"dataset": "water", "valid": True, "errors": [], "warnings": [], "detected_columns": {}}
 
@@ -116,31 +378,11 @@ def validate_water_df(df: pd.DataFrame) -> Tuple[pd.DataFrame, dict]:
 
     # Build normalised frame
     out = pd.DataFrame()
-    out["usage_liters"] = pd.to_numeric(df[usage_col], errors="coerce").fillna(0)
+    _observation_fields(df, out, info, date_col, hour_col, usage_col, "usage_liters", {"l", "liter", "litre", "liters", "litres"})
+    if not info["valid"]:
+        return df, info
 
-    # Date column
-    if date_col:
-        out["date"] = df[date_col].astype(str)
-    else:
-        out["date"] = "2024-01-15"
-        info["warnings"].append("No date column found — using placeholder date.")
-
-    # Hour column — derive from datetime if absent
-    if hour_col:
-        out["hour"] = pd.to_numeric(df[hour_col], errors="coerce").fillna(0).astype(int)
-    elif date_col:
-        try:
-            parsed = pd.to_datetime(df[date_col], errors="coerce")
-            out["hour"] = parsed.dt.hour.fillna(0).astype(int)
-            info["warnings"].append("Hour derived from datetime column.")
-        except Exception:
-            out["hour"] = 0
-            info["warnings"].append("Could not derive hour — using 0.")
-    else:
-        out["hour"] = 0
-        info["warnings"].append("No hour column — using 0.")
-
-    out["location"] = df[loc_col].astype(str) if loc_col else "Main Building"
+    out["location"] = df[loc_col].fillna("Unspecified").astype(str) if loc_col else "Unspecified"
 
     if anom_col:
         out["anomaly"] = df[anom_col].apply(_truthy)
@@ -149,6 +391,13 @@ def validate_water_df(df: pd.DataFrame) -> Tuple[pd.DataFrame, dict]:
         info["warnings"].append("No anomaly column — anomalies will be auto-detected.")
 
     # Stats
+    out = _normalize_intervals(df, out, info, "usage_liters", "location")
+    if not info["valid"]:
+        return df, info
+    if "timestamp" in out:
+        out["timestamp"] = out["timestamp"].astype(str)
+    out.attrs["validation"] = info
+
     info["record_count"]       = len(out)
     info["date_range"]         = f"{out['date'].min()} to {out['date'].max()}"
     info["buildings_detected"] = out["location"].unique().tolist()
@@ -159,22 +408,12 @@ def validate_water_df(df: pd.DataFrame) -> Tuple[pd.DataFrame, dict]:
     return out, info
 
 
-def auto_detect_anomalies_water(df: pd.DataFrame) -> pd.DataFrame:
-    """Set anomaly=True for night-hour readings > 4× baseline, if not pre-labeled."""
-    night_hours = list(range(0, 6))
-    night_mask  = df["hour"].isin(night_hours)
-    night_vals  = df.loc[night_mask & ~df["anomaly"], "usage_liters"]
-    baseline    = float(night_vals.mean()) if len(night_vals) > 0 else 12.0
-    df = df.copy()
-    df.loc[night_mask, "anomaly"] = df.loc[night_mask, "usage_liters"] > baseline * 4
-    return df
-
-
 # ---------------------------------------------------------------------------
 # Energy data
 # ---------------------------------------------------------------------------
 
 def validate_energy_df(df: pd.DataFrame) -> Tuple[pd.DataFrame, dict]:
+    df = _resource_rows(df, {"energy", "electricity"})
     cols = list(df.columns)
     info = {"dataset": "energy", "valid": True, "errors": [], "warnings": [], "detected_columns": {}}
 
@@ -198,34 +437,25 @@ def validate_energy_df(df: pd.DataFrame) -> Tuple[pd.DataFrame, dict]:
     }
 
     out = pd.DataFrame()
-    out["usage_kwh"] = pd.to_numeric(df[usage_col], errors="coerce").fillna(0)
+    _observation_fields(df, out, info, date_col, hour_col, usage_col, "usage_kwh", {"kwh"})
+    if not info["valid"]:
+        return df, info
 
-    if date_col:
-        out["date"] = df[date_col].astype(str)
-    else:
-        out["date"] = "2024-01-15"
-        info["warnings"].append("No date column — using placeholder.")
-
-    if hour_col:
-        out["hour"] = pd.to_numeric(df[hour_col], errors="coerce").fillna(0).astype(int)
-    elif date_col:
-        try:
-            parsed = pd.to_datetime(df[date_col], errors="coerce")
-            out["hour"] = parsed.dt.hour.fillna(0).astype(int)
-            info["warnings"].append("Hour derived from datetime column.")
-        except Exception:
-            out["hour"] = 0
-    else:
-        out["hour"] = 0
-
-    out["zone"]      = df[zone_col].astype(str)  if zone_col  else "Main Zone"
-    out["equipment"] = df[equip_col].astype(str) if equip_col else "Mixed"
+    out["zone"]      = df[zone_col].fillna("Unspecified").astype(str) if zone_col else "Unspecified"
+    out["equipment"] = df[equip_col].fillna("Unspecified").astype(str) if equip_col else "Unspecified"
 
     if anom_col:
         out["anomaly"] = df[anom_col].apply(_truthy)
     else:
         out["anomaly"] = False
         info["warnings"].append("No anomaly column — anomalies will be auto-detected.")
+
+    out = _normalize_intervals(df, out, info, "usage_kwh", "zone")
+    if not info["valid"]:
+        return df, info
+    if "timestamp" in out:
+        out["timestamp"] = out["timestamp"].astype(str)
+    out.attrs["validation"] = info
 
     info["record_count"]      = len(out)
     info["date_range"]        = f"{out['date'].min()} to {out['date'].max()}"
@@ -235,17 +465,6 @@ def validate_energy_df(df: pd.DataFrame) -> Tuple[pd.DataFrame, dict]:
     info["anomaly_pre_labeled"] = bool(anom_col)
 
     return out, info
-
-
-def auto_detect_anomalies_energy(df: pd.DataFrame) -> pd.DataFrame:
-    """Flag after-hours readings > threshold as anomalies, if not pre-labeled."""
-    after_hours = list(range(0, 6)) + [22, 23]
-    ah_mask     = df["hour"].isin(after_hours)
-    ah_vals     = df.loc[ah_mask & ~df["anomaly"], "usage_kwh"]
-    baseline    = float(ah_vals.mean()) if len(ah_vals) > 0 else 2.5
-    df = df.copy()
-    df.loc[ah_mask, "anomaly"] = df.loc[ah_mask, "usage_kwh"] > baseline * 3.5
-    return df
 
 
 # ---------------------------------------------------------------------------
@@ -268,34 +487,31 @@ def validate_fuel_df(df: pd.DataFrame) -> Tuple[dict, dict]:
         info["errors"].append("No fuel quantity column found. Expected: quantity, liters, consumption, usage.")
         return {}, info
 
-    total_co2   = 0.0
+    if not type_col:
+        info.update(valid=False, errors=["Fuel type and compatible units are required."])
+        return {}, info
+    unit_col = _find_col(cols, _FUEL_UNIT)
+    breakdown = {}
+    total_co2 = 0.0
     total_liters = 0.0
-    # breakdown: { ftype: { liters, co2_kg, emission_factor } }
-    breakdown   = {}
-
-    if type_col:
-        for _, row in df.iterrows():
-            ftype  = str(row[type_col]).strip().lower()
-            qty    = float(str(row[qty_col]).replace(",", "")) if pd.notna(row[qty_col]) else 0
-            factor = FUEL_EMISSION_FACTORS.get(ftype, 2.5)
-            co2    = qty * factor
-            total_co2    += co2
-            total_liters += qty
-            if ftype not in breakdown:
-                breakdown[ftype] = {"liters": 0.0, "co2_kg": 0.0, "emission_factor": factor}
-            breakdown[ftype]["liters"] += qty
-            breakdown[ftype]["co2_kg"] += co2
-
-        # Round all values
-        for k in breakdown:
-            breakdown[k]["liters"] = round(breakdown[k]["liters"], 2)
-            breakdown[k]["co2_kg"] = round(breakdown[k]["co2_kg"], 2)
-    else:
-        total_qty   = pd.to_numeric(df[qty_col], errors="coerce").fillna(0).sum()
-        total_liters = float(total_qty)
-        total_co2   = total_liters * 2.5
-        info["warnings"].append("No fuel type column found — using generic emission factor (2.5 kg CO₂/unit).")
-        breakdown["unknown"] = {"liters": round(total_liters, 2), "co2_kg": round(total_co2, 2), "emission_factor": 2.5}
+    for _, row in df.iterrows():
+        fuel = str(row[type_col]).strip().lower()
+        factor = FUEL_EMISSION_FACTORS.get(fuel)
+        unit = {"coal": "kg", "cng": "kg", "natural gas": "m3"}.get(fuel, "l")
+        supplied = str(row[unit_col]).strip().lower() if unit_col else (
+            "l" if str(qty_col).lower() in ("liters", "litres", "quantity_liters") else "")
+        supplied = {"liters": "l", "litres": "l", "m³": "m3"}.get(supplied, supplied)
+        qty = pd.to_numeric(row[qty_col], errors="coerce")
+        if factor is None or supplied != unit or not 0 <= qty < float("inf"):
+            info.update(valid=False, errors=["Unknown fuel, incompatible unit or invalid fuel quantity."])
+            return {}, info
+        entry = breakdown.setdefault(fuel, {"quantity": 0.0, "unit": unit, "co2_kg": 0.0, "emission_factor": factor})
+        entry["quantity"] += float(qty)
+        entry["co2_kg"] += float(qty) * factor
+        total_co2 += float(qty) * factor
+        if unit == "l":
+            total_liters += float(qty)
+            entry["liters"] = entry["quantity"]
 
     info["record_count"] = len(df)
 
@@ -320,46 +536,20 @@ _DATASET_WEIGHTS = {
     "occupancy": 0.10,
 }
 
-_CONFIDENCE_PENALTIES = {
-    "water":   0.20,
-    "energy":  0.20,
-    "waste":   0.08,
-    "fuel":    0.08,
-    "occupancy": 0.04,
-}
-
-
 def compute_coverage(available_datasets: list) -> dict:
-    """
-    Given a list of available dataset names, compute coverage %, confidence %,
-    and mission readiness %.
-    """
-    weighted_coverage = sum(
-        _DATASET_WEIGHTS.get(d, 0) for d in available_datasets
-    )
-    coverage_pct = round(weighted_coverage * 100, 1)
-
-    # Confidence starts at 100% and drops for each missing high-value dataset
-    confidence = 1.0
-    for ds, penalty in _CONFIDENCE_PENALTIES.items():
-        if ds not in available_datasets:
-            confidence -= penalty
-    confidence_pct = round(max(0, confidence) * 100, 1)
-
-    # Mission readiness: blend of coverage and confidence
-    readiness_pct = round((coverage_pct * 0.6 + confidence_pct * 0.4), 1)
-
+    coverage_pct = round(100 * sum(_DATASET_WEIGHTS.get(d, 0) for d in set(available_datasets)), 1)
     missing = [ds for ds in _DATASET_WEIGHTS if ds not in available_datasets]
 
     return {
         "available_datasets":  available_datasets,
         "missing_datasets":    missing,
         "data_coverage_pct":   coverage_pct,
-        "analysis_confidence_pct": confidence_pct,
-        "mission_readiness_pct":   readiness_pct,
+        "analysis_confidence_pct": None,
+        "mission_readiness_pct": coverage_pct,
+        "weights": _DATASET_WEIGHTS,
         "carbon_source":       "Automatic — derived from uploaded resource data",
         "note": (
-            "Analysis confidence decreases when high-value datasets (water, energy) are absent. "
+            "Coverage is the weighted share of supplied datasets. "
             "All present datasets are analysed fully. Missing datasets are skipped and documented."
         ),
     }
@@ -369,133 +559,18 @@ def compute_coverage(available_datasets: list) -> dict:
 # Manual entry helpers
 # ---------------------------------------------------------------------------
 
-_PERIOD_TO_WEEKLY_WATER = {
-    "hourly":  24 * 7,       # 1 L/hr  → 168 L/week
-    "daily":   7,            # 1 L/day → 7 L/week
-    "weekly":  1,            # direct
-    "monthly": 12 / 52,      # 1 L/mo  → 12/52 L/week ≈ 0.231
-}
-
-_PERIOD_TO_WEEKLY_ENERGY = _PERIOD_TO_WEEKLY_WATER
+PERIOD_DAYS = {"hourly": 1 / 24, "daily": 1, "weekly": 7, "monthly": 30}
 
 
-def _deterministic_jitter(day: int, hour: int, scale: float = 0.08) -> float:
-    """Return a small deterministic variation based on day+hour seed (no random)."""
-    # Simple deterministic hash — avoids randomness while adding realistic variation
-    seed = (day * 31 + hour * 7 + day * hour) % 100
-    return 1.0 + (seed / 100.0 - 0.5) * scale * 2
+def build_water_df_from_manual(value: float, period: str = "weekly", location: str = "Unspecified"):
+    return pd.DataFrame([{"usage_liters": value, "location": location, "anomaly": False,
+                          "hour": None, "date": None}])
 
 
-def build_water_df_from_manual(
-    value: float,
-    period: str = "weekly",
-    location: str = "Main Building",
-) -> pd.DataFrame:
-    """
-    Build a synthetic 7-day hourly water DataFrame from an aggregate value.
-    Applies realistic weekday/weekend demand curves with morning, lunch, and
-    evening peaks. All values are deterministic — no random numbers used.
-    `period` can be 'hourly', 'daily', 'weekly', or 'monthly'.
-    """
-    multiplier = _PERIOD_TO_WEEKLY_WATER.get(period, 1)
-    weekly_liters = value * multiplier
+def build_energy_df_from_manual(value: float, period: str = "weekly", zone: str = "Unspecified"):
+    return pd.DataFrame([{"usage_kwh": value, "zone": zone, "equipment": "Unspecified",
+                          "anomaly": False, "hour": None, "date": None}])
 
-    # Weekday diurnal profile — morning peak (7–9), lunch (12–13), evening (17–19)
-    _WEEKDAY_WATER = [
-        0.40, 0.35, 0.28, 0.25, 0.30, 0.55,   # 0–5  AM: very low night flow
-        1.20, 3.20, 3.80, 3.40, 3.10, 2.70,   # 6–11 AM: morning peak
-        3.00, 3.50, 2.80, 2.60, 2.50, 3.20,   # 12–17: lunch peak + afternoon
-        2.80, 2.20, 1.60, 1.20, 0.90, 0.65,   # 18–23: evening wind-down
-    ]
-    # Weekend profile — flatter, slightly later start, lower overall
-    _WEEKEND_WATER = [
-        0.35, 0.30, 0.25, 0.22, 0.28, 0.50,
-        0.90, 2.10, 2.80, 3.00, 2.90, 2.60,
-        2.80, 3.10, 2.70, 2.50, 2.40, 2.60,
-        2.30, 1.90, 1.40, 1.10, 0.85, 0.60,
-    ]
-
-    # Weekday total weight / weekend total weight — for balanced weekly total
-    wd_sum = sum(_WEEKDAY_WATER) * 5
-    we_sum = sum(_WEEKEND_WATER) * 2
-    total_weight = wd_sum + we_sum
-
-    rows = []
-    for day in range(7):
-        date_str = f"2024-01-{15 + day:02d}"
-        is_weekend = day >= 5  # day 5=Sat, 6=Sun
-        profile    = _WEEKEND_WATER if is_weekend else _WEEKDAY_WATER
-
-        for hour, weight in enumerate(profile):
-            # Scale to weekly total; apply small deterministic jitter
-            jitter = _deterministic_jitter(day, hour, 0.06)
-            liters = (weight / total_weight) * weekly_liters * jitter
-            rows.append({
-                "date":         date_str,
-                "hour":         hour,
-                "usage_liters": round(max(0.0, liters), 1),
-                "location":     location,
-                "anomaly":      False,
-            })
-    return pd.DataFrame(rows)
-
-
-def build_energy_df_from_manual(
-    value: float,
-    period: str = "weekly",
-    zone: str = "Main Zone",
-) -> pd.DataFrame:
-    """
-    Build a synthetic 7-day hourly energy DataFrame from an aggregate value.
-    Applies realistic weekday/weekend demand curves with morning ramp, midday
-    plateau, and after-hours base load. All values are deterministic.
-    `period` can be 'hourly', 'daily', 'weekly', or 'monthly'.
-    """
-    multiplier = _PERIOD_TO_WEEKLY_ENERGY.get(period, 1)
-    weekly_kwh = value * multiplier
-
-    # Weekday energy profile — ramps up at 7, plateau 9–17, drops after 18
-    _WEEKDAY_ENERGY = [
-        1.0, 0.9, 0.8, 0.8, 0.9, 1.2,    # 0–5  AM: base load / standby
-        2.0, 5.5, 9.0, 10.0, 10.0, 9.5,  # 6–11 AM: morning ramp + peak
-        9.0, 9.0, 8.5, 8.5, 8.0, 6.5,    # 12–17: peak + afternoon
-        5.0, 3.8, 2.8, 2.2, 1.7, 1.3,    # 18–23: wind-down
-    ]
-    # Weekend profile — lower peak, later start, higher night base (HVAC continues)
-    _WEEKEND_ENERGY = [
-        1.2, 1.0, 0.9, 0.8, 0.9, 1.1,
-        1.5, 3.2, 5.5, 6.5, 6.5, 6.0,
-        6.0, 6.0, 5.5, 5.5, 5.0, 4.2,
-        3.5, 2.8, 2.2, 1.8, 1.5, 1.3,
-    ]
-
-    wd_sum = sum(_WEEKDAY_ENERGY) * 5
-    we_sum = sum(_WEEKEND_ENERGY) * 2
-    total_weight = wd_sum + we_sum
-
-    rows = []
-    for day in range(7):
-        date_str   = f"2024-01-{15 + day:02d}"
-        is_weekend = day >= 5
-        profile    = _WEEKEND_ENERGY if is_weekend else _WEEKDAY_ENERGY
-
-        for hour, weight in enumerate(profile):
-            jitter = _deterministic_jitter(day, hour, 0.05)
-            kwh    = (weight / total_weight) * weekly_kwh * jitter
-            rows.append({
-                "date":      date_str,
-                "hour":      hour,
-                "usage_kwh": round(max(0.0, kwh), 2),
-                "zone":      zone,
-                "equipment": "Mixed",
-                "anomaly":   False,
-            })
-    return pd.DataFrame(rows)
-
-
-# ---------------------------------------------------------------------------
-# Skipped agent result stubs
-# ---------------------------------------------------------------------------
 
 def detect_analysis_level(df=None, is_manual: bool = False) -> dict:
     """
@@ -514,11 +589,10 @@ def detect_analysis_level(df=None, is_manual: bool = False) -> dict:
             "level": 1,
             "code": "level1",
             "label": "Basic Sustainability Assessment",
-            "confidence_range": "Low–Medium",
+            "confidence_range": None,
             "anomaly_detection_available": False,
             "reasoning": (
-                "Manual entry — a synthetic consumption profile is generated for "
-                "estimation purposes only. Anomaly detection, leak detection, and "
+                "Manual entry provides a single aggregate. Anomaly detection, leak detection, and "
                 "predictive maintenance require actual operational logs with "
                 "time-series resolution."
             ),
@@ -526,14 +600,16 @@ def detect_analysis_level(df=None, is_manual: bool = False) -> dict:
 
     n_records    = len(df)
     unique_hours = int(df["hour"].nunique()) if "hour" in df.columns else 1
-    unique_dates = int(df["date"].nunique()) if "date" in df.columns else 1
+    dates = pd.to_datetime(df["date"], errors="coerce", utc=True).dt.normalize() if "date" in df else None
+    unique_dates = int(dates.nunique()) if dates is not None else 0
+    hourly_days = df.groupby(dates)["hour"].nunique() if dates is not None and "hour" in df else pd.Series(dtype=int)
 
-    if unique_hours >= 12 and unique_dates >= 3 and n_records >= 48:
+    if (hourly_days >= 12).sum() >= 3 and n_records >= 48:
         return {
             "level": 3,
             "code": "level3",
             "label": "Advanced AI Analysis",
-            "confidence_range": "High–Very High",
+            "confidence_range": None,
             "anomaly_detection_available": True,
             "reasoning": (
                 f"Hourly operational logs — {n_records:,} records across "
@@ -546,7 +622,7 @@ def detect_analysis_level(df=None, is_manual: bool = False) -> dict:
             "level": 2,
             "code": "level2",
             "label": "Operational Analysis",
-            "confidence_range": "Medium–High",
+            "confidence_range": None,
             "anomaly_detection_available": False,
             "reasoning": (
                 f"Daily/weekly operational data — {n_records} records across {unique_dates} days. "
@@ -559,7 +635,7 @@ def detect_analysis_level(df=None, is_manual: bool = False) -> dict:
             "level": 1,
             "code": "level1",
             "label": "Basic Sustainability Assessment",
-            "confidence_range": "Low–Medium",
+            "confidence_range": None,
             "anomaly_detection_available": False,
             "reasoning": (
                 f"Limited data — {n_records} record(s) across {unique_dates} day(s). "

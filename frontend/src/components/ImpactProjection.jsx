@@ -1,10 +1,9 @@
+import { useState } from 'react'
+import { DEMO_WATER_RATE, DEMO_ENERGY_RATE, DEMO_GRID_FACTOR } from '../projectionRates'
 import { Droplets, Zap, Leaf, DollarSign, TrendingUp, Calendar } from 'lucide-react'
 
 const FIX_RATE_WATER  = 0.85
 const FIX_RATE_ENERGY = 0.80
-const WATER_COST      = 0.05   // ₹/L
-const ENERGY_COST     = 8.0    // ₹/kWh
-const CO2_PER_KWH     = 0.82   // kg CO2/kWh
 
 function ProjectionCard({ icon, label, value, unit, subvalue, sublabel, color }) {
   return (
@@ -42,8 +41,44 @@ function ProgressRow({ label, value, max, color, unit }) {
   )
 }
 
+function UploadedScenario({ waterData, energyData }) {
+  const [reductions, setReductions] = useState({ water: '', energy: '' })
+  return <section id="projection" className="max-w-7xl mx-auto px-6 py-12">
+    <h2 className="text-3xl font-black text-white mb-3">Forecasts and scenarios</h2>
+    <p className="text-sm text-slate-400 mb-4">Compare unchanged consumption with a reduction you specify for the same reporting window.</p>
+    <div className="grid md:grid-cols-2 gap-4">
+      {[['water', waterData, 'total_consumption_liters', 'L'], ['energy', energyData, 'total_consumption_kwh', 'kWh']].map(([resource, data, key, unit]) => {
+        if (data?.[key] == null) return null
+        const forecast = data.resource_profile?.forecast
+        const value = reductions[resource]
+        const valid = value !== '' && Number.isFinite(Number(value)) && Number(value) >= 0 && Number(value) <= 100
+        const saved = valid ? data[key] * Number(value) / 100 : null
+        const tariff = data.tariff?.inr_per_unit
+        return <div className="glass-card p-5 space-y-3" key={resource}>
+          <h3 className="capitalize font-bold text-white">{resource}</h3>
+          <p>Observed reporting period · {data[key].toLocaleString()} {unit}</p>
+          {data.intensity?.per_person != null && <p>{data.intensity.per_person} {unit}/person for the observed period</p>}
+          {data.intensity?.per_square_metre != null && <p>{data.intensity.per_square_metre} {unit}/m² for the observed period</p>}
+          <p>{forecast?.status === 'available'
+            ? `${forecast.next_date} forecast · ${forecast.estimate} ${unit} (validation error range ${forecast.range.join('–')})`
+            : forecast?.basis || 'Daily forecasting requires documented historical observations.'}</p>
+          <label className="block">Assumed reduction (%)
+            <input className="ml-3 bg-slate-900 rounded border border-slate-600 p-1 w-20" type="number" min="0" max="100"
+              value={value} onChange={event => setReductions({ ...reductions, [resource]: event.target.value })} />
+          </label>
+          {saved != null && <p>Scenario consumption · {(data[key] - saved).toLocaleString()} {unit}. Estimated difference · {saved.toLocaleString()} {unit}.
+            {tariff != null ? ` Variable tariff difference ₹${(saved * tariff).toLocaleString()}. ` : ' Financial estimate unavailable without a documented tariff. '}</p>}
+        </div>
+      })}
+    </div>
+  </section>
+}
+
 export default function ImpactProjection({ waterData, energyData, dashData, uploadResult }) {
-  const isUploadMode = !!uploadResult
+  if (uploadResult) return <UploadedScenario waterData={waterData} energyData={energyData} />
+  const WATER_COST = waterData?.tariff?.inr_per_unit ?? DEMO_WATER_RATE
+  const ENERGY_COST = energyData?.tariff?.inr_per_unit ?? DEMO_ENERGY_RATE
+  const CO2_PER_KWH = dashData?.impact_summary?.factor_metadata?.energy?.factor ?? DEMO_GRID_FACTOR
   if (!waterData || !energyData) return null
 
   const wasted7d    = waterData.total_wasted_liters  || 0
@@ -53,10 +88,11 @@ export default function ImpactProjection({ waterData, energyData, dashData, uplo
   const improvement = dashData?.regen_score?.improvement    || 0
 
   // 30-day projections (extrapolate 7-day window × 30/7)
-  const multiplier      = 30 / 7
-  const waterSaved30    = Math.round(wasted7d  * multiplier * FIX_RATE_WATER)
-  const energySaved30   = Math.round(kwh7d     * multiplier * FIX_RATE_ENERGY)
-  const co2Reduced30    = (energySaved30 * CO2_PER_KWH).toFixed(1)
+  const waterDays = 7
+  const energyDays = 7
+  const waterSaved30    = Math.round(wasted7d * (waterDays ? 30 / waterDays : 0) * FIX_RATE_WATER)
+  const energySaved30   = Math.round(kwh7d * (energyDays ? 30 / energyDays : 0) * FIX_RATE_ENERGY)
+  const co2Reduced30    = (energySaved30 * CO2_PER_KWH + waterSaved30 * 0.001).toFixed(1)
   const financialSaving = Math.round(waterSaved30 * WATER_COST + energySaved30 * ENERGY_COST)
   const treesEquiv      = Math.round(parseFloat(co2Reduced30) / 100 * 4.5 * 10) / 10
 
@@ -68,7 +104,7 @@ export default function ImpactProjection({ waterData, energyData, dashData, uplo
         </h2>
         <p className="text-slate-400 text-sm">
           Estimated outcomes if all agent-recommended interventions are fully implemented.
-          Projections extrapolate the {isUploadMode ? 'uploaded data period' : '7-day simulation window'} using standard fix-efficiency rates
+          Projections extrapolate the 7-day simulation window using standard fix-efficiency rates
           (water: {Math.round(FIX_RATE_WATER*100)}%, energy: {Math.round(FIX_RATE_ENERGY*100)}%).
         </p>
       </div>
@@ -121,7 +157,7 @@ export default function ImpactProjection({ waterData, energyData, dashData, uplo
         </div>
         <div className="grid grid-cols-3 gap-4 items-center mb-6">
           <div className="text-center">
-            <p className="text-xs text-slate-500 mb-1">Today ({isUploadMode ? 'uploaded data' : 'simulated'})</p>
+            <p className="text-xs text-slate-500 mb-1">Today (simulated)</p>
             <p className="text-3xl font-black text-red-400">{regenBefore}</p>
             <p className="text-xs text-slate-600 mt-1">Baseline state</p>
           </div>
@@ -144,8 +180,8 @@ export default function ImpactProjection({ waterData, energyData, dashData, uplo
         </div>
 
         <div className="space-y-3">
-          <ProgressRow label="Water savings potential" value={wasted7d * multiplier * FIX_RATE_WATER / 1000} max={5} color="#00e5ff" unit="kL" />
-          <ProgressRow label="Energy recovery potential" value={kwh7d * multiplier * FIX_RATE_ENERGY} max={1000} color="#eab308" unit="kWh" />
+          <ProgressRow label="Water savings potential" value={waterSaved30 / 1000} max={5} color="#00e5ff" unit="kL" />
+          <ProgressRow label="Energy recovery potential" value={energySaved30} max={1000} color="#eab308" unit="kWh" />
           <ProgressRow label="CO₂ reduction potential" value={parseFloat(co2Reduced30)} max={200} color="#22c55e" unit="kg" />
           <ProgressRow label="Financial recovery" value={financialSaving} max={20000} color="#00ff88" unit="₹" />
         </div>
@@ -160,10 +196,10 @@ export default function ImpactProjection({ waterData, energyData, dashData, uplo
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-400">
           <p>• Water fix efficiency: {Math.round(FIX_RATE_WATER*100)}% of detected leakage addressed</p>
           <p>• Energy fix efficiency: {Math.round(FIX_RATE_ENERGY*100)}% of after-hours waste eliminated</p>
-          <p>• Water cost: ₹{WATER_COST}/litre (standard utility rate)</p>
-          <p>• Electricity cost: ₹{ENERGY_COST}/kWh (standard Indian grid tariff)</p>
-          <p>• CO₂ factor: {CO2_PER_KWH} kg/kWh (India grid average 2024)</p>
-          <p>• All figures extrapolated from {isUploadMode ? 'uploaded data' : 'simulated 7-day data'} — not measured</p>
+          <p>• Water cost: ₹{WATER_COST}/litre (reference assumption)</p>
+          <p>• Electricity cost: ₹{ENERGY_COST}/kWh (reference assumption)</p>
+          <p>• CO₂ factor: {CO2_PER_KWH} kg/kWh (inherited reference assumption; vintage unverified)</p>
+          <p>• All figures extrapolated from simulated 7-day data — not measured</p>
         </div>
       </div>
     </section>

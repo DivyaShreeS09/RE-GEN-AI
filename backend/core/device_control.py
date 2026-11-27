@@ -36,6 +36,8 @@ def execute_action(action_id: str) -> dict:
         "device_type": action_meta["device_type"],
         "mode": "mock",
         "status": "executed",
+        "evidence_type": "demo",
+        "hardware_actuated": False,
         "message": (
             f"[MOCK MODE] Command dispatched to {action_meta['device_type']} "
             f"for action '{action_meta['name']}'."

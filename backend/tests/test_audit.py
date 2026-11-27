@@ -10,6 +10,14 @@ Base.metadata.create_all(engine)
 from fastapi.testclient import TestClient
 from main import app
 
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def authenticated_client(token_for, monkeypatch):
+    monkeypatch.setitem(client.headers, "Authorization", token_for())
+
+
 client = TestClient(app)
 
 _PAYLOAD = {
@@ -27,14 +35,14 @@ def _make_run() -> int:
         coverage_pct=90.0, confidence_pct=85.0,
         regen_before=50.0, regen_after=65.0,
         wasted_liters=100.0, wasted_kwh=20.0, co2_kg=0.1,
-        payload_dict=_PAYLOAD,
+        tenant="fixture", payload_dict=_PAYLOAD,
     )
 
 
 class TestBuildAuditRecord:
     def test_contains_all_agent_traces(self):
         rid = _make_run()
-        run = get_run_by_id(rid)
+        run = get_run_by_id(rid, tenant="fixture")
         record = build_audit_record(run)
         agent_names = {a["agent"] for a in record["agent_reasoning"]}
         assert "Water Agent" in agent_names
@@ -44,14 +52,14 @@ class TestBuildAuditRecord:
 
     def test_reasoning_trace_content(self):
         rid = _make_run()
-        run = get_run_by_id(rid)
+        run = get_run_by_id(rid, tenant="fixture")
         record = build_audit_record(run)
         water_traces = next(a for a in record["agent_reasoning"] if a["agent"] == "Water Agent")
         assert "w-step1" in water_traces["reasoning_trace"]
 
     def test_hash_is_deterministic(self):
         rid = _make_run()
-        run = get_run_by_id(rid)
+        run = get_run_by_id(rid, tenant="fixture")
         h1 = build_audit_record(run)["payload_sha256"]
         h2 = build_audit_record(run)["payload_sha256"]
         assert h1 == h2
@@ -63,15 +71,15 @@ class TestBuildAuditRecord:
             coverage_pct=70.0, confidence_pct=75.0,
             regen_before=40.0, regen_after=55.0,
             wasted_liters=200.0, wasted_kwh=50.0, co2_kg=1.0,
-            payload_dict={"water": {"reasoning_trace": ["different"], "total_wasted_liters": 200.0}},
+            tenant="fixture", payload_dict={"water": {"reasoning_trace": ["different"], "total_wasted_liters": 200.0}},
         )
-        h1 = build_audit_record(get_run_by_id(rid1))["payload_sha256"]
-        h2 = build_audit_record(get_run_by_id(rid2))["payload_sha256"]
+        h1 = build_audit_record(get_run_by_id(rid1, tenant="fixture"))["payload_sha256"]
+        h2 = build_audit_record(get_run_by_id(rid2, tenant="fixture"))["payload_sha256"]
         assert h1 != h2
 
     def test_formula_constants_present(self):
         rid = _make_run()
-        record = build_audit_record(get_run_by_id(rid))
+        record = build_audit_record(get_run_by_id(rid, tenant="fixture"))
         fc = record["formula_constants"]
         assert fc["WATER_CO2_KG_PER_LITER"] == 0.001
         assert fc["ENERGY_CO2_KG_PER_KWH"] == 0.82
